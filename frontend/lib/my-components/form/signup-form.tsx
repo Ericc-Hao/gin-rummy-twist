@@ -27,6 +27,7 @@ const formSchema = z
     username: z.string().min(2, {
       message: "Username must be at least 2 characters.",
     }),
+    nickname: z.string(),
     password: z.string().min(8, {
       message: "Password must be at least 8 characters.",
     }),
@@ -46,6 +47,7 @@ export function SignUpForm() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       username: "",
+      nickname:"",
       password:"",
       confirmed:""
     },
@@ -70,6 +72,22 @@ export function SignUpForm() {
               <FormControl>
                 <Input  {...field} />
               </FormControl>
+              {/* <FormDescription>
+                Username must be at least 2 characters.
+              </FormDescription> */}
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="nickname"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nickname</FormLabel>
+              <FormControl>
+                <Input  {...field} />
+              </FormControl>
               <FormDescription>
                 This is your public display name.
               </FormDescription>
@@ -86,9 +104,9 @@ export function SignUpForm() {
               <FormControl>
                 <Input type="password" {...field} />
               </FormControl>
-              <FormDescription>
-                This is your public display name.
-              </FormDescription>
+              {/* <FormDescription>
+                Password must be at least 8 characters.
+              </FormDescription> */}
               <FormMessage />
             </FormItem>
           )}
@@ -102,9 +120,9 @@ export function SignUpForm() {
               <FormControl>
                 <Input type="password" {...field} />
               </FormControl>
-              <FormDescription>
+              {/* <FormDescription>
                 This is your public display name.
-              </FormDescription>
+              </FormDescription> */}
               <FormMessage />
             </FormItem>
           )}

@@ -22,7 +22,6 @@
       "@shared-store/*": ["./lib/shared-store/*"],
       "@my-components*": ["./lib/my-components/*"],
       "@components*": ["./components/*"],
-
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "shared-store/index.js"],

@@ -60,12 +60,12 @@ export function LogInForm() {
     // 登录成功时将数据存储到 Redux store
     dispatch(setUserInfo({ username: data.username })); // 传递 username
     console.log("User info dispatched: ", { username: data.username });
-    router.push("/login");
+    router.push("/home");
 
-    // 如果有 callbackUrl，重定向到该 URL
-    if (result?.url) {
-      window.location.href = result.url; // 或者使用 router.push() 方法
-    }
+    // // 如果有 callbackUrl，重定向到该 URL
+    // if (result?.url) {
+    //   window.location.href = result.url; // 或者使用 router.push() 方法
+    // }
   }
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -87,24 +87,21 @@ export function LogInForm() {
             <FormItem>
               <FormLabel>Username</FormLabel>
               <FormControl>
-                <Input  {...field} />
+                <Input {...field} className="w-full" />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-         <FormField
+        <FormField
           control={form.control}
           name="password"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" {...field} />
+                <Input type="password" {...field} className="w-full"  />
               </FormControl>
-              {/* <FormDescription>
-                This is your public display name.
-              </FormDescription> */}
               <FormMessage />
             </FormItem>
           )}

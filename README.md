@@ -15,9 +15,8 @@ Welcome to "Gin Rummy, With a Twist"! This project is a digital recreation of th
 - **Backend**: Spring Boot for API and game logic, PostgreSQL for database management.
 - **Hosting**: Deployed on Google Cloud Platform for scalability and availability.
 
+## Contribute
+- **Frontend**: Refer to `README.md` under frontend folder
+
 ## Acknowledgments
 Special thanks to Professor Paul Rapoport for his guidance on game rules and mechanics, and to all team members for their hard work in bringing this project to life.
-
-run frontend: 
-    cd frontend
-    npm run dev

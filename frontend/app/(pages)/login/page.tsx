@@ -8,13 +8,11 @@ export default function Login() {
   return (
     
     <div className="w-full h-full flex"> 
-          {/* <Button asChild variant="ghost" className="w-[100px]">
-        <Link href="/login">back to log in</Link>
-      </Button> */}
       <div className="w-full flex flex-col items-center justify-center">
         <div> Log In </div>
         <LogInForm></LogInForm>
         <Button variant="link"><Link href="/signup" className="">Sign Up</Link></Button>
+        <Button variant="link"><Link href="/home" className="">back to home</Link></Button>
       </div>
     </div>
    

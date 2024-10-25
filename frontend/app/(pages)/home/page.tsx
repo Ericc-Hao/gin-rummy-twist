@@ -15,6 +15,9 @@ import {
     DrawerContent,
     DrawerTrigger,
   } from "@/components/ui/drawer"
+  import { DialogTitle, DialogDescription } from "@radix-ui/react-dialog"; // 导入 DialogTitle
+  import { VisuallyHidden } from "@radix-ui/react-visually-hidden"; // 导入 VisuallyHidden
+
 
 
 export default function homePage() {
@@ -31,8 +34,6 @@ export default function homePage() {
             <HeaderBar></HeaderBar>
             <div className='flex felx-row items-center justify-center w-full flex-1 pt-[100px]'>
                 <div className="group w-[300px] h-[300px] flex items-center justify-center bg-white rounded-lg shadow-lg transition-all duration-300 ease-in-out hover:scale-105 hover:shadow-2xl">
-
-
                     <div className='flex flex-col gap-4 items-center justify-center '>
                         <Image 
                             src="/main-image/home.jpg"
@@ -41,17 +42,20 @@ export default function homePage() {
                             height={200}
                             style={{ objectFit: 'cover', borderRadius: '4px' }}
                         />
-
                         <Drawer>
                             <DrawerTrigger asChild>
-                                <Button className="w-full">Play Gin Rummy</Button>
+                                <Button className="w-full transition-transform duration-300 hover:opacity-75">Play Gin Rummy</Button>
                             </DrawerTrigger>
                             <DrawerContent className="m-4 w-full h-auto flex items-center justify-center">
+                                <VisuallyHidden>
+                                    <DialogTitle>Game Options</DialogTitle>
+                                    <DialogDescription>Choose your game mode and start playing!</DialogDescription>
+                                </VisuallyHidden>
                                 <div className='flex flex-col w-[300px] gap-4 m-4 '>
-                                    {StartButton("/game/ginrummy", "Start a New Game")}
-                                    {StartButton("/game/ginrummy", "Continue a Game")}
-                                    {StartButton("/game/tutoring", "Start a Tuition")}
-                                    {StartButton("/game/friend", "Play with a Friend")}
+                                    {StartButton("/ginrummy/newgame", "Start a New Game")}
+                                    {StartButton("", "Continue a Game")}
+                                    {StartButton("", "Start a Tuition")}
+                                    {StartButton("", "Play with a Friend")}
                                 </div>
                             </DrawerContent>
                         </Drawer>
@@ -67,7 +71,7 @@ export function StartButton(href: string, name: string) {
       <Button asChild className="w-full">
         <Link
           href={href}
-          className="w-full text-center transition-transform duration-300 hover:opacity-75"
+          className="w-full text-center transition-transform duration-300 hover:opacity-75" 
         >
           {name}
         </Link>

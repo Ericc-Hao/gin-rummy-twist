@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
+import { CARDS, Card } from '../data/cards.data'; // 导入卡片数据
+
+import Image from 'next/image';
+
+// 定义卡片数据的类型
+interface Card {
+  name: string;
+  image: string;
+}
 
 // 定义 DraggableCard 的 props 类型
 interface DraggableCardProps {
-  card: string;
+  card: Card;
   index: number;
   moveCard: (fromIndex: number, toIndex: number) => void;
 }
@@ -25,25 +34,35 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard }) 
       onDrop={handleDrop}
       onDragOver={(e) => e.preventDefault()} // 防止默认行为以允许放置
       style={{
-        padding: '16px',
-        marginLeft: '-50px', // 实现50%覆盖
+        marginLeft: '-1px',
         border: '1px solid #ccc',
         backgroundColor: '#fff',
         cursor: 'move',
-        minWidth: '150px', // 卡片宽度，确保每张卡有空间
+        // minWidth: '150px',
         textAlign: 'center',
         position: 'relative',
-        zIndex: 100, // 确保拖动卡片在顶层
+        zIndex: 100,
       }}
     >
-      {card}
+       <Image src={card.image} 
+              alt={card.name} 
+              width={100} 
+              height={150}
+              className="object-contain"/>
     </div>
   );
 };
 
-// 定义 CardContainer 的组件类型
-const SortableCardList: React.FC = () => {
-  const [cards, setCards] = useState<string[]>(['Card 1', 'Card 2', 'Card 3', 'Card 4']);
+function SortableCardList({display_cards_list}:{display_cards_list: string[]}) {
+
+  function getSortedCards(list: string[], cards: Card[]){
+    return list
+      .map((name) => cards.find((card) => card.name === name))
+      .filter((card): card is Card => card !== undefined); 
+  };
+
+
+  const [cards, setCards] = useState<Card[]>(getSortedCards(display_cards_list, CARDS));
 
   const moveCard = (fromIndex: number, toIndex: number) => {
     const updatedCards = [...cards];
@@ -56,9 +75,10 @@ const SortableCardList: React.FC = () => {
     <div
       style={{
         display: 'flex',
-        alignItems: 'center', // 使卡片在垂直方向居中
+        alignItems: 'center',
         position: 'relative',
         padding: '16px',
+        zIndex: 0,
       }}
     >
       {cards.map((card, index) => (

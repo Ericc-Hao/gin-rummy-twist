@@ -12,7 +12,7 @@ export default function Login() {
         <div> Log In </div>
         <LogInForm></LogInForm>
         <Button variant="link"><Link href="/signup" className="">Sign Up</Link></Button>
-        <Button variant="link"><Link href="/home">back to home</Link></Button>
+        <Button variant="link"><Link href="/home" className="">back to home</Link></Button>
       </div>
     </div>
    

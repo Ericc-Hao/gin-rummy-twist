@@ -20,6 +20,8 @@
     "paths": {
       "@/*": ["./*"],
       "@shared-store/*": ["./lib/shared-store/*"],
+      "@animcation":["./lib/animation/*"],
+      "@data":["./lib/data/*"],
       "@my-components*": ["./lib/my-components/*"],
       "@components*": ["./components/*"],
     }

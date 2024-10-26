@@ -9,14 +9,14 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import Image from 'next/image';
 
-import { HeaderBar } from '@/lib/my-components/lib/header-bar';
+import { HeaderBar } from '@/lib/my-components/header-bar';
 import {
     Drawer,
     DrawerContent,
     DrawerTrigger,
   } from "@/components/ui/drawer"
-  import { DialogTitle, DialogDescription } from "@radix-ui/react-dialog"; // 导入 DialogTitle
-  import { VisuallyHidden } from "@radix-ui/react-visually-hidden"; // 导入 VisuallyHidden
+  import { DialogTitle, DialogDescription } from "@radix-ui/react-dialog"; 
+  import { VisuallyHidden } from "@radix-ui/react-visually-hidden"; 
 
 
 

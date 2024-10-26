@@ -19,11 +19,11 @@ jobs:
           echo "Checking PR title: $PR_TITLE"
           
           # Define the pattern for the PR title
-          if [[ ! "$PR_TITLE" =~ ^(feat|fix|chore|docs|test|refactor|style|perf|ci|build|global)\((frontend|backend|ui|api|global)\):\  ]]; then
+          if [[ ! "$PR_TITLE" =~ ^(feat|fix|chore|docs|test|refactor|style|build|global)\((frontend|backend|ui|api|global|ci)\):\  ]]; then
             echo "❌ Invalid PR title. Please use the format: <type>(<scope>): <description>"
             echo ""
             echo "Available types:"
-            echo "- feat, fix, chore, docs, test, refactor, style, perf, ci, build, global"
+            echo "- feat, fix, chore, docs, test, refactor, style, build, global"
             echo ""
             echo "Available scopes:"
             echo "- frontend, backend, ui, api, global"

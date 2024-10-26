@@ -15,11 +15,11 @@ import {
     TooltipProvider,
     TooltipTrigger,
   } from "@/components/ui/tooltip"
-  import { Dialog, DialogTrigger, DialogOverlay,DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog"; // Import Dialog components
+  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
   
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { ExitIcon } from "@radix-ui/react-icons"
+import { PauseIcon } from "@radix-ui/react-icons"
 
 import {
     HoverCard,
@@ -69,27 +69,31 @@ export function HeaderBar() {
                 <TooltipProvider>
                     <Tooltip>
                         <TooltipTrigger asChild> 
-                            <Button size="icon" variant="ghost" onClick={handleLeave}><ExitIcon  className="h-4 w-4" /></Button>
+                            <Button size="icon" variant="ghost" onClick={handleLeave}><PauseIcon className="h-4 w-4" /></Button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" align="center" className="bg-black text-white px-3 py-2 rounded-md shadow-lg">
-                            <p>leave the game</p>
+                            <p>Pause</p>
                         </TooltipContent>
                     </Tooltip>
 
                     <Dialog open={open} onOpenChange={setOpen}>
                         <DialogContent onInteractOutside={(event) => event.preventDefault()}
-                                        className="w-[400px] h-[200px] max-w-full max-h-full p-6 rounded-md shadow-lg">
+                                        className="w-auto h-auto max-w-full max-h-full p-6 rounded-md shadow-lg">
                             <DialogHeader>
-                                <DialogTitle>Leave Game</DialogTitle>
+                                <DialogTitle>Pause</DialogTitle>
                                 <DialogDescription className='flex flex-col h-full justify-center'>
-                                    <span>Are you sure you want to leave the game?</span>
-                                    <span>Progress will not be saved</span>
+                                    <span>Prograss will not be saved once you leave the game</span>
                                 </DialogDescription>
                             </DialogHeader>
-                            <DialogFooter className='flex flex-col h-full justify-center'>
+                            <div className='flex flex-col w-[300px] gap-4 m-4 '>
+                                    {StartButton('/home', "Leave")}
+                                    <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+                                    {/* {StartButton("/ginrummy/newgame", "Start New Game")} */}
+                                </div>
+                            {/* <DialogFooter className='flex flex-col h-full justify-center'>
                                 <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
                                 <Button onClick={() => {router.push('/home'); setOpen(false);}}>Leave</Button>
-                            </DialogFooter>
+                            </DialogFooter> */}
                         </DialogContent>
                     </Dialog>
                 </TooltipProvider>
@@ -117,3 +121,17 @@ export function HeaderBar() {
         </header>
     );
 }
+
+
+export function StartButton(href: string, name: string) {
+    return (
+      <Button asChild className="w-full">
+        <Link
+          href={href}
+          className="w-full text-center transition-transform duration-300 hover:opacity-75" 
+        >
+          {name}
+        </Link>
+      </Button>
+    );
+  }

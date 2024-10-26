@@ -19,8 +19,8 @@ import {
 } from "@/components/ui/form"
 
 import {useDispatch } from 'react-redux';
-import {  setUserInfo } from '../../shared-store/slices/user';
-import { AppDispatch } from '../../shared-store/index'; 
+import {  setUserInfo } from '@shared-store/slices/user';
+import { AppDispatch } from '@shared-store/index'; 
 // import { useEffect } from 'react';
 
 import { useRouter } from "next/navigation"

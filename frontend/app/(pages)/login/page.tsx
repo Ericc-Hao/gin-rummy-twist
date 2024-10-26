@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link";
 
 
-import { LogInForm } from "@my-components/form/login-form";
+import { LogInForm } from "@my-components/login-form";
 
 export default function Login() {
   return (

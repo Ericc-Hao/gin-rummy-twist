@@ -7,7 +7,7 @@ import { useSelector,} from 'react-redux';
 import { RootState } from '@shared-store/index'; 
 
 
-import {SignUpForm} from "@my-components/form/signup-form"
+import {SignUpForm} from "@my-components/signup-form"
 
 export default function SignUp() {
 

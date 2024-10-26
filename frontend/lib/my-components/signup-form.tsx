@@ -5,8 +5,8 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import {useDispatch } from 'react-redux';
-import {  setUserInfo } from '../../shared-store/slices/user';
-import { AppDispatch } from '../../shared-store/index'; 
+import {  setUserInfo } from '@shared-store/slices/user';
+import { AppDispatch } from '@shared-store/index'; 
 
 import { useRouter } from "next/navigation"
 

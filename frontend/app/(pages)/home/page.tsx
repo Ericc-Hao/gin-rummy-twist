@@ -54,7 +54,7 @@ export default function homePage() {
                                 <div className='flex flex-col w-[300px] gap-4 m-4 '>
                                     {StartButton("/ginrummy/newgame", "Start a New Game")}
                                     {StartButton("", "Continue a Game")}
-                                    {StartButton("", "Start a Tuition")}
+                                    {StartButton("", "Start a Tutorial")}
                                     {StartButton("", "Play with a Friend")}
                                 </div>
                             </DrawerContent>

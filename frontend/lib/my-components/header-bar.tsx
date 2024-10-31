@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { useRouter } from "next/navigation";
 import { usePathname } from 'next/navigation'; 
 import { useState } from "react";
+import { setGameStatus } from '../shared-store/slices/game';
 
 import { clearUserInfo } from '@shared-store/slices/user';
 
@@ -15,11 +16,12 @@ import {
     TooltipProvider,
     TooltipTrigger,
   } from "@/components/ui/tooltip"
-  import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+
   
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { PauseIcon } from "@radix-ui/react-icons"
+import { PauseIcon, InfoCircledIcon, ArchiveIcon } from "@radix-ui/react-icons"
 
 import {
     HoverCard,
@@ -27,14 +29,19 @@ import {
     HoverCardTrigger,
   } from "@/components/ui/hover-card";
 
+  import { SideBarType } from '../shared-store/slices/game';
+
 
 export function HeaderBar() {
     // 使用 useSelector 读取 Redux store 中的数据
     const dispatch = useDispatch<AppDispatch>();
     const user = useSelector((state: RootState) => state.user);
+    const game = useSelector((state: RootState) => state.game);
+
     const router = useRouter();
     const pathname = usePathname();
-    const [open, setOpen] = useState(false);
+
+    const [openPauseDialog, setOpenPauseDialog] = useState(false);
 
     useEffect(() => {
         console.log("Updated user info: ", user);
@@ -42,61 +49,86 @@ export function HeaderBar() {
     }, [user]);
 
     useEffect(() => {
-        if (open) {
-            // 禁用背景滚动，防止页面内容被压缩
+        if (openPauseDialog) {
             document.body.classList.add('overflow-hidden');
         } else {
-            // 恢复滚动
             document.body.classList.remove('overflow-hidden');
         }
-    }, [open]);
+    }, [openPauseDialog]);
 
 
-
- 
     function handleLogout() {
         dispatch(clearUserInfo());
     }
 
-    function handleLeave(){
-        setOpen(true)
+    function changeShowSideBar(state:SideBarType){
+      if (game.showSideBar == state) {
+        dispatch(setGameStatus({showSideBar:null}))
+      } else {
+        dispatch(setGameStatus({showSideBar:state}))
+      }
     }
     
 
     return (
-        <header className="sticky top-0 z-99 w-full flex items-center justify-between px-4 py-2 flex-row ">
+        <header className="sticky top-0 z-990 w-full flex items-center justify-between px-4 py-2 flex-row ">
             {pathname !== "/home" ? (
+                <div className='flex flex-row gap-2'>
                 <TooltipProvider>
-                    <Tooltip>
+                    <Tooltip delayDuration={0}>
                         <TooltipTrigger asChild> 
-                            <Button size="icon" variant="ghost" onClick={handleLeave}><PauseIcon className="h-4 w-4" /></Button>
+                            <Button size="icon" variant="ghost" onClick={() => {setOpenPauseDialog(true)}}><PauseIcon className="h-4 w-4" /></Button>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" align="center" className="bg-black text-white px-3 py-2 rounded-md shadow-lg">
+                        <TooltipContent side="bottom" align="center" className="bg-black text-white px-3 py-2 rounded-md shadow-lg" style={{zIndex: 1000 }}>
                             <p>Pause</p>
                         </TooltipContent>
                     </Tooltip>
 
-                    <Dialog open={open} onOpenChange={setOpen}>
+                    <Dialog open={openPauseDialog} onOpenChange={setOpenPauseDialog}>
                         <DialogContent onInteractOutside={(event) => event.preventDefault()}
-                                        className="w-auto h-auto max-w-full max-h-full p-6 rounded-md shadow-lg">
+                                        className="w-auto h-auto -w-full max-h-full p-6 rounded-md shadow-lg">
                             <DialogHeader>
                                 <DialogTitle>Pause</DialogTitle>
                                 <DialogDescription className='flex flex-col h-full justify-center'>
-                                    <span>Prograss will not be saved once you leave the game</span>
+                                    {/* <span>Prograss will not be saved automatically</span> */}
                                 </DialogDescription>
                             </DialogHeader>
                             <div className='flex flex-col w-[300px] gap-4 m-4 '>
-                                    {StartButton('/home', "Leave")}
-                                    <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+                                    {StartButton('/home', "Save and Leave")}
+                                    {StartButton('/home', "Leave (without save)")}
+                                    {StartButton('/ginrummy/newgame', "Restart")}
+                                    <Button variant="ghost" onClick={() => setOpenPauseDialog(false)}>Cancel</Button>
                                     {/* {StartButton("/ginrummy/newgame", "Start New Game")} */}
                                 </div>
-                            {/* <DialogFooter className='flex flex-col h-full justify-center'>
-                                <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-                                <Button onClick={() => {router.push('/home'); setOpen(false);}}>Leave</Button>
-                            </DialogFooter> */}
                         </DialogContent>
                     </Dialog>
                 </TooltipProvider>
+
+                <TooltipProvider>
+                    <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild> 
+                            <Button size="icon" variant={game.showSideBar === 'Rules' ? "secondary" : "ghost"} onClick={() => {changeShowSideBar('Rules')}}><InfoCircledIcon  className="h-4 w-4" /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" align="center" className="bg-black text-white px-3 py-2 rounded-md shadow-lg flex" style={{ zIndex: 1000 }}>
+                            <p>Rules</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+
+                <TooltipProvider>
+                    <Tooltip delayDuration={0}>
+                        <TooltipTrigger asChild> 
+                            <Button size="icon" variant={game.showSideBar === 'Grades' ? "secondary" : "ghost"} onClick={() => {changeShowSideBar('Grades')}}><ArchiveIcon  className="h-4 w-4" /></Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" align="center" className="bg-black text-white px-3 py-2 rounded-md shadow-lg flex" style={{ zIndex: 1000 }}>
+                            <p>Grades</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+
+
+
+                </div>
 
             ) : (<div>HOME</div>)}
 

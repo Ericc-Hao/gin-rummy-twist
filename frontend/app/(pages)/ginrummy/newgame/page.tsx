@@ -1,26 +1,68 @@
-"use client"
+"use client";
 
-import { HeaderBar } from "@/lib/my-components/header-bar"
+import { HeaderBar } from "@/lib/my-components/header-bar";
+import DealCards from "@/lib/my-components/deal-card-animation";
 
-import  DealCards from "@/lib/my-components/deal-card-animation"
+import { useSelector, useDispatch } from "react-redux";
+import { AppDispatch, RootState } from "@shared-store/index";
+import { useEffect, useState } from "react";
+import { setGameStatus } from "@/lib/shared-store/slices/game";
 
+import { Button } from "@/components/ui/button";
+import { Cross1Icon } from "@radix-ui/react-icons";
 
 export default function GamePage() {
+    
+    const dispatch = useDispatch<AppDispatch>();
+    const game = useSelector((state: RootState) => state.game);
 
-    return(
-        <div className='h-full w-full flex flex-col '>
-            <HeaderBar></HeaderBar>
-            <div className="flex felx-row items-center justify-center w-full h-[600px] py-6 gap-4 px-4" style={{ minHeight: 'calc(100vh - 64px)' }}>
-                <div className="bg-gray-100 w-full h-full flex flex-col items-center justify-center">
-                    <DealCards />
-                     
+    const [animateClose, setAnimateClose] = useState(true);
+
+    useEffect(() => {
+        console.log("Updated game Status: ", game);
+        if (game.showSideBar) {
+            setAnimateClose(false);
+        }
+    }, [game]);
+
+    const handleClose = () => {
+        setAnimateClose(true);
+        dispatch(setGameStatus({ showSideBar: null }));
+    };
+
+    return (
+        <div className="h-full w-full flex flex-col relative">
+            <HeaderBar />
+            <div className="flex w-full h-[600px] pt-2 py-4 px-4 transition-all duration-500 ease-in-out" style={{ minHeight: "calc(100vh - 52px)" }}>
+                {/* Left Drawer */}
+                <div
+                    className={`bg-gray-100 h-full  transition-all duration-500 ease-in-out flex ${
+                        animateClose ? "" : "mr-4"
+                    }`}
+                    style={{
+                        width: game.showSideBar ? "300px" : "0px",
+                        visibility: game.showSideBar || !animateClose ? 'visible' : 'hidden',
+                    }}
+                >
+                    {game.showSideBar && (
+                        <div className="p-4 relative w-full">
+                            <Button size="icon" variant="ghost"  onClick={handleClose} className="absolute top-2 right-2" >
+                                <Cross1Icon  className="h-4 w-4" />
+                            </Button>
+
+                        </div>
+                    )}
                 </div>
-                {/* <div className="bg-gray-100 w-[100px] h-full">
-                    dfsd
-                 </div>  */}
+
+
+                {/* Right Play Table*/}
+                <div
+                    className="bg-gray-100 h-full flex flex-col items-center justify-center transition-all duration-500 ease-in-out"
+                    style={{flex: game.showSideBar ? 1 : 2, }}
+                >
+                    <DealCards />
+                </div>
             </div>
-            
         </div>
-        
-    )
+    );
 }

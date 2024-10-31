@@ -1,0 +1,42 @@
+name: Check PR Title
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+
+jobs:
+  pr-title-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v3
+
+      - name: Validate PR title format
+        id: validate_title
+        run: |
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          echo "Checking PR title: $PR_TITLE"
+          
+          # Define the pattern for the PR title
+          if [[ ! "$PR_TITLE" =~ ^(feat|fix|chore|docs|test|refactor|style|build|global)\((frontend|backend|ui|api|global|ci)\):\  ]]; then
+            echo "❌ Invalid PR title. Please use the format: <type>(<scope>): <description>"
+            echo ""
+            echo "Available types:"
+            echo "- feat, fix, chore, docs, test, refactor, style, build, global"
+            echo ""
+            echo "Available scopes:"
+            echo "- frontend, backend, ui, api, global"
+            echo ""
+            echo "Example title format:"
+            echo "- feat(frontend): Add new component for homepage"
+            echo "- fix(global): Resolve system-wide login issue"
+            exit 1
+          else
+            echo "✅ PR title is valid!"
+          fi
+
+      - name: Set PR title check status
+        if: failure()
+        run: |
+          echo "PR title check failed. Please update the title to follow the format: <type>(<scope>): <description>."

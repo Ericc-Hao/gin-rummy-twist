@@ -37,8 +37,8 @@ export default function homePage() {
                     <div className="flex h-full w-full">
                         <Image  src="/main-image/home-4.jpg"
                                 alt="home-1"
-                                layout="fill" // 使用 fill 使图片填充父容器
-                                objectFit="cover" // 使用 cover 保持宽高比并填满
+                                layout="fill"
+                                objectFit="cover"
                                 style={{ borderRadius: '4px', zIndex:-1 }}
                             />
                     </div>

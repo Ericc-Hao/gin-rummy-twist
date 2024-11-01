@@ -1,0 +1,71 @@
+name: Deploy to Google Cloud Run using Artifact Registry
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        working-directory: ./src/frontend
+        run: npm install
+
+      - name: Build Next.js App
+        working-directory: ./src/frontend
+        run: npm run build
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Configure Docker for Google Artifact Registry
+        run: gcloud auth configure-docker northamerica-northeast2-docker.pkg.dev
+
+      - name: Build and Push Docker Image
+        run: |
+          IMAGE_NAME="northamerica-northeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gin-rummy-frontend/nextjs-app:${{ github.sha }}"
+          docker build -t $IMAGE_NAME ./src/frontend
+          docker push $IMAGE_NAME
+
+      - name: Deploy to Google Cloud Run
+        id: deploy
+        run: |
+          gcloud run deploy gin-rummy-frontend \
+            --image northamerica-northeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gin-rummy-frontend/nextjs-app:${{ github.sha }} \
+            --platform managed \
+            --region northamerica-northeast2 \
+            --allow-unauthenticated \
+            --port 8080
+          SERVICE_URL=$(gcloud run services describe gin-rummy-frontend --region northamerica-northeast2 --format "value(status.url)")
+          echo "service_url=$SERVICE_URL" >> $GITHUB_ENV
+
+      - name: Comment on PR
+        if: success() || failure()
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const serviceUrl = process.env.SERVICE_URL;
+            const prNumber = context.payload.pull_request.number;
+            const message = serviceUrl 
+              ? `✅ Deployment succeeded! Here is the deployed link: [${serviceUrl}](${serviceUrl})` 
+              : `❌ Deployment failed. Please check the workflow logs for details.`;
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: message
+            });

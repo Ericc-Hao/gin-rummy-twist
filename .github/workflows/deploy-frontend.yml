@@ -22,10 +22,6 @@ jobs:
         working-directory: ./src/frontend
         run: npm install
 
-      - name: Build Next.js App
-        working-directory: ./src/frontend
-        run: npm run build
-
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:
@@ -48,7 +44,7 @@ jobs:
             --platform managed \
             --region northamerica-northeast2 \
             --allow-unauthenticated \
-            --port 8080
+            --port 3000 # Assuming Next.js dev server listens on port 3000
           SERVICE_URL=$(gcloud run services describe gin-rummy-frontend --region northamerica-northeast2 --format "value(status.url)")
           echo "service_url=$SERVICE_URL" >> $GITHUB_ENV
 

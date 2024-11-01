@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 interface Card {
     name: string;
     image: string;
+    index?:number
   }
 interface DraggableCardProps {
     card: Card;
@@ -30,6 +31,8 @@ export default function DealCards() {
   const [sendingNewCard, setSendingNewCard] = useState<'stack'|'dropzone' | null>(null); // sending card from which stack
   const [p1Playing, setP1Playing] = useState<'toTake'|'toDrop' | null>(null);
   const [p2Playing, setP2Playing] = useState<'toTake'|'toDrop' | null>(null);
+  const [p1DroppingCard, setP1DroppingCard] = useState<Card | null>(null); // 当前正在移动到 DropZone 的卡片
+
   
   const [player1Cards, setPlayer1Cards] = useState<Card[]>([]);
   const [player2Cards, setPlayer2Cards] = useState<Card[]>([]);
@@ -77,9 +80,9 @@ export default function DealCards() {
     // take the first card from main stack
     function handleNext(){
       switch (p2Playing) {
-        case null:
-          alert('not your tern');
-          break;
+        // case null:
+        //   alert('not your turn');
+        //   break;
         case 'toDrop':
           alert('You need to drop a card');
           break;
@@ -108,9 +111,9 @@ export default function DealCards() {
     // take the last card from drop zone, (LIFO)
     function handleDropZone(){
       switch (p2Playing) {
-        case null:
-          alert('not your tern');
-          break;
+        // case null:
+        //   alert('not your turn');
+        //   break;
         case 'toDrop':
           alert('You need to drop a card');
           break;
@@ -136,9 +139,9 @@ export default function DealCards() {
     // Player2 plays the card
     function handleDrop(item: { card: Card; index: number }){
       switch (p2Playing) {
-        case null:
-          alert('not your tern');
-          break;
+        // case null:
+        //   alert('not your turn');
+        //   break;
         case 'toTake':
           alert('need to pick a card first');
           break;
@@ -149,17 +152,50 @@ export default function DealCards() {
           setPlayer2Cards(updatedCards);
           setP1Playing("toTake")
           setP2Playing(null)
-
-          // TODO
-          setTimeout(() => {
-            setP1Playing(null)
-            setP2Playing('toTake'); 
-          }, 3000);
+          handleP1Play()
       }
       
     };
   
+    function handleP1Play() {
+      if (remainingCards.length > 0) {
+        const [newCard, ...rest] = remainingCards;
+        setNextCard(newCard);
+        setRemainingCards(rest);
+        setSendingNewCard('stack');
+        setP1Playing('toTake');
+        
+        setTimeout(() => {
+          setPlayer1Cards((prev) => [...prev, newCard]);
+          setNextCard(null);
+          setP1Playing('toDrop');
+   
+          setTimeout(() => {
+            console.log(player1Cards, player1Cards.length);
+            if (player1Cards.length > 0) {
+              const randomIndex = Math.floor(Math.random() * player1Cards.length);
+              const randomCard = player1Cards[randomIndex];
 
+             setP1DroppingCard({...randomCard, index:randomIndex});
+    
+              const updatedCards = [...player1Cards];
+              updatedCards.splice(randomIndex, 0);
+              setPlayer1Cards(updatedCards);
+              console.log(player1Cards, player1Cards.length);
+    
+              setTimeout(() => {
+                setDropZoneCards((prev) => [...prev, randomCard]);
+                setP1Playing(null)
+                setP1DroppingCard(null);
+                setP2Playing('toTake')
+              }, 400);
+             
+            }
+          }, 1000);
+        }, 1000);
+      }
+    }
+    
     function DropZone(){
       const [{ isOver }, drop] = useDrop({
         accept: 'CARD',
@@ -199,9 +235,9 @@ export default function DealCards() {
     };
 
     // avatar
-    function AvatarDisplay({ image, player }: { image: string; player: 1 | 2 }) {
+    function AvatarDisplay({ image, player,name }: { image: string; player: 1 | 2, name:string }) {
       return (
-        <div className="relative flex items-center">
+        <div className="relative flex flex-col gap-2 items-center">
           <Image
             src={image}
             alt={`Player ${player} Avatar`}
@@ -216,6 +252,7 @@ export default function DealCards() {
                 : 'none',
             }}
           />
+          <div className="text-lg font-medium text-gray-500 tracking-wide">{name}</div>
         </div>
       );
     }
@@ -227,25 +264,26 @@ export default function DealCards() {
       <div className="h-full w-full flex flex-col items-center justify-center">
 
         {/* Player1 avatar*/}
-        <AvatarDisplay image={'/main-image/my-avatar.jpg'} player={1} />
+        <AvatarDisplay image={'/main-image/my-avatar.jpg'} player={1} name={'Robot'}/>
 
         <div className="relative flex items-center justify-center w-full h-[500px] gap-4">
             {/* Player1 */}
             {dealing &&
                 player1Cards.map((card, index) => (
-                    <motion.div
-                        key={`player1-${index}`}
-                        initial={{ x: -170, y: 0, opacity: 0 }}
-                        animate={{
-                            x: -100 * (index-5), 
-                            y: -150, 
-                            opacity: 1}}
-                        transition={{
-                            delay: index * 0.6,
-                            duration: 0.8,
-                            type: 'spring',}}
-                        className="absolute"
-                        >
+                  <motion.div
+                  key={`player2-${index}`}
+                  initial={sendingNewCard == 'dropzone'?  {x: 60,opacity:0.8}:{ x: -60, y: 0, opacity: 1}}
+                  animate={{ 
+                      x: -100 * (index - 5), 
+                      y: -150, 
+                      opacity: 1,}}
+                  transition={{ 
+                      delay: sendingNewCard? 0: index * 0.6,  
+                      duration:0.8, 
+                      type: 'spring',}}
+                  className="absolute"
+                  style={{zIndex: 6}}
+                  >
                         <Image
                             src="/cards-image/back.svg.png"
                             alt={`Card ${index + 1}`}
@@ -258,7 +296,7 @@ export default function DealCards() {
             ))}
 
             {/* middle card stack */}
-            <div className="flex flex-row gap-6 items-center justify-center text-center">
+            <div className="flex relative flex-row gap-6 items-center justify-center text-center">
                 <Image
                     src="/cards-image/back.svg.png"
                     alt="Deck"
@@ -268,24 +306,42 @@ export default function DealCards() {
                     className="object-contain"
                     style={{
                       cursor: p2Playing === 'toTake' ? 'pointer' : 'not-allowed', 
+                      zIndex:1
                     }}
                     onClick={handleNext}
                 />
 
                 <DropZone />
 
-                {!dealing ? (
+                {p1DroppingCard && (
+                  <motion.div
+                    initial={{ x: p1DroppingCard.index? -100 * (p1DroppingCard.index-5) : -100, y: -150, opacity: 1 }} // 根据卡片位置调整 x 和 y
+                    animate={{ x: 60, y: 0, opacity: 1 }}
+                    transition={{ duration: 0.6 }}
+                    className="absolute"
+                  >
+                    <Image
+                      src={p1DroppingCard.image}
+                      alt={p1DroppingCard.name}
+                      width={100}
+                      height={150}
+                      draggable="false"
+                      className="object-contain"
+                      style={{
+                        zIndex:70
+                      }}
+                    />
+                  </motion.div>
+                )}
+
+                {!dealing && (
                     <Button
-                    className="mb-4 px-4 py-2 w-[100px] bg-blue-500 text-white rounded"
+                    className="absolute left-full ml-4 px-4 py-2 w-[100px] bg-blue-500 text-white rounded"
                     onClick={() => setDealing(true)}
                     >
                     Deal
                     </Button>
-                ) : (
-                    <Button className="w-[100px]" onClick={handlePass}>
-                        Pass
-                    </Button>
-                )}
+                ) }
             </div>
 
             {/* Player2 */}
@@ -293,7 +349,7 @@ export default function DealCards() {
                 player2Cards.map((card, index) => (
                 <motion.div
                     key={`player2-${index}`}
-                    initial={sendingNewCard == 'dropzone'?  {x: 0,opacity:1}:{ x: -124, y: 0, opacity: 0}}
+                    initial={sendingNewCard == 'dropzone'?  {x: 60,opacity:0.5}:{ x: -60, y: 0, opacity: 0}}
                     animate={{ 
                         x: 100 * (index - 5), 
                         y: 150, 
@@ -303,6 +359,7 @@ export default function DealCards() {
                         duration:0.8, 
                         type: 'spring',}}
                     className="absolute"
+                    style={{zIndex: 50}}
                     >
                       <DraggableCard
                           key={index}
@@ -316,32 +373,74 @@ export default function DealCards() {
         </div>
 
         {/* Player2 avatar*/}
-        <div className="relative flex items-center">
-          <AvatarDisplay image={'/main-image/my-avatar-1.jpg'} player={2} />
+        <div className="relative flex items-center justify-center w-full">
+
+        {dealing &&(
+          <div  className="absolute flex flex-col items-center justify-center gap-2"
+                style={{
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  whiteSpace: 'nowrap',
+                  left: 'calc(50% - 500px)',
+                }}>
+            
+            <div
+              className=" px-2 p-y-1 rounded-lg bg-gray-500 text-white  shadow-xl bg-opacity-60"
+            >
+              Melds: 
+            </div>
+            <div
+              className=" px-2 p-y-1 rounded-lg bg-gray-500 text-white  shadow-xl bg-opacity-60"
+            >
+              Deadwoods: 
+            </div>
+            </div>
+          )}
+
+
+          <AvatarDisplay image={'/main-image/my-avatar-1.jpg'} player={2} name={'User'} />
+
           {p2Playing == 'toTake' && (
             <div
-              className="absolute left-full ml-4 p-2 rounded-lg  bg-green-300 text-black font-semibold"
+              className="absolute ml-4 p-4"
               style={{
                 top: '50%',
                 transform: 'translateY(-50%)',
-                whiteSpace: 'nowrap',
+                left: 'calc(50% + 60px)',
               }}
             >
-              PICK A CARD
+                <ChatBubble content={ 'PICK A CARD'}  bgColor={'bg-yellow-200'} />
+              
             </div>
           )}
           {p2Playing == 'toDrop' && (
             <div
-              className="absolute left-full ml-4 p-2 rounded-lg bg-red-300 text-black font-semibold"
+              className="absolute ml-4 p-4"
+              style={{
+                top: '50%',
+                transform: 'translateY(-50%)',
+                left: 'calc(50% + 60px)',
+              }}
+            >
+                <ChatBubble content={ 'DRAG & DROP A CARD'}  bgColor={'bg-yellow-200'} />
+            </div>
+          )}
+
+          {dealing &&(
+            <div
+              className="absolute w-[80px] h-[80px] flex items-center justify-center bg-red-500 text-white font-semibold shadow-xl cursor-pointer hover:bg-red-600"
               style={{
                 top: '50%',
                 transform: 'translateY(-50%)',
                 whiteSpace: 'nowrap',
+                left: 'calc(50% + 500px)',
+                borderRadius:'50%'
               }}
             >
-              DRAG & DROP A CARD
+              KNOCK
             </div>
           )}
+                
 
 
   </div>
@@ -351,6 +450,53 @@ export default function DealCards() {
     </DndProvider>
   )
 }
+
+
+
+import React from 'react';
+
+interface ChatBubbleProps {
+  content: string; 
+  bgColor: string; 
+}
+
+
+const ChatBubble: React.FC<ChatBubbleProps> = ({ content, bgColor}) => {
+  return (
+    <div
+      className={`relative ml-4 px-4 py-2 text-black font-semibold shadow-lg rounded-3xl max-w-xs ${bgColor} bg-opacity-60`}
+      style={{
+        transform: 'translateY(-80%)',
+        whiteSpace: 'pre-wrap',
+      }}
+    >
+      {content}
+      
+      <div
+        className={`absolute w-[20px] h-[20px] shadow-lg rounded-full ${bgColor} bg-opacity-60`}
+        style={{
+          left: '-25px',
+          bottom: '-20px',
+          transform: 'translateY(-50%)',
+        }}
+      />
+      
+      <div
+        className={`absolute w-[10px] h-[10px] shadow-lg rounded-full ${bgColor} bg-opacity-60`}
+        style={{
+          left: '-40px',
+          bottom: '-25px',
+          transform: 'translateY(-50%)',
+        }}
+      />
+    </div>
+  );
+};
+
+
+
+
+
 
 const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard,p2Playing }) => {
   const [{ isDragging }, drag] = useDrag({

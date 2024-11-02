@@ -20,6 +20,14 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Cache Node.js modules
+        uses: actions/cache@v3
+        with:
+          path: ./src/frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
       - name: Install Dependencies
         working-directory: ./src/frontend
         run: npm install
@@ -46,25 +54,8 @@ jobs:
             --platform managed \
             --region northamerica-northeast2 \
             --allow-unauthenticated \
-            --port 8080
-          SERVICE_URL=$(gcloud run services describe gin-rummy-frontend --region northamerica-northeast2 --format "value(status.url)")
-          echo "service_url=$SERVICE_URL" >> $GITHUB_ENV
-
-  comment:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Comment on PR
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const serviceUrl = process.env.SERVICE_URL;
-            const message = serviceUrl 
-              ? `✅ Deployment succeeded! Here is the deployed link: [${serviceUrl}](${serviceUrl})` 
-              : `❌ Deployment failed. Please check the workflow logs for details.`;
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: message
-            });
+            --port 3000
+          echo "SERVICE_URL=$(gcloud run services describe gin-rummy-frontend --region northamerica-northeast2 --format 'value(status.url)')" >> $GITHUB_ENV
+      - name: Output Service URL
+        run: |
+          echo "Deployed service URL: ${{ steps.deploy.outputs.SERVICE_URL }}"

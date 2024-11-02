@@ -65,6 +65,18 @@ jobs:
             --cpu 1
           echo "SERVICE_URL=$(gcloud run services describe gin-rummy-frontend --region us-east1 --format 'value(status.url)')" >> $GITHUB_ENV
 
-      - name: Output Service URL
-        run: |
-          echo "Deployed service URL: ${{ env.SERVICE_URL }}"
+  comment:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: success()
+    steps:
+      - name: Post a comment on PR
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "Deployment succeeded! Check the changes at [staging.ginrummys.ca](https://staging.ginrummys.ca/)"
+            })

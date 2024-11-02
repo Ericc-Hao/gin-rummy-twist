@@ -44,11 +44,11 @@ jobs:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
       - name: Configure Docker for Google Artifact Registry
-        run: gcloud auth configure-docker us-south1-docker.pkg.dev
+        run: gcloud auth configure-docker us-east1-docker.pkg.dev
 
       - name: Build and Push Docker Image
         run: |
-          IMAGE_NAME="us-south1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gin-rummy/frontend/nextjs-app:${{ github.sha }}"
+          IMAGE_NAME="us-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gin-rummy/frontend/nextjs-app:${{ github.sha }}"
           docker build -t $IMAGE_NAME ./src/frontend
           docker push $IMAGE_NAME
 
@@ -56,14 +56,14 @@ jobs:
         id: deploy
         run: |
           gcloud run deploy gin-rummy-frontend \
-            --image us-south1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gin-rummy/frontend/nextjs-app:${{ github.sha }} \
+            --image us-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gin-rummy/frontend/nextjs-app:${{ github.sha }} \
             --platform managed \
-            --region us-south1 \
+            --region us-east1 \
             --allow-unauthenticated \
             --port 3000 \
             --memory 3Gi \
             --cpu 1
-          echo "SERVICE_URL=$(gcloud run services describe gin-rummy-frontend --region us-south1 --format 'value(status.url)')" >> $GITHUB_ENV
+          echo "SERVICE_URL=$(gcloud run services describe gin-rummy-frontend --region us-east1 --format 'value(status.url)')" >> $GITHUB_ENV
 
       - name: Output Service URL
         run: |

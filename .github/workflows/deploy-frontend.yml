@@ -1,11 +1,11 @@
 name: Deploy to Google Cloud Run using Artifact Registry
 
 on:
-  # Trigger the workflow on pull request
   pull_request:
     branches:
       - main
-      - develop
+    paths:
+      - 'src/frontend/**'
 
 jobs:
   deploy:
@@ -38,11 +38,11 @@ jobs:
           credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
 
       - name: Configure Docker for Google Artifact Registry
-        run: gcloud auth configure-docker northamerica-northeast2-docker.pkg.dev
+        run: gcloud auth configure-docker us-south1-docker.pkg.dev
 
       - name: Build and Push Docker Image
         run: |
-          IMAGE_NAME="northamerica-northeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gin-rummy-frontend/nextjs-app:${{ github.sha }}"
+          IMAGE_NAME="us-south1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gin-rummy/frontend/nextjs-app:${{ github.sha }}"
           docker build -t $IMAGE_NAME ./src/frontend
           docker push $IMAGE_NAME
 
@@ -50,14 +50,15 @@ jobs:
         id: deploy
         run: |
           gcloud run deploy gin-rummy-frontend \
-            --image northamerica-northeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gin-rummy-frontend/nextjs-app:${{ github.sha }} \
+            --image us-south1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gin-rummy/frontend/nextjs-app:${{ github.sha }} \
             --platform managed \
-            --region northamerica-northeast2 \
+            --region us-south1 \
             --allow-unauthenticated \
             --port 3000 \
             --memory 3Gi \
-            --cpu 1
-          echo "SERVICE_URL=$(gcloud run services describe gin-rummy-frontend --region northamerica-northeast2 --format 'value(status.url)')" >> $GITHUB_ENV
+            --cpu 2
+          echo "SERVICE_URL=$(gcloud run services describe gin-rummy-frontend --region us-south1 --format 'value(status.url)')" >> $GITHUB_ENV
+
       - name: Output Service URL
         run: |
-          echo "Deployed service URL: ${{ steps.deploy.outputs.SERVICE_URL }}"
+          echo "Deployed service URL: ${{ env.SERVICE_URL }}"

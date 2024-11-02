@@ -1,4 +1,4 @@
-import { useState,useEffect } from 'react';
+import { useState,useEffect, useRef } from 'react';
 import { motion } from 'framer-motion'; 
 import Image from 'next/image'; 
 
@@ -72,9 +72,9 @@ export default function DealCards() {
         setPlayer2Cards(updatedCards)
     };
 
-    const handlePass = () => {
+    // const handlePass = () => {
 
-    };
+    // };
 
 
     // take the first card from main stack
@@ -204,10 +204,17 @@ export default function DealCards() {
           isOver: !!monitor.isOver(),
         }),
       });
+
+      const ref = useRef<HTMLDivElement | null>(null);
+      useEffect(() => {
+        if (ref.current) {
+          drop(ref.current);
+        }
+      }, [drop]);
     
       return (
         <div
-          ref={drop}
+          ref={ref}
           onClick={handleDropZone}
           className={`w-[100px] h-[136.72px] ${
             isOver ? 'bg-blue-200' : 'bg-white'
@@ -493,11 +500,6 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ content, bgColor}) => {
   );
 };
 
-
-
-
-
-
 const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard,p2Playing }) => {
   const [{ isDragging }, drag] = useDrag({
     type: 'CARD',
@@ -517,9 +519,16 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard,p2P
     },
   });
 
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (ref.current) {
+      drag(drop(ref.current));
+    }
+  }, [drag, drop]);
+
   return (
     <motion.div
-      ref={(node) => drag(drop(node))}
+      ref={ref}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}

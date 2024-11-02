@@ -66,7 +66,7 @@ export default function homePage() {
     )
 }
 
-export function StartButton(href: string, name: string) {
+function StartButton(href: string, name: string) {
     return (
       <Button asChild className="w-full">
         <Link

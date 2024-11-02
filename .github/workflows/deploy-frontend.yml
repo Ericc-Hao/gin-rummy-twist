@@ -1,9 +1,11 @@
 name: Deploy to Google Cloud Run using Artifact Registry
 
 on:
+  # Trigger the workflow on pull request when files in src/frontend change
   pull_request:
     branches:
       - main
+      - develop
     paths:
       - 'src/frontend/**'
 
@@ -32,6 +34,10 @@ jobs:
         working-directory: ./src/frontend
         run: npm install
 
+      - name: Build Project
+        working-directory: ./src/frontend
+        run: npm run build
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:
@@ -56,7 +62,7 @@ jobs:
             --allow-unauthenticated \
             --port 3000 \
             --memory 3Gi \
-            --cpu 2
+            --cpu 1
           echo "SERVICE_URL=$(gcloud run services describe gin-rummy-frontend --region us-south1 --format 'value(status.url)')" >> $GITHUB_ENV
 
       - name: Output Service URL

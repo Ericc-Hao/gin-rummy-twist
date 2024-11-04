@@ -5,21 +5,27 @@ import Image from 'next/image';
 import { useDrag, useDrop, DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
-import { CARDS } from '../data/cards.data';
+import { CARDS,Card } from '../data/cards.data';
 
 import { Button } from "@/components/ui/button"
 
-interface Card {
-    name: string;
-    image: string;
-    index?:number
-  }
+import {PlayerSummary} from './calc-score';
+
+import GinRummyScore from './calc-score';
+
+
+
 interface DraggableCardProps {
     card: Card;
     index: number;
     moveCard: (fromIndex: number, toIndex: number) => void;
     p2Playing:'toTake'|'toDrop' | null
 }
+interface ChatBubbleProps {
+  content: string; 
+  bgColor: string; 
+}
+
   
 
 function getRandomCards(cards: Card[]): Card[] {
@@ -33,9 +39,8 @@ export default function DealCards() {
   const [p2Playing, setP2Playing] = useState<'toTake'|'toDrop' | null>(null);
   const [p1DroppingCard, setP1DroppingCard] = useState<Card | null>(null); // 当前正在移动到 DropZone 的卡片
 
-  
-  const [player1Cards, setPlayer1Cards] = useState<Card[]>([]);
-  const [player2Cards, setPlayer2Cards] = useState<Card[]>([]);
+  const [player1Cards, setPlayer1Cards] = useState<PlayerSummary>({cards:[]});
+  const [player2Cards, setPlayer2Cards] = useState<PlayerSummary>({cards:[]});
   const [remainingCards, setRemainingCards] = useState<Card[]>([]); // remaining cards in main stack, 
   const [nextCard, setNextCard] = useState<Card | null>(null); // next card from main stack
   const [dropZoneCards, setDropZoneCards] = useState<Card[]>([]); // drop zone cards
@@ -50,8 +55,9 @@ export default function DealCards() {
       const initialCards = shuffledCards.slice(0, initialCardsNumber);
       const p1Cards = initialCards.filter((_, index) => index % 2 === 0);
       const p2Cards = initialCards.filter((_, index) => index % 2 !== 0);
-      setPlayer1Cards(p1Cards);
-      setPlayer2Cards(p2Cards);
+
+      setPlayer1Cards(GinRummyScore(p1Cards));
+      setPlayer2Cards(GinRummyScore(p2Cards));
 
       setP2Playing('toTake');
       setP1Playing(null)
@@ -61,28 +67,21 @@ export default function DealCards() {
      }
     }, [dealing]);
 
-    function moveCard(fromIndex: number, toIndex: number){
-        const updatedCards = [...player2Cards]
-        // player === 1 ? [...player1Cards] : [...player2Cards];
-        const [movedCard] = updatedCards.splice(fromIndex, 1); // 移动卡片
-        updatedCards.splice(toIndex, 0, movedCard); // 在新位置插入卡片
 
-        // if (player === 1) setPlayer1Cards(updatedCards);
-        // else setPlayer2Cards(updatedCards);
-        setPlayer2Cards(updatedCards)
-    };
+    function moveCard(fromIndex: number, toIndex: number) {
+      const updatedCards = [...player2Cards.cards];
+      const [movedCard] = updatedCards.splice(fromIndex, 1); // 移动卡片
+      updatedCards.splice(toIndex, 0, movedCard); // 在新位置插入卡片
 
-    // const handlePass = () => {
+      setPlayer2Cards({
+        ...player2Cards, 
+        cards: updatedCards, 
+      });
+    }
 
-    // };
-
-
-    // take the first card from main stack
+    // take the first card from main stack, remainingCards --
     function handleNext(){
       switch (p2Playing) {
-        // case null:
-        //   alert('not your turn');
-        //   break;
         case 'toDrop':
           alert('You need to drop a card');
           break;
@@ -95,7 +94,9 @@ export default function DealCards() {
             setP2Playing('toDrop');
   
             setTimeout(() => {
-              setPlayer2Cards((prev) => [...prev, newCard]);
+              // add new cards to player2
+              const updatedCards = [...player2Cards.cards, newCard]
+              setPlayer2Cards(GinRummyScore(updatedCards));
               setNextCard(null);
             }, 300);
           } else {
@@ -108,12 +109,9 @@ export default function DealCards() {
       }
     };
 
-    // take the last card from drop zone, (LIFO)
+    // take the last card from drop zone, (LIFO), dropzone --
     function handleDropZone(){
       switch (p2Playing) {
-        // case null:
-        //   alert('not your turn');
-        //   break;
         case 'toDrop':
           alert('You need to drop a card');
           break;
@@ -125,7 +123,9 @@ export default function DealCards() {
             setP2Playing('toDrop');
     
             setTimeout(() => {
-              setPlayer2Cards((prev) => [...prev, lastCard]);
+              // add new cards to player2
+              const updatedCards = [...player2Cards.cards, lastCard]
+              setPlayer2Cards(GinRummyScore(updatedCards));
               setDropZoneCards(rest);
               setNextCard(null);
             }, 300);
@@ -136,27 +136,24 @@ export default function DealCards() {
       }
     }
 
-    // Player2 plays the card
+    // Player2 plays the card, dropzone ++
     function handleDrop(item: { card: Card; index: number }){
       switch (p2Playing) {
-        // case null:
-        //   alert('not your turn');
-        //   break;
         case 'toTake':
           alert('need to pick a card first');
           break;
         case 'toDrop':
           setDropZoneCards([...dropZoneCards, item.card]);
-          const updatedCards = [...player2Cards];
+          const updatedCards = [...player2Cards.cards];
           updatedCards.splice(item.index, 1);
-          setPlayer2Cards(updatedCards);
+          setPlayer2Cards(GinRummyScore(updatedCards));
           setP1Playing("toTake")
           setP2Playing(null)
           handleP1Play()
       }
-      
     };
   
+
     function handleP1Play() {
       if (remainingCards.length > 0) {
         const [newCard, ...rest] = remainingCards;
@@ -166,30 +163,28 @@ export default function DealCards() {
         setP1Playing('toTake');
         
         setTimeout(() => {
-          setPlayer1Cards((prev) => [...prev, newCard]);
+          // add new cards to player1
+          const updatedP1Cards = [...player1Cards.cards, newCard]
+          setPlayer1Cards(GinRummyScore(updatedP1Cards));
           setNextCard(null);
           setP1Playing('toDrop');
    
           setTimeout(() => {
-            console.log(player1Cards, player1Cards.length);
-            if (player1Cards.length > 0) {
-              const randomIndex = Math.floor(Math.random() * player1Cards.length);
-              const randomCard = player1Cards[randomIndex];
+            if (player1Cards.cards.length > 0) {
+              const randomIndex = Math.floor(Math.random() * updatedP1Cards.length);
+              const droppedCard = player1Cards.cards[randomIndex];
 
-             setP1DroppingCard({...randomCard, index:randomIndex});
+              setP1DroppingCard({...droppedCard, index:randomIndex});
     
-              const updatedCards = [...player1Cards];
-              updatedCards.splice(randomIndex, 0);
-              setPlayer1Cards(updatedCards);
-              console.log(player1Cards, player1Cards.length);
+              updatedP1Cards.splice(randomIndex, 1);
+              setPlayer1Cards(GinRummyScore(updatedP1Cards));
     
               setTimeout(() => {
-                setDropZoneCards((prev) => [...prev, randomCard]);
+                setDropZoneCards((prev) => [...prev, droppedCard]);
                 setP1Playing(null)
                 setP1DroppingCard(null);
                 setP2Playing('toTake')
               }, 400);
-             
             }
           }, 1000);
         }, 1000);
@@ -276,7 +271,7 @@ export default function DealCards() {
         <div className="relative flex items-center justify-center w-full h-[500px] gap-4">
             {/* Player1 */}
             {dealing &&
-                player1Cards.map((card, index) => (
+                player1Cards.cards.map((card, index) => (
                   <motion.div
                   key={`player2-${index}`}
                   initial={sendingNewCard == 'dropzone'?  {x: 60,opacity:0.8}:{ x: -60, y: 0, opacity: 1}}
@@ -353,7 +348,7 @@ export default function DealCards() {
 
             {/* Player2 */}
             {dealing && 
-                player2Cards.map((card, index) => (
+                player2Cards.cards.map((card, index) => (
                 <motion.div
                     key={`player2-${index}`}
                     initial={sendingNewCard == 'dropzone'?  {x: 60,opacity:0.5}:{ x: -60, y: 0, opacity: 0}}
@@ -391,17 +386,33 @@ export default function DealCards() {
                   left: 'calc(50% - 500px)',
                 }}>
             
-            <div
-              className=" px-2 p-y-1 rounded-lg bg-gray-500 text-white  shadow-xl bg-opacity-60"
-            >
-              Melds: 
+
+            <div className="px-2 py-1 flex flex-row items-center rounded-lg bg-gray-300 text-gray-700 shadow-xl bg-opacity-60 mt-4">
+              <div className="flex items-center space-x-2">
+                <span>Melds ({player2Cards.MeldsPoint}):</span>
+                <div className="flex flex-row space-x-2">
+                  {player2Cards.Melds?.map((card, index) => (
+                    <div key={index} className={`font-black ${card.color}`}>
+                      {card.text}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-            <div
-              className=" px-2 p-y-1 rounded-lg bg-gray-500 text-white  shadow-xl bg-opacity-60"
-            >
-              Deadwoods: 
+
+            <div className="px-2 py-1 flex flex-row items-center rounded-lg bg-gray-300 text-gray-700 shadow-xl bg-opacity-60 mt-4">
+              <div className="flex items-center space-x-2">
+                <span>Deadwoods ({player2Cards.DeadwoodsPoint}):</span>
+                <div className="flex flex-row space-x-2">
+                  {player2Cards.Deadwoods?.map((card, index) => (
+                    <div key={index} className={`font-black ${card.color}`}>
+                      {card.text}
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
-            </div>
+          </div>
           )}
 
 
@@ -441,31 +452,20 @@ export default function DealCards() {
                 transform: 'translateY(-50%)',
                 whiteSpace: 'nowrap',
                 left: 'calc(50% + 500px)',
-                borderRadius:'50%'
+                borderRadius:'50%',
+                backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 10 ? 'red' : 'gray',
+                cursor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 10 ? 'pointer' : 'not-allowed',
               }}
             >
               KNOCK
             </div>
           )}
-                
-
-
-  </div>
-          
-          
+        </div>
       </div>
     </DndProvider>
   )
 }
 
-
-
-import React from 'react';
-
-interface ChatBubbleProps {
-  content: string; 
-  bgColor: string; 
-}
 
 
 const ChatBubble: React.FC<ChatBubbleProps> = ({ content, bgColor}) => {
@@ -508,15 +508,17 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard,p2P
       isDragging: !!monitor.isDragging(),
     }),
   });
+  
 
   const [, drop] = useDrop({
     accept: 'CARD',
     hover: (item: { card: Card; index: number }) => {
+      console.log(`Dragging card from index ${item.index} to ${index}`);
       if (item.index !== index) {
         moveCard(item.index, index);
         item.index = index;
       }
-    },
+    }, 
   });
 
   const ref = useRef<HTMLDivElement | null>(null);
@@ -552,4 +554,8 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard,p2P
     </motion.div>
   );
 };
+
+
+
+
 

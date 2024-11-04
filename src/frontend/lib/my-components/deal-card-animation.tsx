@@ -73,8 +73,16 @@ export default function DealCards() {
   const shuffledCards = getRandomCards(CARDS); 
   const initialCardsNumber = 20
 
+  function resetAll(){
+   
+    setDealing(false)
+   
+  }
+
   useEffect(() => {
     if (dealing) {
+      console.log('dealing: ',dealing);
+      
       // deal card to each player
       const initialCards = shuffledCards.slice(0, initialCardsNumber);
       const p1Cards = initialCards.filter((_, index) => index % 2 === 0);
@@ -88,6 +96,12 @@ export default function DealCards() {
 
       // update the remaining card
       setRemainingCards(shuffledCards.slice(initialCardsNumber));
+     } else {
+      console.log('dealing: ',dealing);
+      setPlayer1Cards({cards:[]})
+      setPlayer2Cards({cards:[]})
+      setRemainingCards([])
+      setDropZoneCards([])
      }
     }, [dealing]);
 
@@ -126,7 +140,7 @@ export default function DealCards() {
               const updatedCards = [...player2Cards.cards, newCard]
               setPlayer2Cards(GinRummyScore(updatedCards));
               setNextCard(null);
-            }, 300);
+            }, 500);
           } else {
             if (dealing) {
               alert('No card to play!');
@@ -156,7 +170,7 @@ export default function DealCards() {
               setPlayer2Cards(GinRummyScore(updatedCards));
               setDropZoneCards(rest);
               setNextCard(null);
-            }, 300);
+            }, 500);
           } else {
             // TODO: toast component(sooner)
             alert('No card in Drop Zone!');
@@ -201,6 +215,8 @@ export default function DealCards() {
             if (player1Cards.cards.length > 0) {
               const randomIndex = Math.floor(Math.random() * updatedP1Cards.length);
               const droppedCard = player1Cards.cards[randomIndex];
+              console.log('droppedCard: ',droppedCard);
+              
 
               setP1DroppingCard({...droppedCard, index:randomIndex});
     
@@ -616,7 +632,7 @@ export default function DealCards() {
                   </Table>
                 </div>
                 <DialogFooter>
-                  <Button type="submit">Play next round</Button>
+                  <Button type="submit" onClick={resetAll}>Play next round</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -672,7 +688,7 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard,p2P
   const [, drop] = useDrop({
     accept: 'CARD',
     hover: (item: { card: Card; index: number }) => {
-      console.log(`Dragging card from index ${item.index} to ${index}`);
+      console.log(`Dragging card ${card}from index ${item.index}`);
       if (item.index !== index) {
         moveCard(item.index, index);
         item.index = index;

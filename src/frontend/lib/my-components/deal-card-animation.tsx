@@ -29,7 +29,7 @@ interface ChatBubbleProps {
   
 
 function getRandomCards(cards: Card[]): Card[] {
-  return [...cards].sort(() => Math.random()); // set random rards
+  return [...cards].sort(() => 0.5 - Math.random()); // set random rards
 }
 
 export default function DealCards() {

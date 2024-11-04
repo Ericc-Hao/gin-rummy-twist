@@ -13,7 +13,6 @@ import {PlayerSummary} from './calc-score';
 
 import GinRummyScore from './calc-score';
 
-// import debounce from 'lodash.debounce';
 
 
 interface DraggableCardProps {
@@ -57,12 +56,8 @@ export default function DealCards() {
       const p1Cards = initialCards.filter((_, index) => index % 2 === 0);
       const p2Cards = initialCards.filter((_, index) => index % 2 !== 0);
 
-
-      const p2Summary = GinRummyScore(p2Cards)
-
-      setPlayer1Cards({cards:p1Cards});
-      setPlayer2Cards(p2Summary);
-      // setPlayer2Cards(GinRummyScore(p2Cards));
+      setPlayer1Cards(GinRummyScore(p1Cards));
+      setPlayer2Cards(GinRummyScore(p2Cards));
 
       setP2Playing('toTake');
       setP1Playing(null)
@@ -72,45 +67,21 @@ export default function DealCards() {
      }
     }, [dealing]);
 
-    // function moveCard(fromIndex: number, toIndex: number){
-    //     const updatedCards = [...player2Cards.cards]
-    //     // player === 1 ? [...player1Cards] : [...player2Cards];
-    //     const [movedCard] = updatedCards.splice(fromIndex, 1); // 移动卡片
-    //     updatedCards.splice(toIndex, 0, movedCard); // 在新位置插入卡片
-
-    //     // if (player === 1) setPlayer1Cards(updatedCards);
-    //     // else setPlayer2Cards(updatedCards);
-    //     // setPlayer2Cards({...player2Cards, cards:updatedCards})
-    //   setPlayer2Cards(GinRummyScore(updatedCards));
-
-    // };
 
     function moveCard(fromIndex: number, toIndex: number) {
       const updatedCards = [...player2Cards.cards];
       const [movedCard] = updatedCards.splice(fromIndex, 1); // 移动卡片
       updatedCards.splice(toIndex, 0, movedCard); // 在新位置插入卡片
-    
-      // 调用 GinRummyScore 计算新的分数和牌组信息
-      const updatedPlayer2Data = GinRummyScore(updatedCards);
-    
-      // 更新 player2 的卡片和分数信息
+
       setPlayer2Cards({
-        ...updatedPlayer2Data, // 从 GinRummyScore 获得的结构
-        cards: updatedCards, // 更新后的卡片顺序
+        ...player2Cards, 
+        cards: updatedCards, 
       });
     }
 
-    // const handlePass = () => {
-
-    // };
-
-
-    // take the first card from main stack
+    // take the first card from main stack, remainingCards --
     function handleNext(){
       switch (p2Playing) {
-        // case null:
-        //   alert('not your turn');
-        //   break;
         case 'toDrop':
           alert('You need to drop a card');
           break;
@@ -123,13 +94,9 @@ export default function DealCards() {
             setP2Playing('toDrop');
   
             setTimeout(() => {
-              // setPlayer2Cards(prevState => ({
-              //   ...prevState,
-              //   cards: [...prevState.cards, newCard]
-              // }));
+              // add new cards to player2
               const updatedCards = [...player2Cards.cards, newCard]
               setPlayer2Cards(GinRummyScore(updatedCards));
-              
               setNextCard(null);
             }, 300);
           } else {
@@ -142,12 +109,9 @@ export default function DealCards() {
       }
     };
 
-    // take the last card from drop zone, (LIFO)
+    // take the last card from drop zone, (LIFO), dropzone --
     function handleDropZone(){
       switch (p2Playing) {
-        // case null:
-        //   alert('not your turn');
-        //   break;
         case 'toDrop':
           alert('You need to drop a card');
           break;
@@ -159,13 +123,9 @@ export default function DealCards() {
             setP2Playing('toDrop');
     
             setTimeout(() => {
-              // setPlayer2Cards(prevState => ({
-              //   ...prevState,
-              //   cards: [...prevState.cards, lastCard]
-              // }));
+              // add new cards to player2
               const updatedCards = [...player2Cards.cards, lastCard]
               setPlayer2Cards(GinRummyScore(updatedCards));
-
               setDropZoneCards(rest);
               setNextCard(null);
             }, 300);
@@ -176,12 +136,9 @@ export default function DealCards() {
       }
     }
 
-    // Player2 plays the card
+    // Player2 plays the card, dropzone ++
     function handleDrop(item: { card: Card; index: number }){
       switch (p2Playing) {
-        // case null:
-        //   alert('not your turn');
-        //   break;
         case 'toTake':
           alert('need to pick a card first');
           break;
@@ -189,17 +146,14 @@ export default function DealCards() {
           setDropZoneCards([...dropZoneCards, item.card]);
           const updatedCards = [...player2Cards.cards];
           updatedCards.splice(item.index, 1);
-          // setPlayer2Cards({...player2Cards,cards:updatedCards});
           setPlayer2Cards(GinRummyScore(updatedCards));
-          
-
           setP1Playing("toTake")
           setP2Playing(null)
           handleP1Play()
       }
-      
     };
   
+
     function handleP1Play() {
       if (remainingCards.length > 0) {
         const [newCard, ...rest] = remainingCards;
@@ -209,33 +163,28 @@ export default function DealCards() {
         setP1Playing('toTake');
         
         setTimeout(() => {
-          setPlayer1Cards(prevState => ({
-            ...prevState,
-            cards: [...prevState.cards, newCard]
-          }));
+          // add new cards to player1
+          const updatedP1Cards = [...player1Cards.cards, newCard]
+          setPlayer1Cards(GinRummyScore(updatedP1Cards));
           setNextCard(null);
           setP1Playing('toDrop');
    
           setTimeout(() => {
-            // console.log(player1Cards, player1Cards.length);
             if (player1Cards.cards.length > 0) {
-              const randomIndex = Math.floor(Math.random() * player1Cards.cards.length);
-              const randomCard = player1Cards.cards[randomIndex];
+              const randomIndex = Math.floor(Math.random() * updatedP1Cards.length);
+              const droppedCard = player1Cards.cards[randomIndex];
 
-             setP1DroppingCard({...randomCard, index:randomIndex});
+              setP1DroppingCard({...droppedCard, index:randomIndex});
     
-              const updatedCards = [...player1Cards.cards];
-              updatedCards.splice(randomIndex, 0);
-              setPlayer1Cards({...player1Cards, cards:updatedCards});
-              console.log(player1Cards, player1Cards.cards.length);
+              updatedP1Cards.splice(randomIndex, 1);
+              setPlayer1Cards(GinRummyScore(updatedP1Cards));
     
               setTimeout(() => {
-                setDropZoneCards((prev) => [...prev, randomCard]);
+                setDropZoneCards((prev) => [...prev, droppedCard]);
                 setP1Playing(null)
                 setP1DroppingCard(null);
                 setP2Playing('toTake')
               }, 400);
-             
             }
           }, 1000);
         }, 1000);
@@ -503,18 +452,15 @@ export default function DealCards() {
                 transform: 'translateY(-50%)',
                 whiteSpace: 'nowrap',
                 left: 'calc(50% + 500px)',
-                borderRadius:'50%'
+                borderRadius:'50%',
+                backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 10 ? 'red' : 'gray',
+                cursor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 10 ? 'pointer' : 'not-allowed',
               }}
             >
               KNOCK
             </div>
           )}
-                
-
-
-  </div>
-          
-          
+        </div>
       </div>
     </DndProvider>
   )
@@ -562,13 +508,12 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard,p2P
       isDragging: !!monitor.isDragging(),
     }),
   });
-
-  console.log(card,index);
   
 
   const [, drop] = useDrop({
     accept: 'CARD',
     hover: (item: { card: Card; index: number }) => {
+      console.log(`Dragging card from index ${item.index} to ${index}`);
       if (item.index !== index) {
         moveCard(item.index, index);
         item.index = index;

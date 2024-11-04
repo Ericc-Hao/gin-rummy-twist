@@ -5,13 +5,22 @@ import Image from 'next/image';
 import { useDrag, useDrop, DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
-import { CARDS,Card } from '../data/cards.data';
-
 import { Button } from "@/components/ui/button"
 
+import { CARDS,Card } from '../data/cards.data';
 import {PlayerSummary} from './calc-score';
-
 import GinRummyScore from './calc-score';
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 
 
@@ -25,7 +34,21 @@ interface ChatBubbleProps {
   content: string; 
   bgColor: string; 
 }
-
+interface RoundData {
+  round: number;
+  p1Score: number;
+  p1Bonus: number;
+  p1Total: number;
+  p2Score: number;
+  p2Bonus: number;
+  p2Total: number;
+  result: string;
+}
+interface ScoreSummary {
+  rounds: RoundData[];
+  p1TotalScore: number;
+  p2TotalScore: number;
+}
   
 
 function getRandomCards(cards: Card[]): Card[] {
@@ -38,6 +61,7 @@ export default function DealCards() {
   const [p1Playing, setP1Playing] = useState<'toTake'|'toDrop' | null>(null);
   const [p2Playing, setP2Playing] = useState<'toTake'|'toDrop' | null>(null);
   const [p1DroppingCard, setP1DroppingCard] = useState<Card | null>(null); // 当前正在移动到 DropZone 的卡片
+  const [scoreSummary, setScoreSummary] = useState<ScoreSummary>()
 
   const [player1Cards, setPlayer1Cards] = useState<PlayerSummary>({cards:[]});
   const [player2Cards, setPlayer2Cards] = useState<PlayerSummary>({cards:[]});
@@ -49,8 +73,16 @@ export default function DealCards() {
   const shuffledCards = getRandomCards(CARDS); 
   const initialCardsNumber = 20
 
+  function resetAll(){
+   
+    setDealing(false)
+   
+  }
+
   useEffect(() => {
     if (dealing) {
+      console.log('dealing: ',dealing);
+      
       // deal card to each player
       const initialCards = shuffledCards.slice(0, initialCardsNumber);
       const p1Cards = initialCards.filter((_, index) => index % 2 === 0);
@@ -64,6 +96,12 @@ export default function DealCards() {
 
       // update the remaining card
       setRemainingCards(shuffledCards.slice(initialCardsNumber));
+     } else {
+      console.log('dealing: ',dealing);
+      setPlayer1Cards({cards:[]})
+      setPlayer2Cards({cards:[]})
+      setRemainingCards([])
+      setDropZoneCards([])
      }
     }, [dealing]);
 
@@ -80,7 +118,7 @@ export default function DealCards() {
     }
 
     useEffect(() => {
-      console.log(nextCard);
+      console.log("next card: ",nextCard);
     })
 
     // take the first card from main stack, remainingCards --
@@ -102,7 +140,7 @@ export default function DealCards() {
               const updatedCards = [...player2Cards.cards, newCard]
               setPlayer2Cards(GinRummyScore(updatedCards));
               setNextCard(null);
-            }, 300);
+            }, 500);
           } else {
             if (dealing) {
               alert('No card to play!');
@@ -132,7 +170,7 @@ export default function DealCards() {
               setPlayer2Cards(GinRummyScore(updatedCards));
               setDropZoneCards(rest);
               setNextCard(null);
-            }, 300);
+            }, 500);
           } else {
             // TODO: toast component(sooner)
             alert('No card in Drop Zone!');
@@ -157,7 +195,7 @@ export default function DealCards() {
       }
     };
   
-
+    // P1自动出牌
     function handleP1Play() {
       if (remainingCards.length > 0) {
         const [newCard, ...rest] = remainingCards;
@@ -177,6 +215,8 @@ export default function DealCards() {
             if (player1Cards.cards.length > 0) {
               const randomIndex = Math.floor(Math.random() * updatedP1Cards.length);
               const droppedCard = player1Cards.cards[randomIndex];
+              console.log('droppedCard: ',droppedCard);
+              
 
               setP1DroppingCard({...droppedCard, index:randomIndex});
     
@@ -193,6 +233,39 @@ export default function DealCards() {
           }, 1000);
         }, 1000);
       }
+    }
+
+    function handleKnock(){
+      console.log(player1Cards.DeadwoodsPoint, player2Cards.DeadwoodsPoint);
+
+      const roundData = {
+        round: (scoreSummary?.rounds?.length || 0) + 1,
+        p1Score: 0,  // p1 的得分
+        p1Bonus: 0,
+        p1Total: 0,  // p1 的总分
+        p2Score: player1Cards.DeadwoodsPoint! - player2Cards.DeadwoodsPoint!,
+        p2Bonus: 0,
+        p2Total: player1Cards.DeadwoodsPoint! - player2Cards.DeadwoodsPoint!,
+        result: "Knock"
+      };
+
+      setScoreSummary(prev => {
+        const prevSummary: ScoreSummary = prev || { rounds: [], p1TotalScore: 0, p2TotalScore: 0 };
+    
+        const updatedRounds = [...prevSummary.rounds, roundData];
+    
+        const p1TotalScore = updatedRounds.reduce((acc, round) => {
+          return acc + round.p1Total;
+        }, 0);
+        const p2TotalScore = updatedRounds.reduce((acc, round) => {
+          return acc + round.p2Total;
+        }, 0);
+        return {
+          rounds: updatedRounds,
+          p1TotalScore: p1TotalScore,
+          p2TotalScore: p2TotalScore
+        };
+      });
     }
     
     function DropZone(){
@@ -267,8 +340,6 @@ export default function DealCards() {
       );
     }
   
-
-
   return (
     <DndProvider backend={HTML5Backend}>
 
@@ -458,30 +529,119 @@ export default function DealCards() {
           )}
 
           {dealing &&(
-            <div
-              className="absolute w-[80px] h-[80px] flex items-center justify-center bg-red-500 text-white font-semibold shadow-xl cursor-pointer hover:bg-red-600"
-              style={{
-                top: '50%',
-                transform: 'translateY(-50%)',
-                whiteSpace: 'nowrap',
-                left: 'calc(50% + 500px)',
-                borderRadius:'50%',
-                backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 10 ? 'red' : 'gray',
-                cursor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 10 ? 'pointer' : 'not-allowed',
-              }}
-            >
-              KNOCK
-            </div>
+            
+            <Dialog>
+              <DialogTrigger asChild>
+                {/* <Button variant="outline">Edit Profile</Button>
+                 */}
+                 <div className="absolute w-[80px] h-[80px] flex items-center justify-center bg-red-500 text-white font-semibold shadow-xl cursor-pointer hover:bg-red-600"
+                      style={{
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        whiteSpace: 'nowrap',
+                        left: 'calc(50% + 500px)',
+                        borderRadius:'50%',
+                        backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 10 ? 'red' : 'gray',
+                        cursor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 10 ? 'pointer' : 'not-allowed',
+                      }}
+                      onClick={handleKnock}
+                    >
+                      KNOCK
+                  </div>
+              </DialogTrigger>
+              <DialogContent >
+                <DialogHeader>
+                  <DialogTitle className="flex flex-col items-center justify-center">You Win this round</DialogTitle>
+                  <DialogDescription className="flex flex-col items-center justify-center"> Round end by knocking! </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <Table>
+                    <TableHeader className="bg-gray-200">
+                      <TableRow>
+                        <TableCell className="font-bold text-center"></TableCell>
+                        <TableCell colSpan={3} className="font-bold text-center"> Robot</TableCell>
+                        <TableCell colSpan={3} className="font-bold text-center"> You</TableCell>
+                        <TableCell  className="font-bold text-center"></TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell className="font-bold text-center">Round</TableCell>
+                        {/* Player 1 Headers */}
+                        <TableCell className="font-bold text-center">Score</TableCell>
+                        <TableCell className="font-bold text-center">Bonus</TableCell>
+                        <TableCell className="font-bold text-center">Total</TableCell>
+                        {/* Player 2 Headers */}
+                        <TableCell className="font-bold text-center">Score</TableCell>
+                        <TableCell className="font-bold text-center">Bonus</TableCell>
+                        <TableCell className="font-bold text-center">Total</TableCell>
+                        <TableCell className="font-bold text-center">Result</TableCell>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+
+
+                      {/* Scores for each player */}
+                      {/* <TableRow>
+                        <TableCell className="text-center">1</TableCell>
+                        <TableCell className="text-center">0</TableCell>
+                        <TableCell className="text-center">0</TableCell>
+                        <TableCell className="text-center">0</TableCell>
+                        <TableCell className="text-center">29</TableCell>
+                        <TableCell className="text-center">0</TableCell>
+                        <TableCell className="text-center">29</TableCell>
+                        <TableCell className="text-center">Knock</TableCell>
+                      </TableRow> */}
+                      {/* Total Score Row */}
+                      {/* <TableRow>
+                        <TableCell className="font-semibold text-center">Total Score</TableCell>
+                        <TableCell className="text-center">0</TableCell>
+                        <TableCell className="text-center">0</TableCell>
+                        <TableCell className="text-center">0</TableCell>
+                        <TableCell className="text-center">29</TableCell>
+                        <TableCell className="text-center">0</TableCell>
+                        <TableCell className="text-center">29</TableCell>
+                        <TableCell className="text-center"></TableCell>
+                      </TableRow> */}
+
+{scoreSummary && scoreSummary.rounds.map((round, index) => (
+        <TableRow key={index}>
+          <TableCell className="text-center">{round.round}</TableCell>
+          <TableCell className="text-center">{round.p1Score}</TableCell>
+          <TableCell className="text-center">{round.p1Bonus}</TableCell>
+          <TableCell className="text-center">{round.p1Total}</TableCell>
+          <TableCell className="text-center">{round.p2Score}</TableCell>
+          <TableCell className="text-center">{round.p2Bonus}</TableCell>
+          <TableCell className="text-center">{round.p2Total}</TableCell>
+          <TableCell className="text-center">{round.result}</TableCell>
+        </TableRow>
+      ))}
+      {/* 总分行 */}
+      <TableRow>
+        <TableCell className="font-semibold text-center">Total Score</TableCell>
+        <TableCell className="text-center">{scoreSummary?.p1TotalScore || 0}</TableCell>
+        <TableCell className="text-center">0</TableCell>
+        <TableCell className="text-center">{scoreSummary?.p1TotalScore || 0}</TableCell>
+        <TableCell className="text-center">{scoreSummary?.p2TotalScore || 0}</TableCell>
+        <TableCell className="text-center">0</TableCell>
+        <TableCell className="text-center">{scoreSummary?.p2TotalScore || 0}</TableCell>
+        <TableCell className="text-center"></TableCell>
+      </TableRow>
+
+
+
+                    </TableBody>
+                  </Table>
+                </div>
+                <DialogFooter>
+                  <Button type="submit" onClick={resetAll}>Play next round</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           )}
         </div>
-      
       </div>
-
     </DndProvider>
   )
 }
-
-
 
 const ChatBubble: React.FC<ChatBubbleProps> = ({ content, bgColor}) => {
   return (
@@ -528,7 +688,7 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard,p2P
   const [, drop] = useDrop({
     accept: 'CARD',
     hover: (item: { card: Card; index: number }) => {
-      console.log(`Dragging card from index ${item.index} to ${index}`);
+      console.log(`Dragging card ${card}from index ${item.index}`);
       if (item.index !== index) {
         moveCard(item.index, index);
         item.index = index;
@@ -568,7 +728,7 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard,p2P
           className="object-contain"
         />
       ) : (
-        <p>Card image missing</p> // 或者显示占位符
+        <p>Card image missing</p>
       )}
     </motion.div>
   );

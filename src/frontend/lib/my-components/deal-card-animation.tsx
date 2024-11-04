@@ -29,7 +29,7 @@ interface ChatBubbleProps {
   
 
 function getRandomCards(cards: Card[]): Card[] {
-  return [...cards].sort(() => 0.5 - Math.random()); // set random rards
+  return [...cards].sort(() => Math.random()); // set random rards
 }
 
 export default function DealCards() {
@@ -78,6 +78,10 @@ export default function DealCards() {
         cards: updatedCards, 
       });
     }
+
+    useEffect(() => {
+      console.log(nextCard);
+    })
 
     // take the first card from main stack, remainingCards --
     function handleNext(){
@@ -263,6 +267,7 @@ export default function DealCards() {
 
   return (
     <DndProvider backend={HTML5Backend}>
+      {CARDS ? (
       <div className="h-full w-full flex flex-col items-center justify-center">
 
         {/* Player1 avatar*/}
@@ -461,7 +466,13 @@ export default function DealCards() {
             </div>
           )}
         </div>
+      
       </div>
+        ) : (
+          <div className="h-full w-full flex flex-col items-center justify-center">
+             <p>Loading...</p>
+          </div>
+        )}
     </DndProvider>
   )
 }

@@ -79,6 +79,10 @@ export default function DealCards() {
       });
     }
 
+    useEffect(() => {
+      console.log(nextCard);
+    })
+
     // take the first card from main stack, remainingCards --
     function handleNext(){
       switch (p2Playing) {
@@ -216,21 +220,25 @@ export default function DealCards() {
           } flex items-center justify-center relative`}
         >
           {dropZoneCards.map((card, idx) => (
-            <Image
-              key={`dropzone-card-${idx}`}
-              src={card.image}
-              alt={card.name}
-              width={100}
-              height={150}
-              draggable="false"
-              className="object-contain absolute cursor-pointer"
-              style={{
-                top: `0px`,
-                left: `0px`,
-                zIndex: idx,
-                cursor: p2Playing === 'toTake' ? 'pointer' : 'not-allowed', 
-              }}
-            />
+            card && card.image ? (
+              <Image
+                key={`dropzone-card-${idx}`}
+                src={card.image}
+                alt={card.name}
+                width={100}
+                height={150}
+                draggable="false"
+                className="object-contain absolute cursor-pointer"
+                style={{
+                  top: `0px`,
+                  left: `0px`,
+                  zIndex: idx,
+                  cursor: p2Playing === 'toTake' ? 'pointer' : 'not-allowed', 
+                }}
+              />
+            ) : (
+              <p key={`dropzone-card-${idx}`} >Card image missing</p> // 或者显示占位符
+            )
           ))}
         </div>
       );
@@ -263,6 +271,7 @@ export default function DealCards() {
 
   return (
     <DndProvider backend={HTML5Backend}>
+
       <div className="h-full w-full flex flex-col items-center justify-center">
 
         {/* Player1 avatar*/}
@@ -322,17 +331,21 @@ export default function DealCards() {
                     transition={{ duration: 0.6 }}
                     className="absolute"
                   >
-                    <Image
-                      src={p1DroppingCard.image}
-                      alt={p1DroppingCard.name}
-                      width={100}
-                      height={150}
-                      draggable="false"
-                      className="object-contain"
-                      style={{
-                        zIndex:70
-                      }}
-                    />
+                    {p1DroppingCard && p1DroppingCard.image ? (
+                      <Image
+                        src={p1DroppingCard.image}
+                        alt={p1DroppingCard.name}
+                        width={100}
+                        height={150}
+                        draggable="false"
+                        className="object-contain"
+                        style={{
+                          zIndex:70
+                        }}
+                      />
+                    ) : (
+                      <p>Card image missing</p> // 或者显示占位符
+                    )}
                   </motion.div>
                 )}
 
@@ -461,7 +474,9 @@ export default function DealCards() {
             </div>
           )}
         </div>
+      
       </div>
+
     </DndProvider>
   )
 }
@@ -543,14 +558,18 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard,p2P
         textAlign: 'center',
       }}
     >
-      <Image
-        src={card.image}
-        alt={card.name}
-        width={100}
-        height={150}
-        draggable="false"
-        className="object-contain"
-      />
+      {card && card.image ? (
+        <Image
+          src={card.image}
+          alt={card.name}
+          width={100}
+          height={150}
+          draggable="false"
+          className="object-contain"
+        />
+      ) : (
+        <p>Card image missing</p> // 或者显示占位符
+      )}
     </motion.div>
   );
 };

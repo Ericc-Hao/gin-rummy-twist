@@ -74,15 +74,11 @@ export default function DealCards() {
   const initialCardsNumber = 20
 
   function resetAll(){
-   
     setDealing(false)
-   
   }
 
   useEffect(() => {
     if (dealing) {
-      console.log('dealing: ',dealing);
-      
       // deal card to each player
       const initialCards = shuffledCards.slice(0, initialCardsNumber);
       const p1Cards = initialCards.filter((_, index) => index % 2 === 0);
@@ -97,29 +93,25 @@ export default function DealCards() {
       // update the remaining card
       setRemainingCards(shuffledCards.slice(initialCardsNumber));
      } else {
-      console.log('dealing: ',dealing);
       setPlayer1Cards({cards:[]})
       setPlayer2Cards({cards:[]})
       setRemainingCards([])
       setDropZoneCards([])
+      setSendingNewCard(null)
+      
      }
     }, [dealing]);
-
 
     function moveCard(fromIndex: number, toIndex: number) {
       const updatedCards = [...player2Cards.cards];
       const [movedCard] = updatedCards.splice(fromIndex, 1); // 移动卡片
       updatedCards.splice(toIndex, 0, movedCard); // 在新位置插入卡片
-
+      
       setPlayer2Cards({
         ...player2Cards, 
         cards: updatedCards, 
       });
     }
-
-    useEffect(() => {
-      console.log("next card: ",nextCard);
-    })
 
     // take the first card from main stack, remainingCards --
     function handleNext(){
@@ -135,12 +127,12 @@ export default function DealCards() {
             setSendingNewCard('stack'); 
             setP2Playing('toDrop');
   
-            setTimeout(() => {
+            // setTimeout(() => {
               // add new cards to player2
               const updatedCards = [...player2Cards.cards, newCard]
               setPlayer2Cards(GinRummyScore(updatedCards));
               setNextCard(null);
-            }, 500);
+            // }, 100);
           } else {
             if (dealing) {
               alert('No card to play!');
@@ -170,7 +162,7 @@ export default function DealCards() {
               setPlayer2Cards(GinRummyScore(updatedCards));
               setDropZoneCards(rest);
               setNextCard(null);
-            }, 500);
+            }, 100);
           } else {
             // TODO: toast component(sooner)
             alert('No card in Drop Zone!');
@@ -212,12 +204,13 @@ export default function DealCards() {
           setP1Playing('toDrop');
    
           setTimeout(() => {
-            if (player1Cards.cards.length > 0) {
-              const randomIndex = Math.floor(Math.random() * updatedP1Cards.length);
-              const droppedCard = player1Cards.cards[randomIndex];
-              console.log('droppedCard: ',droppedCard);
+            if (updatedP1Cards.length > 0) {
+              const randomIndex = Math.floor(Math.random() * 11);
+              const droppedCard = updatedP1Cards[randomIndex];
+              console.log('******** P1 droppedCard: ',droppedCard,randomIndex);
+              console.log('P2 Card: ',player2Cards);
               
-
+              
               setP1DroppingCard({...droppedCard, index:randomIndex});
     
               updatedP1Cards.splice(randomIndex, 1);
@@ -240,9 +233,9 @@ export default function DealCards() {
 
       const roundData = {
         round: (scoreSummary?.rounds?.length || 0) + 1,
-        p1Score: 0,  // p1 的得分
+        p1Score: 0, 
         p1Bonus: 0,
-        p1Total: 0,  // p1 的总分
+        p1Total: 0,  
         p2Score: player1Cards.DeadwoodsPoint! - player2Cards.DeadwoodsPoint!,
         p2Bonus: 0,
         p2Total: player1Cards.DeadwoodsPoint! - player2Cards.DeadwoodsPoint!,
@@ -449,7 +442,7 @@ export default function DealCards() {
                     >
                       <DraggableCard
                           key={index}
-                          index={index}
+                          index={index??10}
                           card={card}
                           moveCard={(from, to) => moveCard(from, to)}
                           p2Playing ={p2Playing}
@@ -676,19 +669,29 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ content, bgColor}) => {
 };
 
 const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard,p2Playing }) => {
+
+  // console.log(card.name, index);
+  
   const [{ isDragging }, drag] = useDrag({
     type: 'CARD',
     item: { card, index },
-    collect: (monitor) => ({
-      isDragging: !!monitor.isDragging(),
-    }),
+    collect: (monitor) => {
+      if (monitor.isDragging()) {
+        const draggedItem = monitor.getItem();
+        console.log('Currently dragging card:', draggedItem.card.name, 'from index:', draggedItem.index);
+      }
+      return {
+        isDragging: !!monitor.isDragging(),
+      };
+    },
   });
   
+
 
   const [, drop] = useDrop({
     accept: 'CARD',
     hover: (item: { card: Card; index: number }) => {
-      console.log(`Dragging card ${card}from index ${item.index}`);
+      // console.log(`Dragging card ${card.name,card.image}from index ${item.index}`);
       if (item.index !== index) {
         moveCard(item.index, index);
         item.index = index;

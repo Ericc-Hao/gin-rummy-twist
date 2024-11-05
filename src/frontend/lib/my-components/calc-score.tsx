@@ -28,6 +28,9 @@ type CalcScoreCard = {
       ranks[rank].push(CalcScoreCard);
     });
   
+    // 定义牌的顺序，方便判断顺序关系
+    const cardOrder = ['2|','3|', '1','|2', '|3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K','C'];
+  
     // 计算同花顺 (run) 和相同牌面组合 (set)
     const calculateMelds = (): { melds: CalcScoreCard[]; meldsPoint: number } => {
       let melds: CalcScoreCard[] = [];
@@ -35,13 +38,16 @@ type CalcScoreCard = {
   
       // 计算同花顺
       for (const suit in suits) {
-        const sortedCalcScoreCards = suits[suit].sort((a, b) => a.point - b.point);
+        const sortedCalcScoreCards = suits[suit].sort(
+          (a, b) => cardOrder.indexOf(a.name.split('-')[1]) - cardOrder.indexOf(b.name.split('-')[1])
+        );
         let currentRun: CalcScoreCard[] = [];
   
         for (let i = 0; i < sortedCalcScoreCards.length; i++) {
           if (
             currentRun.length === 0 ||
-            sortedCalcScoreCards[i].point === currentRun[currentRun.length - 1].point + 1
+            cardOrder.indexOf(sortedCalcScoreCards[i].name.split('-')[1]) ===
+              cardOrder.indexOf(currentRun[currentRun.length - 1].name.split('-')[1]) + 1
           ) {
             currentRun.push(sortedCalcScoreCards[i]);
           } else {
@@ -87,4 +93,3 @@ type CalcScoreCard = {
   };
   
   export default calculateGinRummyScore;
-  

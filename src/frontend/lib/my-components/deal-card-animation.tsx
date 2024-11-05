@@ -74,19 +74,33 @@ export default function DealCards() {
   const initialCardsNumber = 20
 
   function resetAll(){
-   
     setDealing(false)
-   
   }
 
   useEffect(() => {
     if (dealing) {
-      console.log('dealing: ',dealing);
-      
       // deal card to each player
       const initialCards = shuffledCards.slice(0, initialCardsNumber);
       const p1Cards = initialCards.filter((_, index) => index % 2 === 0);
       const p2Cards = initialCards.filter((_, index) => index % 2 !== 0);
+
+    //   const cards = [
+    //     { order:1, point: 1, name: 'hearts-01', image: '/cards-image/Hearts/hearts-01.svg.png',color: 'text-red-600' , text: '1'   },
+    //     { order:2, point: 2, name: 'hearts-02', image: '/cards-image/Hearts/hearts-02.svg.png',color: 'text-red-600' , text: '2'   },
+    //     { order:3, point: 3, name: 'hearts-03', image: '/cards-image/Hearts/hearts-03.svg.png',color: 'text-red-600' , text: '3'   },
+    // { order:1, point: 1, name: 'spades-01', image: '/cards-image/spades/spades-01.svg.png',color: 'text-black' , text: '1' },
+    // { order:1, point: 1, name: 'clubs-01', image: '/cards-image/clubs/clubs-01.svg.png', color: 'text-green-700', text: '1' },
+    // { order:3, point: 3, name: 'diamonds-03', image: '/cards-image/diamonds/diamonds-03.svg.png',color: 'text-yellow-600' , text: '3'  },
+    // { order:4, point: 4, name: 'diamonds-04', image: '/cards-image/diamonds/diamonds-04.svg.png',color: 'text-yellow-600' , text: '4'  },
+    // { order:5, point: 5, name: 'diamonds-05', image: '/cards-image/diamonds/diamonds-05.svg.png',color: 'text-yellow-600' , text: '5'  },
+    // { order:5, point: 5, name: 'spades-05', image: '/cards-image/spades/spades-05.svg.png',color: 'text-black' , text: '5'  },
+    // // { order:5, point: 5, name: 'hearts-05', image: '/cards-image/Hearts/hearts-05.svg.png',color: 'text-red-600' , text: '5'   },
+    // { order:5, point: 5, name: 'clubs-05', image: '/cards-image/clubs/clubs-05.svg.png', color: 'text-green-700', text: '5'  },
+    // { order:4, point: 4, name: 'hearts-04', image: '/cards-image/Hearts/hearts-04.svg.png',color: 'text-red-600' , text: '4'   },
+    //   ]
+    
+    //   setPlayer2Cards(GinRummyScore(cards));
+
 
       setPlayer1Cards(GinRummyScore(p1Cards));
       setPlayer2Cards(GinRummyScore(p2Cards));
@@ -97,29 +111,25 @@ export default function DealCards() {
       // update the remaining card
       setRemainingCards(shuffledCards.slice(initialCardsNumber));
      } else {
-      console.log('dealing: ',dealing);
       setPlayer1Cards({cards:[]})
       setPlayer2Cards({cards:[]})
       setRemainingCards([])
       setDropZoneCards([])
+      setSendingNewCard(null)
+      
      }
     }, [dealing]);
-
 
     function moveCard(fromIndex: number, toIndex: number) {
       const updatedCards = [...player2Cards.cards];
       const [movedCard] = updatedCards.splice(fromIndex, 1); // 移动卡片
       updatedCards.splice(toIndex, 0, movedCard); // 在新位置插入卡片
-
+      
       setPlayer2Cards({
         ...player2Cards, 
         cards: updatedCards, 
       });
     }
-
-    useEffect(() => {
-      console.log("next card: ",nextCard);
-    })
 
     // take the first card from main stack, remainingCards --
     function handleNext(){
@@ -135,12 +145,12 @@ export default function DealCards() {
             setSendingNewCard('stack'); 
             setP2Playing('toDrop');
   
-            setTimeout(() => {
+            // setTimeout(() => {
               // add new cards to player2
               const updatedCards = [...player2Cards.cards, newCard]
               setPlayer2Cards(GinRummyScore(updatedCards));
               setNextCard(null);
-            }, 500);
+            // }, 100);
           } else {
             if (dealing) {
               alert('No card to play!');
@@ -170,7 +180,7 @@ export default function DealCards() {
               setPlayer2Cards(GinRummyScore(updatedCards));
               setDropZoneCards(rest);
               setNextCard(null);
-            }, 500);
+            }, 100);
           } else {
             // TODO: toast component(sooner)
             alert('No card in Drop Zone!');
@@ -185,9 +195,14 @@ export default function DealCards() {
           alert('need to pick a card first');
           break;
         case 'toDrop':
+          // console.log("DropCard: ",item.card);
+          
           setDropZoneCards([...dropZoneCards, item.card]);
           const updatedCards = [...player2Cards.cards];
+          // console.log('P2 updated card before split: ',updatedCards);
+          
           updatedCards.splice(item.index, 1);
+          // console.log('P2 updated card: ',updatedCards);
           setPlayer2Cards(GinRummyScore(updatedCards));
           setP1Playing("toTake")
           setP2Playing(null)
@@ -212,11 +227,11 @@ export default function DealCards() {
           setP1Playing('toDrop');
    
           setTimeout(() => {
-            if (player1Cards.cards.length > 0) {
-              const randomIndex = Math.floor(Math.random() * updatedP1Cards.length);
-              const droppedCard = player1Cards.cards[randomIndex];
-              console.log('droppedCard: ',droppedCard);
-              
+            if (updatedP1Cards.length > 0) {
+              const randomIndex = Math.floor(Math.random() * 11);
+              const droppedCard = updatedP1Cards[randomIndex];
+              console.log('******** P1 droppedCard: ',droppedCard,randomIndex);
+              // console.log('P2 Card: ',player2Cards);
 
               setP1DroppingCard({...droppedCard, index:randomIndex});
     
@@ -240,9 +255,9 @@ export default function DealCards() {
 
       const roundData = {
         round: (scoreSummary?.rounds?.length || 0) + 1,
-        p1Score: 0,  // p1 的得分
+        p1Score: 0, 
         p1Bonus: 0,
-        p1Total: 0,  // p1 的总分
+        p1Total: 0,  
         p2Score: player1Cards.DeadwoodsPoint! - player2Cards.DeadwoodsPoint!,
         p2Bonus: 0,
         p2Total: player1Cards.DeadwoodsPoint! - player2Cards.DeadwoodsPoint!,
@@ -449,7 +464,7 @@ export default function DealCards() {
                     >
                       <DraggableCard
                           key={index}
-                          index={index}
+                          index={index??10}
                           card={card}
                           moveCard={(from, to) => moveCard(from, to)}
                           p2Playing ={p2Playing}
@@ -676,19 +691,26 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ content, bgColor}) => {
 };
 
 const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard,p2Playing }) => {
+
+  // console.log(card.name, index);
+  
   const [{ isDragging }, drag] = useDrag({
     type: 'CARD',
     item: { card, index },
-    collect: (monitor) => ({
-      isDragging: !!monitor.isDragging(),
-    }),
+    collect: (monitor) => {
+      if (monitor.isDragging()) {
+        const draggedItem = monitor.getItem();
+        console.log('Currently dragging card:', draggedItem.card.name, 'from index:', draggedItem.index);
+      }
+      return {
+        isDragging: !!monitor.isDragging(),
+      };
+    },
   });
-  
 
   const [, drop] = useDrop({
     accept: 'CARD',
     hover: (item: { card: Card; index: number }) => {
-      console.log(`Dragging card ${card}from index ${item.index}`);
       if (item.index !== index) {
         moveCard(item.index, index);
         item.index = index;

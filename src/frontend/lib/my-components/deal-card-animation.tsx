@@ -358,7 +358,7 @@ export default function DealCards() {
   return (
     <DndProvider backend={HTML5Backend}>
 
-      <div className="h-full w-full flex flex-col items-center justify-center">
+      <div className="h-full w-full flex flex-col items-center justify-center select-none">
 
         {/* Player1 avatar*/}
         <AvatarDisplay image={'/main-image/my-avatar.jpg'} player={1} name={'Robot'}/>

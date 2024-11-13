@@ -124,14 +124,10 @@ export default function DealCards() {
      }
     }, [dealing]);
 
-    // useEffect(()=>{
-    //   console.log(dropZoneCards);
-    // })
-
     function handlePass(){
       setP2Playing(null);
       setP1Playing('toTake')
-      handleP1Play()
+      handleP1Play('dropzone')
       setCurrentPass(null)
     }
 
@@ -222,45 +218,65 @@ export default function DealCards() {
           setPlayer2Cards(GinRummyScore(updatedCards));
           setP1Playing("toTake")
           setP2Playing(null)
-          handleP1Play()
+          handleP1Play('stack')
       }
     };
   
     // P1自动出牌
-    function handleP1Play() {
-      if (remainingCards.length > 0) {
-        const [newCard, ...rest] = remainingCards;
-        setNextCard(newCard);
-        setRemainingCards(rest);
-        setSendingNewCard('stack');
-        setP1Playing('toTake');
+    function handleP1Play(place:'dropzone'|'stack') {
+
+
+      if (place == 'dropzone') {
+        if (dropZoneCards.length > 0) {
+          const lastCard = dropZoneCards.pop()
+          if (lastCard) {
+            setNextCard(lastCard);
+            setDropZoneCards(dropZoneCards);
+            setSendingNewCard('dropzone');
+            setP1Playing('toTake');
+            handleP1PickAndDrop(lastCard)
+          }
+        }
         
-        setTimeout(() => {
-          // add new cards to player1
-          const updatedP1Cards = [...player1Cards.cards, newCard]
-          setPlayer1Cards(GinRummyScore(updatedP1Cards));
-          setNextCard(null);
-          setP1Playing('toDrop');
-   
-          setTimeout(() => {
-            if (updatedP1Cards.length > 0) {
-              const randomIndex = Math.floor(Math.random() * 11);
-              const droppedCard = updatedP1Cards[randomIndex];
-              setP1DroppingCard({...droppedCard, index:randomIndex});
-    
-              updatedP1Cards.splice(randomIndex, 1);
-              setPlayer1Cards(GinRummyScore(updatedP1Cards));
-    
-              setTimeout(() => {
-                setDropZoneCards((prev) => [...prev, droppedCard]);
-                setP1Playing(null)
-                setP1DroppingCard(null);
-                setP2Playing('toTake')
-              }, 400);
-            }
-          }, 1000);
-        }, 1000);
+      } else if (place == 'stack'){
+          if (remainingCards.length > 0) {
+            const [newCard, ...rest] = remainingCards;
+            setNextCard(newCard);
+            setRemainingCards(rest);
+            setSendingNewCard('stack');
+            setP1Playing('toTake');
+            handleP1PickAndDrop(newCard)
+          }
+
       }
+      
+    }
+    function handleP1PickAndDrop(newCard: Card){
+      setTimeout(() => {
+        // add new cards to player1
+        const updatedP1Cards = [...player1Cards.cards, newCard]
+        setPlayer1Cards(GinRummyScore(updatedP1Cards));
+        setNextCard(null);
+        setP1Playing('toDrop');
+ 
+        setTimeout(() => {
+          if (updatedP1Cards.length > 0) {
+            const randomIndex = Math.floor(Math.random() * 11);
+            const droppedCard = updatedP1Cards[randomIndex];
+            setP1DroppingCard({...droppedCard, index:randomIndex});
+  
+            updatedP1Cards.splice(randomIndex, 1);
+            setPlayer1Cards(GinRummyScore(updatedP1Cards));
+  
+            setTimeout(() => {
+              setDropZoneCards((prev) => [...prev, droppedCard]);
+              setP1Playing(null)
+              setP1DroppingCard(null);
+              setP2Playing('toTake')
+            }, 400);
+          }
+        }, 1000);
+      }, 300);
     }
 
     function handleKnock(){
@@ -391,7 +407,7 @@ export default function DealCards() {
                       duration:0.8, 
                       type: 'spring',}}
                   className="absolute"
-                  style={{zIndex: 6,boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)'}}
+                  style={{zIndex: 6,boxShadow: '0 4px 8px rgba(255, 255, 255, 0.5)'}}
                   >
                         <Image
                             src="/cards-image/back.svg.png"

@@ -1,4 +1,4 @@
-import { Card } from '../data/cards.data';
+import { Card,PlayerSummary } from '../models/card-animation.model';
 
 type CalcScoreCard = {
     order: number,
@@ -6,16 +6,6 @@ type CalcScoreCard = {
     name: string;
     image: string;
   };
-  
- export interface PlayerSummary{
-    cards: Card[]
-    Melds?: Card[]
-    MeldsPoint?: number
-    Deadwoods?: Card[]
-    DeadwoodsPoint?: number
-    Sets?:Card[]
-    Runs?:Card[]
-  }
   
   const calculateGinRummyScore = (CalcScoreCards: CalcScoreCard[]): PlayerSummary & { Sets: CalcScoreCard[]; Runs: CalcScoreCard[] } => {
     const suits: { [key: string]: CalcScoreCard[] } = {};

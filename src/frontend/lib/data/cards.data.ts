@@ -1,12 +1,4 @@
-export interface Card {
-  order: number,
-  point:number;
-  name: string;
-  image: string;
-  color?: string;
-  text?:string
-  index?:number
-}
+import { Card } from '../models/card-animation.model';
 
 export const CARDS: Card[] = [
   { order:1, point: 1, name: 'clubs-01', image: '/cards-image/clubs/clubs-01.svg.png', color: 'text-green-700', text: '1' },

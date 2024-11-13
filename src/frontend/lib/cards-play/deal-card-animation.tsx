@@ -2,13 +2,13 @@ import { useState,useEffect, useRef } from 'react';
 import { motion } from 'framer-motion'; 
 import Image from 'next/image'; 
 
-import { useDrag, useDrop, DndProvider } from 'react-dnd';
+import { useDrop, DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
 import { Button } from "@/components/ui/button"
 
-import { CARDS,Card } from '../data/cards.data';
-import {PlayerSummary} from './calc-score';
+import { CARDS } from '../data/cards.data';
+import { Card,PlayerSummary } from '../models/card-animation.model';
 import GinRummyScore from './calc-score';
 
 import {
@@ -22,54 +22,29 @@ import {
 } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
-
-
-interface DraggableCardProps {
-    card: Card;
-    index: number;
-    moveCard: (fromIndex: number, toIndex: number,wholeCardList:Card[]) => void;
-    p2Playing:'toTake'|'toDrop' | null;
-    wholeCardList: Card[]
-}
-interface ChatBubbleProps {
-  content: string; 
-  bgColor: string; 
-}
-interface RoundData {
-  round: number;
-  p1Score: number;
-  p1Bonus: number;
-  p1Total: number;
-  p2Score: number;
-  p2Bonus: number;
-  p2Total: number;
-  result: string;
-}
-interface ScoreSummary {
-  rounds: RoundData[];
-  p1TotalScore: number;
-  p2TotalScore: number;
-}
-  
+import { ScoreSummary,playingStatus,passingStatus,sendingNewCardPlace } from '../models/card-animation.model';
+import { DraggableCard} from './drag-card'
+import { AvatarDisplay,ChatBubble  } from '@my-components/avatar'
 
 function getRandomCards(cards: Card[]): Card[] {
   return [...cards].sort(() => 0.5 - Math.random()); // set random rards
 }
 
 export default function DealCards() {
-  const [dealing, setDealing] = useState(false); // if dealed
-  const [currentPass, setCurrentPass] = useState<1|2|null>(null)
-  const [sendingNewCard, setSendingNewCard] = useState<'stack'|'dropzone' | null>(null); // sending card from which stack
-  const [p1Playing, setP1Playing] = useState<'toTake'|'toDrop' | null>(null);
-  const [p2Playing, setP2Playing] = useState<'toTake'|'toDrop' | null>(null);
-  const [p1DroppingCard, setP1DroppingCard] = useState<Card | null>(null); // 当前正在移动到 DropZone 的卡片
-  const [scoreSummary, setScoreSummary] = useState<ScoreSummary>()
+  const [dealing, setDealing] = useState(false);
+  const [currentPass, setCurrentPass] = useState<passingStatus>(null)
 
+  const [p1Playing, setP1Playing] = useState<playingStatus>(null);
+  const [p2Playing, setP2Playing] = useState<playingStatus>(null);
   const [player1Cards, setPlayer1Cards] = useState<PlayerSummary>({cards:[]});
   const [player2Cards, setPlayer2Cards] = useState<PlayerSummary>({cards:[]});
+
+  const [p1DroppingCard, setP1DroppingCard] = useState<Card | null>(null); // p1 dropping card
+  const [sendingNewCard, setSendingNewCard] = useState<sendingNewCardPlace>(null); // sending card from stack or dropzone
   const [remainingCards, setRemainingCards] = useState<Card[]>([]); // remaining cards in main stack, 
-  const [nextCard, setNextCard] = useState<Card | null>(null); // next card from main stack
   const [dropZoneCards, setDropZoneCards] = useState<Card[]>([]); // drop zone cards
+
+  const [scoreSummary, setScoreSummary] = useState<ScoreSummary>()
 
   // get random stack of cards (shuffle the card)
   const shuffledCards = getRandomCards(CARDS); 
@@ -90,28 +65,13 @@ export default function DealCards() {
       const p1Cards = initialCards.filter((_, index) => index % 2 === 0);
       const p2Cards = initialCards.filter((_, index) => index % 2 !== 0);
 
-    //   const cards = [
-    //     { order:1, point: 1, name: 'hearts-01', image: '/cards-image/Hearts/hearts-01.svg.png',color: 'text-red-600' , text: '1'   },
-    //     { order:2, point: 2, name: 'hearts-02', image: '/cards-image/Hearts/hearts-02.svg.png',color: 'text-red-600' , text: '2'   },
-    //     { order:3, point: 3, name: 'hearts-03', image: '/cards-image/Hearts/hearts-03.svg.png',color: 'text-red-600' , text: '3'   },
-    // { order:1, point: 1, name: 'spades-01', image: '/cards-image/spades/spades-01.svg.png',color: 'text-black' , text: '1' },
-    // { order:1, point: 1, name: 'clubs-01', image: '/cards-image/clubs/clubs-01.svg.png', color: 'text-green-700', text: '1' },
-    // { order:3, point: 3, name: 'diamonds-03', image: '/cards-image/diamonds/diamonds-03.svg.png',color: 'text-yellow-600' , text: '3'  },
-    // { order:4, point: 4, name: 'diamonds-04', image: '/cards-image/diamonds/diamonds-04.svg.png',color: 'text-yellow-600' , text: '4'  },
-    // { order:5, point: 5, name: 'diamonds-05', image: '/cards-image/diamonds/diamonds-05.svg.png',color: 'text-yellow-600' , text: '5'  },
-    // { order:5, point: 5, name: 'spades-05', image: '/cards-image/spades/spades-05.svg.png',color: 'text-black' , text: '5'  },
-    // // { order:5, point: 5, name: 'hearts-05', image: '/cards-image/Hearts/hearts-05.svg.png',color: 'text-red-600' , text: '5'   },
-    // { order:5, point: 5, name: 'clubs-05', image: '/cards-image/clubs/clubs-05.svg.png', color: 'text-green-700', text: '5'  },
-    // { order:4, point: 4, name: 'hearts-04', image: '/cards-image/Hearts/hearts-04.svg.png',color: 'text-red-600' , text: '4'   },
-    //   ]
-    
-    //   setPlayer2Cards(GinRummyScore(cards));
-
-
       setPlayer1Cards(GinRummyScore(p1Cards));
       setPlayer2Cards(GinRummyScore(p2Cards));
 
-      setCurrentPass(2)
+      setTimeout(() => {
+        setCurrentPass(2)
+      }, 7400);
+     
       // update the remaining card
       setRemainingCards(shuffledCards.slice(initialCardsNumber));
      } else {
@@ -120,10 +80,10 @@ export default function DealCards() {
       setRemainingCards([])
       setDropZoneCards([])
       setSendingNewCard(null)
-      
      }
     }, [dealing]);
 
+    // 点击Pass按钮，P1拿最开始的牌
     function handlePass(){
       setP2Playing(null);
       setP1Playing('toTake')
@@ -131,18 +91,17 @@ export default function DealCards() {
       setCurrentPass(null)
     }
 
+    // p2 拖动时move card
     function moveCard(fromIndex: number, toIndex: number, wholeCardList: Card[]) {
-      const updatedCards = wholeCardList;
-      const [movedCard] = updatedCards.splice(fromIndex, 1);
-      updatedCards.splice(toIndex, 0, movedCard);
-      
+      const [movedCard] = wholeCardList.splice(fromIndex, 1);
+      wholeCardList.splice(toIndex, 0, movedCard);
       setPlayer2Cards({
         ...player2Cards, 
-        cards: updatedCards, 
+        cards: wholeCardList, 
       });
     }
 
-    // take the first card from main stack, remainingCards --
+    // P2从stack拿 下一张牌
     function handleNext(){
       switch (p2Playing) {
         case 'toDrop':
@@ -151,17 +110,11 @@ export default function DealCards() {
         case 'toTake':
           if (remainingCards.length > 0) {
             const [newCard, ...rest] = remainingCards;
-            setNextCard(newCard); 
             setRemainingCards(rest);
             setSendingNewCard('stack'); 
             setP2Playing('toDrop');
-  
-            // setTimeout(() => {
-              // add new cards to player2
-              const updatedCards = [...player2Cards.cards, newCard]
-              setPlayer2Cards(GinRummyScore(updatedCards));
-              setNextCard(null);
-            // }, 100);
+            const updatedCards = [...player2Cards.cards, newCard]
+            setPlayer2Cards(GinRummyScore(updatedCards));
           } else {
             if (dealing) {
               alert('No card to play!');
@@ -172,48 +125,40 @@ export default function DealCards() {
       }
     };
 
-    // take the last card from drop zone, (LIFO), dropzone --
+    // P2从dropzone拿 下一张牌
+    // dropzone拿牌规则：LIFO，新牌添加在最后，pop取出，显示是从后往前显示
     function handleDropZone(){
-      if (p2Playing == 'toTake' || currentPass == 2)
-
+      if (p2Playing == 'toTake' || currentPass == 2){
         if (currentPass == 2) {
           setCurrentPass(null)
         }
         if (dropZoneCards && dropZoneCards.length > 0) {
-          
           const lastCard = dropZoneCards.pop()
           if (lastCard) {
-            setNextCard(lastCard);
             setSendingNewCard('dropzone');
             setP2Playing('toDrop');
-    
             setTimeout(() => {
-              // add new cards to player2
               const updatedCards = [...player2Cards.cards, lastCard]
               setPlayer2Cards(GinRummyScore(updatedCards));
               setDropZoneCards(dropZoneCards);
-              setNextCard(null);
             }, 100);
-            
-          }
-         
+          } 
         } else {
           // TODO: toast component(sooner)
           alert('No card in Drop Zone!');
         }
+      }
     }
 
-    // P2出牌到dropzone（LIFO）
+    // P2出牌到dropzone，添加在最后一张
     function handleDrop(item: { card: Card; index: number }){
       switch (p2Playing) {
         case 'toTake':
           alert('need to pick a card first');
           break;
         case 'toDrop':
-          
           setDropZoneCards([...dropZoneCards, item.card]);
           const updatedCards = [...player2Cards.cards];
-          
           updatedCards.splice(item.index, 1);
           setPlayer2Cards(GinRummyScore(updatedCards));
           setP1Playing("toTake")
@@ -224,44 +169,37 @@ export default function DealCards() {
   
     // P1自动出牌
     function handleP1Play(place:'dropzone'|'stack') {
-
-
       if (place == 'dropzone') {
         if (dropZoneCards.length > 0) {
           const lastCard = dropZoneCards.pop()
           if (lastCard) {
-            setNextCard(lastCard);
             setDropZoneCards(dropZoneCards);
             setSendingNewCard('dropzone');
             setP1Playing('toTake');
             handleP1PickAndDrop(lastCard)
           }
         }
-        
       } else if (place == 'stack'){
           if (remainingCards.length > 0) {
             const [newCard, ...rest] = remainingCards;
-            setNextCard(newCard);
+            // setNextCard(newCard);
             setRemainingCards(rest);
             setSendingNewCard('stack');
             setP1Playing('toTake');
             handleP1PickAndDrop(newCard)
           }
-
       }
-      
     }
     function handleP1PickAndDrop(newCard: Card){
+      // mock P1 拿牌
       setTimeout(() => {
-        // add new cards to player1
         const updatedP1Cards = [...player1Cards.cards, newCard]
         setPlayer1Cards(GinRummyScore(updatedP1Cards));
-        setNextCard(null);
         setP1Playing('toDrop');
- 
+        // mock P1 出牌
         setTimeout(() => {
           if (updatedP1Cards.length > 0) {
-            const randomIndex = Math.floor(Math.random() * 11);
+            const randomIndex = Math.floor(Math.random() * 13);
             const droppedCard = updatedP1Cards[randomIndex];
             setP1DroppingCard({...droppedCard, index:randomIndex});
   
@@ -280,7 +218,6 @@ export default function DealCards() {
     }
 
     function handleKnock(){
-
       const roundData = {
         round: (scoreSummary?.rounds?.length || 0) + 1,
         p1Score: 0, 
@@ -353,43 +290,20 @@ export default function DealCards() {
                 }}
               />
             ) : (
-              <p key={`dropzone-card-${idx}`} >Card image missing</p> // 或者显示占位符
+              <p key={`dropzone-card-${idx}`} >Card image missing</p>
             )
           ))}
         </div>
       );
     };
 
-    // avatar
-    function AvatarDisplay({ image, player,name }: { image: string; player: 1 | 2, name:string }) {
-      return (
-        <div className="relative flex flex-col gap-2 items-center">
-          <Image
-            src={image}
-            alt={`Player ${player} Avatar`}
-            width={100}
-            height={100}
-            className="object-contain"
-            draggable="false"
-            style={{
-              borderRadius: '50%',
-              boxShadow: (p2Playing && player == 2) || (p1Playing && player == 1) || (currentPass == player)
-                ? '0 0 20px rgba(250,225, 0, 1)'
-                : 'none',
-            }}
-          />
-          <div className="text-lg font-medium text-gray-500 tracking-wide">{name}</div>
-        </div>
-      );
-    }
-  
   return (
     <DndProvider backend={HTML5Backend}>
 
       <div className="h-full w-full flex flex-col items-center justify-center select-none">
 
         {/* Player1 avatar*/}
-        <AvatarDisplay image={'/main-image/my-avatar.jpg'} player={1} name={'Robot'}/>
+        <AvatarDisplay image={'/main-image/my-avatar.jpg'} player={1} name={'Robot'} p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
 
         <div className="relative flex items-center justify-center w-full h-[500px] gap-4">
             {/* Player1 */}
@@ -569,7 +483,7 @@ export default function DealCards() {
           )}
 
 
-          <AvatarDisplay image={'/main-image/my-avatar-1.jpg'} player={2} name={'User'} />
+          <AvatarDisplay image={'/main-image/my-avatar-1.jpg'} player={2} name={'User'}  p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
 
 
           {!dealing && (
@@ -626,8 +540,6 @@ export default function DealCards() {
           {dealing &&(
             <Dialog>
               <DialogTrigger asChild>
-                {/* <Button variant="outline">Edit Profile</Button>
-                 */}
                  <div className="absolute w-[80px] h-[80px] flex items-center justify-center bg-red-500 text-white font-semibold shadow-xl cursor-pointer hover:bg-red-600"
                       style={{
                         top: '50%',
@@ -643,6 +555,7 @@ export default function DealCards() {
                       KNOCK
                   </div>
               </DialogTrigger>
+
               <DialogContent >
                 <DialogHeader>
                   <DialogTitle className="flex flex-col items-center justify-center">You Win this round</DialogTitle>
@@ -695,9 +608,6 @@ export default function DealCards() {
                               <TableCell className="text-center">{scoreSummary?.p2TotalScore || 0}</TableCell>
                               <TableCell className="text-center"></TableCell>
                             </TableRow>
-
-
-
                     </TableBody>
                   </Table>
                 </div>
@@ -712,104 +622,3 @@ export default function DealCards() {
     </DndProvider>
   )
 }
-
-const ChatBubble: React.FC<ChatBubbleProps> = ({ content, bgColor}) => {
-  return (
-    <div
-      className={`relative ml-4 px-4 py-2 text-black font-semibold shadow-lg rounded-3xl max-w-xs ${bgColor} bg-opacity-60`}
-      style={{
-        transform: 'translateY(-80%)',
-        whiteSpace: 'pre-wrap',
-      }}
-    >
-      {content}
-      
-      <div
-        className={`absolute w-[20px] h-[20px] shadow-lg rounded-full ${bgColor} bg-opacity-60`}
-        style={{
-          left: '-25px',
-          bottom: '-20px',
-          transform: 'translateY(-50%)',
-        }}
-      />
-      
-      <div
-        className={`absolute w-[10px] h-[10px] shadow-lg rounded-full ${bgColor} bg-opacity-60`}
-        style={{
-          left: '-40px',
-          bottom: '-25px',
-          transform: 'translateY(-50%)',
-        }}
-      />
-    </div>
-  );
-};
-
-const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard,p2Playing, wholeCardList }) => {
-  
-  const [{ isDragging }, drag] = useDrag({
-    type: 'CARD',
-    item: { card, index },
-    collect: (monitor) => {
-      if (monitor.isDragging()) {
-        const draggedItem = monitor.getItem();
-      }
-      return {
-        isDragging: !!monitor.isDragging(),
-      };
-    },
-  });
-
-  const [, drop] = useDrop({
-    accept: 'CARD',
-    hover: (item: { card: Card; index: number;wholeCardList:Card[] }) => {
-      setTimeout(() => {
-        if (item.index !== index) {
-          moveCard(item.index, index, wholeCardList);
-          item.index = index;
-        }
-      }, 0);
-    }, 
-  });
-
-  const ref = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    if (ref.current) {
-      drag(drop(ref.current));
-    }
-  }, [drag, drop]);
-
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      style={{
-        opacity: isDragging ? 0 : 1,
-        backgroundColor: '#fff',
-        // cursor: 'pointer',
-        cursor:  p2Playing ? 'pointer' : 'not-allowed',
-        textAlign: 'center',
-      }}
-    >
-      {card && card.image ? (
-        <Image
-          src={card.image}
-          alt={card.name}
-          width={100}
-          height={150}
-          draggable="false"
-          className="object-contain"
-        />
-      ) : (
-        <p>Card image missing</p>
-      )}
-    </motion.div>
-  );
-};
-
-
-
-
-

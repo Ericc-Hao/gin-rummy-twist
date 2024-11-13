@@ -1,7 +1,7 @@
 "use client";
 
 import { HeaderBar } from "@/lib/my-components/header-bar";
-import DealCards from "@/lib/my-components/deal-card-animation";
+import DealCards from "@/lib/cards-play/deal-card-animation";
 
 import { useSelector, useDispatch } from "react-redux";
 import { AppDispatch, RootState } from "@shared-store/index";

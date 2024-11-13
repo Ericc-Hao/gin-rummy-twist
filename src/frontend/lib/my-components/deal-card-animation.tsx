@@ -124,6 +124,10 @@ export default function DealCards() {
      }
     }, [dealing]);
 
+    // useEffect(()=>{
+    //   console.log(dropZoneCards);
+    // })
+
     function handlePass(){
       setP2Playing(null);
       setP1Playing('toTake')
@@ -174,18 +178,15 @@ export default function DealCards() {
 
     // take the last card from drop zone, (LIFO), dropzone --
     function handleDropZone(){
-      // switch (p2Playing) {
-      //   case 'toDrop':
-      //     alert('You need to drop a card');
-      //     break;
       if (p2Playing == 'toTake' || currentPass == 2)
 
         if (currentPass == 2) {
           setCurrentPass(null)
         }
-
-          if (dropZoneCards.length > 0) {
-            const [lastCard, ...rest] = [...dropZoneCards].reverse();
+        if (dropZoneCards && dropZoneCards.length > 0) {
+          
+          const lastCard = dropZoneCards.pop()
+          if (lastCard) {
             setNextCard(lastCard);
             setSendingNewCard('dropzone');
             setP2Playing('toDrop');
@@ -194,17 +195,19 @@ export default function DealCards() {
               // add new cards to player2
               const updatedCards = [...player2Cards.cards, lastCard]
               setPlayer2Cards(GinRummyScore(updatedCards));
-              setDropZoneCards(rest);
+              setDropZoneCards(dropZoneCards);
               setNextCard(null);
             }, 100);
-          } else {
-            // TODO: toast component(sooner)
-            alert('No card in Drop Zone!');
+            
           }
-      // }
+         
+        } else {
+          // TODO: toast component(sooner)
+          alert('No card in Drop Zone!');
+        }
     }
 
-    // Player2 plays the card, dropzone ++
+    // P2出牌到dropzone（LIFO）
     function handleDrop(item: { card: Card; index: number }){
       switch (p2Playing) {
         case 'toTake':

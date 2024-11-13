@@ -27,8 +27,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 interface DraggableCardProps {
     card: Card;
     index: number;
-    moveCard: (fromIndex: number, toIndex: number) => void;
-    p2Playing:'toTake'|'toDrop' | null
+    moveCard: (fromIndex: number, toIndex: number,wholeCardList:Card[]) => void;
+    p2Playing:'toTake'|'toDrop' | null;
+    wholeCardList: Card[]
 }
 interface ChatBubbleProps {
   content: string; 
@@ -71,7 +72,7 @@ export default function DealCards() {
 
   // get random stack of cards (shuffle the card)
   const shuffledCards = getRandomCards(CARDS); 
-  const initialCardsNumber = 20
+  const initialCardsNumber = 24
 
   function resetAll(){
     setDealing(false)
@@ -80,7 +81,11 @@ export default function DealCards() {
   useEffect(() => {
     if (dealing) {
       // deal card to each player
-      const initialCards = shuffledCards.slice(0, initialCardsNumber);
+      const initialCards = shuffledCards.slice(0, initialCardsNumber + 1);
+      const firstCard = initialCards.pop();
+      if (firstCard) {
+        setDropZoneCards([firstCard]);
+      }
       const p1Cards = initialCards.filter((_, index) => index % 2 === 0);
       const p2Cards = initialCards.filter((_, index) => index % 2 !== 0);
 
@@ -120,10 +125,10 @@ export default function DealCards() {
      }
     }, [dealing]);
 
-    function moveCard(fromIndex: number, toIndex: number) {
-      const updatedCards = [...player2Cards.cards];
-      const [movedCard] = updatedCards.splice(fromIndex, 1); // 移动卡片
-      updatedCards.splice(toIndex, 0, movedCard); // 在新位置插入卡片
+    function moveCard(fromIndex: number, toIndex: number, wholeCardList: Card[]) {
+      const updatedCards = wholeCardList;
+      const [movedCard] = updatedCards.splice(fromIndex, 1);
+      updatedCards.splice(toIndex, 0, movedCard);
       
       setPlayer2Cards({
         ...player2Cards, 
@@ -369,9 +374,9 @@ export default function DealCards() {
                 player1Cards.cards.map((card, index) => (
                   <motion.div
                   key={`player2-${index}`}
-                  initial={sendingNewCard == 'dropzone'?  {x: 60,opacity:0.8}:{ x: -60, y: 0, opacity: 1}}
+                  initial={sendingNewCard == 'dropzone'?  {x: 60,opacity:0.8}:{ x: -75, y: 0, opacity: 1}}
                   animate={{ 
-                      x: -100 * (index - 5), 
+                      x: -100 * (index - 6), 
                       y: -150, 
                       opacity: 1,}}
                   transition={{ 
@@ -379,7 +384,7 @@ export default function DealCards() {
                       duration:0.8, 
                       type: 'spring',}}
                   className="absolute"
-                  style={{zIndex: 6}}
+                  style={{zIndex: 6,boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)'}}
                   >
                         <Image
                             src="/cards-image/back.svg.png"
@@ -403,7 +408,8 @@ export default function DealCards() {
                     className="object-contain"
                     style={{
                       cursor: p2Playing === 'toTake' ? 'pointer' : 'not-allowed', 
-                      zIndex:1
+                      zIndex:1,
+                      boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)'
                     }}
                     onClick={handleNext}
                 />
@@ -412,7 +418,7 @@ export default function DealCards() {
 
                 {p1DroppingCard && (
                   <motion.div
-                    initial={{ x: p1DroppingCard.index? -100 * (p1DroppingCard.index-5) : -100, y: -150, opacity: 1 }} // 根据卡片位置调整 x 和 y
+                    initial={{ x: p1DroppingCard.index? -100 * (p1DroppingCard.index-5) : -100, y: -150, opacity: 1 }} 
                     animate={{ x: 60, y: 0, opacity: 1 }}
                     transition={{ duration: 0.6 }}
                     className="absolute"
@@ -426,22 +432,33 @@ export default function DealCards() {
                         draggable="false"
                         className="object-contain"
                         style={{
-                          zIndex:70
+                          zIndex:7
                         }}
                       />
                     ) : (
-                      <p>Card image missing</p> // 或者显示占位符
+                      <p>Card image missing</p>
                     )}
                   </motion.div>
                 )}
 
-                {!dealing && (
+                {!dealing? (
                     <Button
                     className="absolute left-full ml-4 px-4 py-2 w-[100px] bg-blue-500 text-white rounded"
                     onClick={() => setDealing(true)}
                     >
                     Deal
                     </Button>
+                ) :(
+                  <div>
+                    {/* {!passed && (
+                    <Button
+                    className="absolute left-full ml-4 px-4 py-2 w-[100px] bg-blue-500 text-white rounded"
+                    onClick={() => handlePass()}
+                    >
+                    Pass
+                    </Button>
+                ) } */}
+                  </div>
                 ) }
             </div>
 
@@ -450,9 +467,9 @@ export default function DealCards() {
                 player2Cards.cards.map((card, index) => (
                 <motion.div
                     key={`player2-${index}`}
-                    initial={sendingNewCard == 'dropzone'?  {x: 60,opacity:0.5}:{ x: -60, y: 0, opacity: 0}}
+                    initial={sendingNewCard == 'dropzone'?  {x: 60,opacity:0.5}:{ x: -75, y: 0, opacity: 0}}
                     animate={{ 
-                        x: 100 * (index - 5), 
+                        x: 100 * (index - 6), 
                         y: 150, 
                         opacity: 1,}}
                     transition={{ 
@@ -460,14 +477,16 @@ export default function DealCards() {
                         duration:0.8, 
                         type: 'spring',}}
                     className="absolute"
-                    style={{zIndex: 50}}
+                    style={{zIndex: 50,
+                            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)'}}
                     >
                       <DraggableCard
                           key={index}
                           index={index??10}
                           card={card}
-                          moveCard={(from, to) => moveCard(from, to)}
+                          moveCard={(from, to,wholeCardList) => moveCard(from, to,wholeCardList)}
                           p2Playing ={p2Playing}
+                          wholeCardList = {player2Cards.cards}
                       />
                 </motion.div>
                 ))}
@@ -488,9 +507,9 @@ export default function DealCards() {
 
             <div className="px-2 py-1 flex flex-row items-center rounded-lg bg-gray-300 text-gray-700 shadow-xl bg-opacity-60 mt-4">
               <div className="flex items-center space-x-2">
-                <span>Melds ({player2Cards.MeldsPoint}):</span>
+                <span>Sets:</span>
                 <div className="flex flex-row space-x-2">
-                  {player2Cards.Melds?.map((card, index) => (
+                  {player2Cards.Sets?.map((card, index) => (
                     <div key={index} className={`font-black ${card.color}`}>
                       {card.text}
                     </div>
@@ -501,7 +520,20 @@ export default function DealCards() {
 
             <div className="px-2 py-1 flex flex-row items-center rounded-lg bg-gray-300 text-gray-700 shadow-xl bg-opacity-60 mt-4">
               <div className="flex items-center space-x-2">
-                <span>Deadwoods ({player2Cards.DeadwoodsPoint}):</span>
+                <span>Runs:</span>
+                <div className="flex flex-row space-x-2">
+                  {player2Cards.Runs?.map((card, index) => (
+                    <div key={index} className={`font-black ${card.color}`}>
+                      {card.text}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="px-2 py-1 flex flex-row items-center rounded-lg bg-gray-300 text-gray-700 shadow-xl bg-opacity-60 mt-4">
+              <div className="flex items-center space-x-2">
+                <span>Deadwood ({player2Cards.DeadwoodsPoint}):</span>
                 <div className="flex flex-row space-x-2">
                   {player2Cards.Deadwoods?.map((card, index) => (
                     <div key={index} className={`font-black ${card.color}`}>
@@ -517,6 +549,32 @@ export default function DealCards() {
 
           <AvatarDisplay image={'/main-image/my-avatar-1.jpg'} player={2} name={'User'} />
 
+
+          {!dealing && (
+            <div
+              className="absolute ml-4 p-4"
+              style={{
+                top: '50%',
+                transform: 'translateY(-50%)',
+                left: 'calc(50% + 60px)',
+              }}
+            >
+                <ChatBubble content={'CLICK DEAL'}  bgColor={'bg-yellow-200'} />
+            </div>
+          )}
+          {/* {p2Playing == 'toPass' && (
+            <div
+              className="absolute ml-4 p-4"
+              style={{
+                top: '50%',
+                transform: 'translateY(-50%)',
+                left: 'calc(50% + 60px)',
+              }}
+            >
+                <ChatBubble content={'DRAW OR PASS'}  bgColor={'bg-yellow-200'} />
+              
+            </div>
+          )} */}
           {p2Playing == 'toTake' && (
             <div
               className="absolute ml-4 p-4"
@@ -526,7 +584,7 @@ export default function DealCards() {
                 left: 'calc(50% + 60px)',
               }}
             >
-                <ChatBubble content={ 'PICK A CARD'}  bgColor={'bg-yellow-200'} />
+                <ChatBubble content={'PICK A CARD'}  bgColor={'bg-yellow-200'} />
               
             </div>
           )}
@@ -539,12 +597,11 @@ export default function DealCards() {
                 left: 'calc(50% + 60px)',
               }}
             >
-                <ChatBubble content={ 'DRAG & DROP A CARD'}  bgColor={'bg-yellow-200'} />
+                <ChatBubble content={ 'DRAG TO DISCARD'}  bgColor={'bg-yellow-200'} />
             </div>
           )}
 
           {dealing &&(
-            
             <Dialog>
               <DialogTrigger asChild>
                 {/* <Button variant="outline">Edit Profile</Button>
@@ -593,53 +650,29 @@ export default function DealCards() {
                     </TableHeader>
                     <TableBody>
 
-
-                      {/* Scores for each player */}
-                      {/* <TableRow>
-                        <TableCell className="text-center">1</TableCell>
-                        <TableCell className="text-center">0</TableCell>
-                        <TableCell className="text-center">0</TableCell>
-                        <TableCell className="text-center">0</TableCell>
-                        <TableCell className="text-center">29</TableCell>
-                        <TableCell className="text-center">0</TableCell>
-                        <TableCell className="text-center">29</TableCell>
-                        <TableCell className="text-center">Knock</TableCell>
-                      </TableRow> */}
-                      {/* Total Score Row */}
-                      {/* <TableRow>
-                        <TableCell className="font-semibold text-center">Total Score</TableCell>
-                        <TableCell className="text-center">0</TableCell>
-                        <TableCell className="text-center">0</TableCell>
-                        <TableCell className="text-center">0</TableCell>
-                        <TableCell className="text-center">29</TableCell>
-                        <TableCell className="text-center">0</TableCell>
-                        <TableCell className="text-center">29</TableCell>
-                        <TableCell className="text-center"></TableCell>
-                      </TableRow> */}
-
-{scoreSummary && scoreSummary.rounds.map((round, index) => (
-        <TableRow key={index}>
-          <TableCell className="text-center">{round.round}</TableCell>
-          <TableCell className="text-center">{round.p1Score}</TableCell>
-          <TableCell className="text-center">{round.p1Bonus}</TableCell>
-          <TableCell className="text-center">{round.p1Total}</TableCell>
-          <TableCell className="text-center">{round.p2Score}</TableCell>
-          <TableCell className="text-center">{round.p2Bonus}</TableCell>
-          <TableCell className="text-center">{round.p2Total}</TableCell>
-          <TableCell className="text-center">{round.result}</TableCell>
-        </TableRow>
-      ))}
-      {/* 总分行 */}
-      <TableRow>
-        <TableCell className="font-semibold text-center">Total Score</TableCell>
-        <TableCell className="text-center">{scoreSummary?.p1TotalScore || 0}</TableCell>
-        <TableCell className="text-center">0</TableCell>
-        <TableCell className="text-center">{scoreSummary?.p1TotalScore || 0}</TableCell>
-        <TableCell className="text-center">{scoreSummary?.p2TotalScore || 0}</TableCell>
-        <TableCell className="text-center">0</TableCell>
-        <TableCell className="text-center">{scoreSummary?.p2TotalScore || 0}</TableCell>
-        <TableCell className="text-center"></TableCell>
-      </TableRow>
+                      {scoreSummary && scoreSummary.rounds.map((round, index) => (
+                              <TableRow key={index}>
+                                <TableCell className="text-center">{round.round}</TableCell>
+                                <TableCell className="text-center">{round.p1Score}</TableCell>
+                                <TableCell className="text-center">{round.p1Bonus}</TableCell>
+                                <TableCell className="text-center">{round.p1Total}</TableCell>
+                                <TableCell className="text-center">{round.p2Score}</TableCell>
+                                <TableCell className="text-center">{round.p2Bonus}</TableCell>
+                                <TableCell className="text-center">{round.p2Total}</TableCell>
+                                <TableCell className="text-center">{round.result}</TableCell>
+                              </TableRow>
+                            ))}
+                            {/* 总分行 */}
+                            <TableRow>
+                              <TableCell className="font-semibold text-center">Total Score</TableCell>
+                              <TableCell className="text-center">{scoreSummary?.p1TotalScore || 0}</TableCell>
+                              <TableCell className="text-center">0</TableCell>
+                              <TableCell className="text-center">{scoreSummary?.p1TotalScore || 0}</TableCell>
+                              <TableCell className="text-center">{scoreSummary?.p2TotalScore || 0}</TableCell>
+                              <TableCell className="text-center">0</TableCell>
+                              <TableCell className="text-center">{scoreSummary?.p2TotalScore || 0}</TableCell>
+                              <TableCell className="text-center"></TableCell>
+                            </TableRow>
 
 
 
@@ -690,9 +723,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({ content, bgColor}) => {
   );
 };
 
-const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard,p2Playing }) => {
-
-  // console.log(card.name, index);
+const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard,p2Playing, wholeCardList }) => {
   
   const [{ isDragging }, drag] = useDrag({
     type: 'CARD',
@@ -700,7 +731,6 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard,p2P
     collect: (monitor) => {
       if (monitor.isDragging()) {
         const draggedItem = monitor.getItem();
-        console.log('Currently dragging card:', draggedItem.card.name, 'from index:', draggedItem.index);
       }
       return {
         isDragging: !!monitor.isDragging(),
@@ -710,11 +740,13 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard,p2P
 
   const [, drop] = useDrop({
     accept: 'CARD',
-    hover: (item: { card: Card; index: number }) => {
-      if (item.index !== index) {
-        moveCard(item.index, index);
-        item.index = index;
-      }
+    hover: (item: { card: Card; index: number;wholeCardList:Card[] }) => {
+      setTimeout(() => {
+        if (item.index !== index) {
+          moveCard(item.index, index, wholeCardList);
+          item.index = index;
+        }
+      }, 0);
     }, 
   });
 
@@ -733,7 +765,6 @@ const DraggableCard: React.FC<DraggableCardProps> = ({ card, index, moveCard,p2P
       transition={{ duration: 0.5 }}
       style={{
         opacity: isDragging ? 0 : 1,
-        margin: '0 5px',
         backgroundColor: '#fff',
         // cursor: 'pointer',
         cursor:  p2Playing ? 'pointer' : 'not-allowed',

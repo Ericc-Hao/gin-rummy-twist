@@ -626,7 +626,7 @@ export default function DealCards() {
                 left: 'calc(50% + 60px)',
               }}
             >
-                <ChatBubble content={ 'DRAG tO DISCARD'}  bgColor={'bg-yellow-200'} />
+                <ChatBubble content={ 'DRAG TO DISCARD'}  bgColor={'bg-yellow-200'} />
             </div>
           )}
 

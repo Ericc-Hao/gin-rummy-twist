@@ -58,6 +58,7 @@ function getRandomCards(cards: Card[]): Card[] {
 
 export default function DealCards() {
   const [dealing, setDealing] = useState(false); // if dealed
+  const [currentPass, setCurrentPass] = useState<1|2|null>(null)
   const [sendingNewCard, setSendingNewCard] = useState<'stack'|'dropzone' | null>(null); // sending card from which stack
   const [p1Playing, setP1Playing] = useState<'toTake'|'toDrop' | null>(null);
   const [p2Playing, setP2Playing] = useState<'toTake'|'toDrop' | null>(null);
@@ -110,9 +111,7 @@ export default function DealCards() {
       setPlayer1Cards(GinRummyScore(p1Cards));
       setPlayer2Cards(GinRummyScore(p2Cards));
 
-      setP2Playing('toTake');
-      setP1Playing(null)
-
+      setCurrentPass(2)
       // update the remaining card
       setRemainingCards(shuffledCards.slice(initialCardsNumber));
      } else {
@@ -124,6 +123,13 @@ export default function DealCards() {
       
      }
     }, [dealing]);
+
+    function handlePass(){
+      setP2Playing(null);
+      setP1Playing('toTake')
+      handleP1Play()
+      setCurrentPass(null)
+    }
 
     function moveCard(fromIndex: number, toIndex: number, wholeCardList: Card[]) {
       const updatedCards = wholeCardList;
@@ -168,11 +174,16 @@ export default function DealCards() {
 
     // take the last card from drop zone, (LIFO), dropzone --
     function handleDropZone(){
-      switch (p2Playing) {
-        case 'toDrop':
-          alert('You need to drop a card');
-          break;
-        case 'toTake':
+      // switch (p2Playing) {
+      //   case 'toDrop':
+      //     alert('You need to drop a card');
+      //     break;
+      if (p2Playing == 'toTake' || currentPass == 2)
+
+        if (currentPass == 2) {
+          setCurrentPass(null)
+        }
+
           if (dropZoneCards.length > 0) {
             const [lastCard, ...rest] = [...dropZoneCards].reverse();
             setNextCard(lastCard);
@@ -190,7 +201,7 @@ export default function DealCards() {
             // TODO: toast component(sooner)
             alert('No card in Drop Zone!');
           }
-      }
+      // }
     }
 
     // Player2 plays the card, dropzone ++
@@ -200,14 +211,11 @@ export default function DealCards() {
           alert('need to pick a card first');
           break;
         case 'toDrop':
-          // console.log("DropCard: ",item.card);
           
           setDropZoneCards([...dropZoneCards, item.card]);
           const updatedCards = [...player2Cards.cards];
-          // console.log('P2 updated card before split: ',updatedCards);
           
           updatedCards.splice(item.index, 1);
-          // console.log('P2 updated card: ',updatedCards);
           setPlayer2Cards(GinRummyScore(updatedCards));
           setP1Playing("toTake")
           setP2Playing(null)
@@ -235,9 +243,6 @@ export default function DealCards() {
             if (updatedP1Cards.length > 0) {
               const randomIndex = Math.floor(Math.random() * 11);
               const droppedCard = updatedP1Cards[randomIndex];
-              console.log('******** P1 droppedCard: ',droppedCard,randomIndex);
-              // console.log('P2 Card: ',player2Cards);
-
               setP1DroppingCard({...droppedCard, index:randomIndex});
     
               updatedP1Cards.splice(randomIndex, 1);
@@ -256,7 +261,6 @@ export default function DealCards() {
     }
 
     function handleKnock(){
-      console.log(player1Cards.DeadwoodsPoint, player2Cards.DeadwoodsPoint);
 
       const roundData = {
         round: (scoreSummary?.rounds?.length || 0) + 1,
@@ -326,7 +330,7 @@ export default function DealCards() {
                   top: `0px`,
                   left: `0px`,
                   zIndex: idx,
-                  cursor: p2Playing === 'toTake' ? 'pointer' : 'not-allowed', 
+                  cursor: p2Playing === 'toTake' || currentPass == 2 ? 'pointer' : 'not-allowed', 
                 }}
               />
             ) : (
@@ -350,7 +354,7 @@ export default function DealCards() {
             draggable="false"
             style={{
               borderRadius: '50%',
-              boxShadow: (p2Playing && player == 2) || (p1Playing && player == 1)
+              boxShadow: (p2Playing && player == 2) || (p1Playing && player == 1) || (currentPass == player)
                 ? '0 0 20px rgba(250,225, 0, 1)'
                 : 'none',
             }}
@@ -450,14 +454,14 @@ export default function DealCards() {
                     </Button>
                 ) :(
                   <div>
-                    {/* {!passed && (
+                    {currentPass && (
                     <Button
                     className="absolute left-full ml-4 px-4 py-2 w-[100px] bg-blue-500 text-white rounded"
                     onClick={() => handlePass()}
                     >
                     Pass
                     </Button>
-                ) } */}
+                ) }
                   </div>
                 ) }
             </div>
@@ -503,7 +507,6 @@ export default function DealCards() {
                   whiteSpace: 'nowrap',
                   left: 'calc(50% - 500px)',
                 }}>
-            
 
             <div className="px-2 py-1 flex flex-row items-center rounded-lg bg-gray-300 text-gray-700 shadow-xl bg-opacity-60 mt-4">
               <div className="flex items-center space-x-2">
@@ -562,7 +565,7 @@ export default function DealCards() {
                 <ChatBubble content={'CLICK DEAL'}  bgColor={'bg-yellow-200'} />
             </div>
           )}
-          {/* {p2Playing == 'toPass' && (
+          {currentPass == 2 && (
             <div
               className="absolute ml-4 p-4"
               style={{
@@ -574,7 +577,7 @@ export default function DealCards() {
                 <ChatBubble content={'DRAW OR PASS'}  bgColor={'bg-yellow-200'} />
               
             </div>
-          )} */}
+          )}
           {p2Playing == 'toTake' && (
             <div
               className="absolute ml-4 p-4"

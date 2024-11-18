@@ -304,7 +304,7 @@ export default function DealCards() {
       <div className="h-full w-full flex flex-col items-center justify-center select-none">
 
         {/* Player1 avatar*/}
-        <AvatarDisplay image={'/main-image/my-avatar.jpg'} player={1} name={'Robot'} p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
+        <AvatarDisplay image={'/main-image/avatar-robot.jpg'} player={1} name={'Robot'} p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
 
         <div className="relative flex items-center justify-center w-full h-[500px] gap-4">
             {/* Player1 */}
@@ -484,7 +484,7 @@ export default function DealCards() {
           )}
 
 
-          <AvatarDisplay image={'/main-image/my-avatar-1.jpg'} player={2} name={'User'}  p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
+          <AvatarDisplay image={'/main-image/avatar-user.jpg'} player={2} name={'User'}  p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
 
 
           {!dealing && (
@@ -548,8 +548,8 @@ export default function DealCards() {
                         whiteSpace: 'nowrap',
                         left: 'calc(50% + 500px)',
                         borderRadius:'50%',
-                        backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 10 ? 'red' : 'gray',
-                        cursor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 10 ? 'pointer' : 'not-allowed',
+                        backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'red' : 'gray',
+                        cursor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'pointer' : 'not-allowed',
                       }}
                       onClick={handleKnock}
                     >

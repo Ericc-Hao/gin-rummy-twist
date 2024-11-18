@@ -1,4 +1,5 @@
 import { Card,PlayerSummary } from '../models/card-animation.model';
+import { decimalToDozenal } from './count-dozenal';
 
 type CalcScoreCard = {
     order: number,
@@ -117,6 +118,7 @@ type CalcScoreCard = {
       MeldsPoint: bestMeldsPoint,
       Deadwoods: deadwoods,
       DeadwoodsPoint: deadwoodsPoint,
+      DeadwoodsDozenalPoint:decimalToDozenal(deadwoodsPoint),
       Sets: bestSets,
       Runs: bestRuns,
     };

@@ -24,6 +24,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 import { ScoreSummary,playingStatus,passingStatus,sendingNewCardPlace } from '../models/card-animation.model';
 import { DraggableCard} from './drag-card'
+import { decimalToDozenal } from './count-dozenal';
 import { AvatarDisplay,ChatBubble  } from '@my-components/avatar'
 
 function getRandomCards(cards: Card[]): Card[] {
@@ -469,7 +470,7 @@ export default function DealCards() {
 
             <div className="px-2 py-1 flex flex-row items-center rounded-lg bg-gray-300 text-gray-700 shadow-xl bg-opacity-60 mt-4">
               <div className="flex items-center space-x-2">
-                <span>Deadwood ({player2Cards.DeadwoodsPoint}):</span>
+                <span>Deadwood ({player2Cards.DeadwoodsDozenalPoint}):</span>
                 <div className="flex flex-row space-x-2">
                   {player2Cards.Deadwoods?.map((card, index) => (
                     <div key={index} className={`font-black ${card.color}`}>
@@ -598,14 +599,15 @@ export default function DealCards() {
                               </TableRow>
                             ))}
                             {/* 总分行 */}
+                          {/* TODO: 这里之后要改，存的时候就存dozenal的 */}
                             <TableRow>
                               <TableCell className="font-semibold text-center">Total Score</TableCell>
-                              <TableCell className="text-center">{scoreSummary?.p1TotalScore || 0}</TableCell>
+                              <TableCell className="text-center">{decimalToDozenal(scoreSummary?.p1TotalScore || 0) }</TableCell>
                               <TableCell className="text-center">0</TableCell>
-                              <TableCell className="text-center">{scoreSummary?.p1TotalScore || 0}</TableCell>
-                              <TableCell className="text-center">{scoreSummary?.p2TotalScore || 0}</TableCell>
+                              <TableCell className="text-center">{decimalToDozenal(scoreSummary?.p1TotalScore || 0)}</TableCell>
+                              <TableCell className="text-center">{decimalToDozenal(scoreSummary?.p2TotalScore || 0)}</TableCell>
                               <TableCell className="text-center">0</TableCell>
-                              <TableCell className="text-center">{scoreSummary?.p2TotalScore || 0}</TableCell>
+                              <TableCell className="text-center">{decimalToDozenal(scoreSummary?.p2TotalScore || 0)}</TableCell>
                               <TableCell className="text-center"></TableCell>
                             </TableRow>
                     </TableBody>

@@ -22,7 +22,9 @@ class Authentication():
         # When user create an account. 
         # This method is expected to store the user credential(in encrypted version, in the worst case of a leakage of our database)
         # This should be called after user enter all necessary information (intended user name and password)
-        
+        if self.fake_database.get(user_name) != None:
+            print("User already exists")
+            return False
         
         encrypted_password = self.translated_password(password)
 

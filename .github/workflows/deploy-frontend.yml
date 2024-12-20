@@ -1,0 +1,83 @@
+name: Deploy to Google Cloud Run using Artifact Registry
+
+on:
+  # Trigger the workflow on pull request when files in src/frontend change
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'src/frontend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Cache Node.js modules
+        uses: actions/cache@v3
+        with:
+          path: ./src/frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      - name: Install Dependencies
+        working-directory: ./src/frontend
+        run: npm install
+
+      - name: Build Project
+        working-directory: ./src/frontend
+        run: npm run build
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Configure Docker for Google Artifact Registry
+        run: gcloud auth configure-docker us-east1-docker.pkg.dev
+
+      - name: Build and Push Docker Image
+        run: |
+          IMAGE_NAME="us-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gin-rummy/frontend/nextjs-app:${{ github.sha }}"
+          docker build -t $IMAGE_NAME ./src/frontend
+          docker push $IMAGE_NAME
+
+      - name: Deploy to Google Cloud Run
+        id: deploy
+        run: |
+          gcloud run deploy gin-rummy-frontend \
+            --image us-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gin-rummy/frontend/nextjs-app:${{ github.sha }} \
+            --platform managed \
+            --region us-east1 \
+            --allow-unauthenticated \
+            --port 3000 \
+            --memory 3Gi \
+            --cpu 1
+          echo "SERVICE_URL=$(gcloud run services describe gin-rummy-frontend --region us-east1 --format 'value(status.url)')" >> $GITHUB_ENV
+
+  comment:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: success()
+    steps:
+      - name: Post a comment on PR
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "Deployment succeeded! Check the changes at [staging.ginrummys.ca](https://staging.ginrummys.ca/)"
+            })

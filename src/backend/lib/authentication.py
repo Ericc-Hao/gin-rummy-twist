@@ -64,26 +64,26 @@ class Authentication():
 
         return False
 
-
-test = Authentication()
-test.create_account("Alice", "Alice_password")
-test.create_account("Bob", "Bob_password")
-test.create_account("Charlie", "Charlie_password")
-test.create_account("David", "David_password")
-print("-------------------------------")
-test.verify_account("Alice", "Alice_password")
-test.verify_account("Bob", "Boo_password")
-test.verify_account("Trudy", "Bob_password")
-print("-------------------------------")
-test.verify_account("Charlie", "Charlie_password")
-test.change_password("Charlie", "Charlie_password", "Charlie_new_password")
-test.verify_account("Charlie", "Charlie_password")
-test.verify_account("Charlie", "Charlie_new_password")
-print("-------------------------------")
-test.verify_account("David", "David_password")
-test.remove_account("David", "David_password")
-test.verify_account("Alice", "Alice_password")
-test.verify_account("David", "David_password")
+def unit_test():
+    test = Authentication()
+    test.create_account("Alice", "Alice_password")
+    test.create_account("Bob", "Bob_password")
+    test.create_account("Charlie", "Charlie_password")
+    test.create_account("David", "David_password")
+    print("-------------------------------")
+    test.verify_account("Alice", "Alice_password")
+    test.verify_account("Bob", "Boo_password")
+    test.verify_account("Trudy", "Bob_password")
+    print("-------------------------------")
+    test.verify_account("Charlie", "Charlie_password")
+    test.change_password("Charlie", "Charlie_password", "Charlie_new_password")
+    test.verify_account("Charlie", "Charlie_password")
+    test.verify_account("Charlie", "Charlie_new_password")
+    print("-------------------------------")
+    test.verify_account("David", "David_password")
+    test.remove_account("David", "David_password")
+    test.verify_account("Alice", "Alice_password")
+    test.verify_account("David", "David_password")
 
 
 

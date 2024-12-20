@@ -11,10 +11,12 @@ auth = Authentication()
 def signup_request():
     if auth.create_account(request.json['username'], request.json['password']):
         return jsonify({
-            'message': 0
+            'result': 0, 
+            "message": "OK"
         })
     return jsonify({
-        'message': 1
+        'result': 1, 
+        "message": "Account already exists"
     })
 
 if __name__ == '__main__':

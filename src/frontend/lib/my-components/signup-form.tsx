@@ -71,20 +71,21 @@ export function SignUpForm() {
     })
     .then((response) => response.json())
     .then((data) => {
-      console.log("Success:", data);
-      if (data === 0) {
+      console.log("Success:", data["result"]);
+      if (data["result"] == 0) {
         dispatch(setUserInfo({ username: values.username }));
         router.push("/home");
       }
-      else if (data === 1) {
+      else if (data["result"] == 1) {
         // TODO: show error message
         console.log("username already exists")
         alert("username already exists")
       }
       else {
         console.log("sign up failed")
+        console.log(data["message"])
         // TODO: show error message
-        alert("Sign up failed")
+        alert(data["message"])
       }
     })
     

@@ -21,6 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { useEffect } from "react";
 
 const formSchema = z
   .object({
@@ -56,6 +57,21 @@ export function SignUpForm() {
   // 2. Define a submit handler.
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values)
+    console.log("sign up success")
+    fetch("http://localhost:8080/api/test", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: values.username,
+        nickname: values.nickname,
+        password: values.password,})
+    })
+    .then((response) => response.json())
+    .then((data) => {
+      console.log("Success:", data);
+    })
     dispatch(setUserInfo({ username: values.username }));
     router.push("/home");
   }

@@ -39,14 +39,13 @@ class Authentication():
         # User not found: 
         if self.fake_database.get(user_name) == None:
             print("User not found")
-            return False
+            return 1, "User not found"
         
         if self.fake_database.get(user_name) != self.translated_password(password):
-            print("Wrong password")
-            return False
+            return 2, "Wrong password"
         
         print(user_name + " Access Granted")
-        return True
+        return 0, "OK"
     
     def remove_account(self, user_name: str, password: str):
         if self.verify_account(user_name, password):

@@ -71,7 +71,6 @@ export function SignUpForm() {
     })
     .then((response) => response.json())
     .then((data) => {
-      console.log("Success:", data["result"]);
       if (data["result"] == 0) {
         dispatch(setUserInfo({ username: values.username }));
         router.push("/home");

@@ -19,5 +19,13 @@ def signup_request():
         "message": "Account already exists"
     })
 
+@app.route('/api/login', methods=['POST'])
+def login_request():
+    code, message = auth.verify_account(request.json['username'], request.json['password'])
+    return jsonify({
+        'result': code, 
+        "message": message
+    })
+
 if __name__ == '__main__':
     app.run(debug=True, port=8080)

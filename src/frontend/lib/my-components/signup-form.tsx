@@ -58,7 +58,8 @@ export function SignUpForm() {
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values)
     console.log("sign up success")
-    fetch("http://localhost:8080/api/test", {
+    // On submit, send a POST request to backend server to communicate the request.
+    fetch("http://localhost:8080/api/signup", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -70,10 +71,23 @@ export function SignUpForm() {
     })
     .then((response) => response.json())
     .then((data) => {
-      console.log("Success:", data);
+      if (data["result"] == 0) {
+        dispatch(setUserInfo({ username: values.username }));
+        router.push("/home");
+      }
+      else if (data["result"] == 1) {
+        // TODO: show error message
+        console.log("username already exists")
+        alert("username already exists")
+      }
+      else {
+        console.log("sign up failed")
+        console.log(data["message"])
+        // TODO: show error message
+        alert(data["message"])
+      }
     })
-    dispatch(setUserInfo({ username: values.username }));
-    router.push("/home");
+    
   }
 
   return (

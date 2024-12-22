@@ -158,13 +158,20 @@ export default function DealCards() {
           alert('need to pick a card first');
           break;
         case 'toDrop':
-          setDropZoneCards([...dropZoneCards, item.card]);
+          dropZoneCards.push(item.card);
+          // Qixuan Noted: Bug here
+          // 这边直接push进去就行，这样set并不会将card放入dropzonecards
+          // 你如果print出来就会发现实际上没加入dropzonecards
+          // 如果P1从弃牌堆拿牌就会露馅
+          //const updatedDropZoneCards = [...dropZoneCards, item.card];
+          //setDropZoneCards(updatedDropZoneCards);
+          //console.log("dropzoneafterdrop", dropZoneCards)
           const updatedCards = [...player2Cards.cards];
           updatedCards.splice(item.index, 1);
           setPlayer2Cards(GinRummyScore(updatedCards));
           setP1Playing("toTake")
           setP2Playing(null)
-          handleP1Play('stack')
+          handleP1Play('dropzone')
       }
     };
   
@@ -179,6 +186,10 @@ export default function DealCards() {
             setP1Playing('toTake');
             handleP1PickAndDrop(lastCard)
           }
+        }
+        else {
+          alert('ERROR: No card in Drop Zone!');
+          handleP1Play('stack')
         }
       } else if (place == 'stack'){
           if (remainingCards.length > 0) {
@@ -200,7 +211,7 @@ export default function DealCards() {
         // mock P1 出牌
         setTimeout(() => {
           if (updatedP1Cards.length > 0) {
-            const randomIndex = Math.floor(Math.random() * 13);
+            const randomIndex = 1;
             const droppedCard = updatedP1Cards[randomIndex];
             setP1DroppingCard({...droppedCard, index:randomIndex});
   

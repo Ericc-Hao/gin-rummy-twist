@@ -113,7 +113,7 @@ def move_request():
             'text':new_card["text"]
         })
     
-    if request.json['move'] == "dropzone": ##TODO Choose drop zone
+    if request.json['move'] == "dropzone":
         target_match.choose_drop_zone(request.json['host'])
         return jsonify({
             'result': 0, 

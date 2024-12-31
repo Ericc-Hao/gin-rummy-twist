@@ -103,27 +103,25 @@ class Match():
             
             self.initial_cards.append(self.guest_cards[-1])
             self.initial_cards.append(self.host_cards[-1])
+        for card in self.deck:
+            print('deck:', card["name"]) if debug else None
         for card in self.host_cards:
             print('host initial:', card["name"]) if debug else None
         for card in self.guest_cards:
             print('guest initial:', card["name"]) if debug else None
-
+        print(len(self.guest_cards) , len(self.host_cards) , len(self.deck) , len(self.drop_zone)) if debug else None
         pass
 
-    def get_matchid(self):
+    def get_matchid(self) -> str:
         return self.match_id
     
-    def draw_stack(self):
-        self.latest_operation = 'stack'
-        new_card = self.deck.pop()
-        return new_card
-    
-    def get_initial_cards(self):
+    def get_initial_cards(self) -> list:
         return self.initial_cards
 
-    def choose_stack(self, is_host):
-        self.latest_operation = 'dropzone'
-        new_card = self.draw_stack()
+    def choose_stack(self, is_host: int) -> dict:
+        self.latest_operation = 'stack'
+        print("host choose to draw stack")
+        new_card = self.deck.pop()
         if is_host:
             print("host get stack, ", new_card["name"]) if debug else None
             self.host_cards.append(new_card)
@@ -132,9 +130,9 @@ class Match():
             self.guest_cards.append(new_card)
         return new_card
     
-    def choose_drop_zone(self, is_host):
+    def choose_drop_zone(self, is_host: int) -> dict:
         self.latest_operation = 'dropzone'
-        new_card = self.draw_drop_zone()
+        new_card = self.drop_zone.pop()
         if is_host:
             print("host get drop zone, ", new_card["name"]) if debug else None
             self.host_cards.append(new_card)
@@ -144,7 +142,7 @@ class Match():
         return new_card
 
     
-    def drop_card(self, is_host, card_name): 
+    def drop_card(self, is_host: int, card_name: str) -> dict: 
         if is_host:
             for i in range(len(self.host_cards)):
                 if self.host_cards[i]["name"] == card_name:
@@ -159,14 +157,9 @@ class Match():
                     break
             self.latest_player = guest
             print("guest drop, ", self.drop_zone[-1]["name"]) if debug else None
+        return self.drop_zone[-1]
 
-    def draw_stack(self):
-        return self.drop_zone.pop()
-    
-    def draw_drop_zone(self):
-        return self.drop_zone.pop()
-
-    def get_latest_operation(self):
+    def get_latest_operation(self) -> tuple:
         if self.Bot != None:
             self.latest_operation = self.Bot.bot_draw(self.guest_cards, self.drop_zone[-1], self.deck)
             if self.latest_operation == "stack":

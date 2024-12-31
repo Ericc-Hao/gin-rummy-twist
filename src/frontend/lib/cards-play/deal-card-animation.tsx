@@ -26,9 +26,12 @@ import { ScoreSummary,playingStatus,passingStatus,sendingNewCardPlace } from '..
 import { DraggableCard} from './drag-card'
 import { decimalToDozenal } from './count-dozenal';
 import { AvatarDisplay,ChatBubble  } from '@my-components/avatar'
+import { start } from 'repl';
+import { drop } from 'lodash';
 
 function getRandomCards(cards: Card[]): Card[] {
   return [...cards].sort(() => 0.5 - Math.random()); // set random rards
+  
 }
 
 export default function DealCards() {
@@ -47,28 +50,90 @@ export default function DealCards() {
 
   const [scoreSummary, setScoreSummary] = useState<ScoreSummary>()
 
+  const [matchID, setMatchID] = useState<string | null>(null)
+
   // get random stack of cards (shuffle the card)
   const shuffledCards = getRandomCards(CARDS); 
   const initialCardsNumber = 24
+  const host = 1
 
   function resetAll(){
     setDealing(false)
   }
 
+  async function startGame(){ 
+    const initialCards: Card[] = [];
+    const p1Cards: Card[] = [];
+    const p2Cards: Card[] = [];
+    await fetch("http://localhost:8080/api/match_create").then((response) => response.json()).then((data) => {
+       setMatchID(data['match_id'])
+       setDropZoneCards([{ order:data["order0"], point: data["point0"], name: data["name0"], image: data["image0"], color: data["color0"], text: data["text0"] }])
+       p1Cards.push({ order:data["order1"], point: data["point1"], name: data["name1"], image: data["image1"], color: data["color1"], text: data["text1"] })
+       p2Cards.push({ order:data["order2"], point: data["point2"], name: data["name2"], image: data["image2"], color: data["color2"], text: data["text2"] })
+        p1Cards.push({ order:data["order3"], point: data["point3"], name: data["name3"], image: data["image3"], color: data["color3"], text: data["text3"] })
+        p2Cards.push({ order:data["order4"], point: data["point4"], name: data["name4"], image: data["image4"], color: data["color4"], text: data["text4"] })
+        p1Cards.push({ order:data["order5"], point: data["point5"], name: data["name5"], image: data["image5"], color: data["color5"], text: data["text5"] })
+        p2Cards.push({ order:data["order6"], point: data["point6"], name: data["name6"], image: data["image6"], color: data["color6"], text: data["text6"] })
+        p1Cards.push({ order:data["order7"], point: data["point7"], name: data["name7"], image: data["image7"], color: data["color7"], text: data["text7"] })
+        p2Cards.push({ order:data["order8"], point: data["point8"], name: data["name8"], image: data["image8"], color: data["color8"], text: data["text8"] })
+        p1Cards.push({ order:data["order9"], point: data["point9"], name: data["name9"], image: data["image9"], color: data["color9"], text: data["text9"] })
+        p2Cards.push({ order:data["order10"], point: data["point10"], name: data["name10"], image: data["image10"], color: data["color10"], text: data["text10"] })
+        p1Cards.push({ order:data["order11"], point: data["point11"], name: data["name11"], image: data["image11"], color: data["color11"], text: data["text11"] })
+        p2Cards.push({ order:data["order12"], point: data["point12"], name: data["name12"], image: data["image12"], color: data["color12"], text: data["text12"] })
+        p1Cards.push({ order:data["order13"], point: data["point13"], name: data["name13"], image: data["image13"], color: data["color13"], text: data["text13"] })
+        p2Cards.push({ order:data["order14"], point: data["point14"], name: data["name14"], image: data["image14"], color: data["color14"], text: data["text14"] })
+        p1Cards.push({ order:data["order15"], point: data["point15"], name: data["name15"], image: data["image15"], color: data["color15"], text: data["text15"] })
+        p2Cards.push({ order:data["order16"], point: data["point16"], name: data["name16"], image: data["image16"], color: data["color16"], text: data["text16"] })
+        p1Cards.push({ order:data["order17"], point: data["point17"], name: data["name17"], image: data["image17"], color: data["color17"], text: data["text17"] })
+        p2Cards.push({ order:data["order18"], point: data["point18"], name: data["name18"], image: data["image18"], color: data["color18"], text: data["text18"] })
+        p1Cards.push({ order:data["order19"], point: data["point19"], name: data["name19"], image: data["image19"], color: data["color19"], text: data["text19"] })
+        p2Cards.push({ order:data["order20"], point: data["point20"], name: data["name20"], image: data["image20"], color: data["color20"], text: data["text20"] })
+        p1Cards.push({ order:data["order21"], point: data["point21"], name: data["name21"], image: data["image21"], color: data["color21"], text: data["text21"] })
+        p2Cards.push({ order:data["order22"], point: data["point22"], name: data["name22"], image: data["image22"], color: data["color22"], text: data["text22"] })
+        p1Cards.push({ order:data["order23"], point: data["point23"], name: data["name23"], image: data["image23"], color: data["color23"], text: data["text23"] })
+        p2Cards.push({ order:data["order24"], point: data["point24"], name: data["name24"], image: data["image24"], color: data["color24"], text: data["text24"] })
+    })
+
+    setPlayer1Cards(GinRummyScore(p1Cards));
+    setPlayer2Cards(GinRummyScore(p2Cards));
+    setDealing(true);
+  }
+
+
+  async function get_card_from_stack(is_P2: boolean){
+    //fetch a new card
+    await fetch("http://localhost:8080/api/match_move", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        host: host,
+        matchid: matchID,
+        move: 'stack'})
+    })
+    .then((response) => response.json())
+    .then((data) => {
+      const newCard = { order:data["order"], point: data["point"], name: data["name"], image: data["image"], color: data["color"], text: data["text"] };
+      setSendingNewCard('stack'); 
+      console.log('get_card_from_stack, newCard', newCard)
+      if (is_P2){
+        setP2Playing('toDrop');
+        console.log('get_card_from_stack, P2 to drop')
+        const updatedCards = [...player2Cards.cards, newCard]
+        setPlayer2Cards(GinRummyScore(updatedCards));
+        console.log('get_card_from_stack, P2 to drop', updatedCards)
+        console.log('get_card_from_stack, P2 to drop', player2Cards.cards)
+      }
+    }
+  )
+  }
+
   useEffect(() => {
     if (dealing) {
+      // The following functionality is transferred to the backend
       // deal card to each player
-      const initialCards = shuffledCards.slice(0, initialCardsNumber + 1);
-      const firstCard = initialCards.pop();
-      if (firstCard) {
-        setDropZoneCards([firstCard]);
-      }
-      const p1Cards = initialCards.filter((_, index) => index % 2 === 0);
-      const p2Cards = initialCards.filter((_, index) => index % 2 !== 0);
-
-      setPlayer1Cards(GinRummyScore(p1Cards));
-      setPlayer2Cards(GinRummyScore(p2Cards));
-
+      
       setTimeout(() => {
         setCurrentPass(2)
       }, 7400);
@@ -88,7 +153,7 @@ export default function DealCards() {
     function handlePass(){
       setP2Playing(null);
       setP1Playing('toTake')
-      handleP1Play('dropzone')
+      handleP1Play()
       setCurrentPass(null)
     }
 
@@ -103,19 +168,17 @@ export default function DealCards() {
     }
 
     // P2从stack拿 下一张牌
-    function handleNext(){
+    async function handleNext(){
       switch (p2Playing) {
         case 'toDrop':
           alert('You need to drop a card');
           break;
         case 'toTake':
           if (remainingCards.length > 0) {
-            const [newCard, ...rest] = remainingCards;
-            setRemainingCards(rest);
-            setSendingNewCard('stack'); 
-            setP2Playing('toDrop');
-            const updatedCards = [...player2Cards.cards, newCard]
-            setPlayer2Cards(GinRummyScore(updatedCards));
+            //const [newCard, ...rest] = remainingCards;
+            //setRemainingCards(rest);
+            await get_card_from_stack(true)
+            
           } else {
             if (dealing) {
               alert('No card to play!');
@@ -128,12 +191,22 @@ export default function DealCards() {
 
     // P2从dropzone拿 下一张牌
     // dropzone拿牌规则：LIFO，新牌添加在最后，pop取出，显示是从后往前显示
-    function handleDropZone(){
+    async function handleDropZone(){
       if (p2Playing == 'toTake' || currentPass == 2){
         if (currentPass == 2) {
           setCurrentPass(null)
         }
         if (dropZoneCards && dropZoneCards.length > 0) {
+          await fetch("http://localhost:8080/api/match_move", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              host: host,
+              matchid: matchID,
+              move: 'dropzone'})
+          })
           const lastCard = dropZoneCards.pop()
           if (lastCard) {
             setSendingNewCard('dropzone');
@@ -152,7 +225,7 @@ export default function DealCards() {
     }
 
     // P2出牌到dropzone，添加在最后一张
-    function handleDrop(item: { card: Card; index: number }){
+    async function handleDrop(item: { card: Card; index: number }){
       switch (p2Playing) {
         case 'toTake':
           alert('need to pick a card first');
@@ -169,54 +242,99 @@ export default function DealCards() {
           const updatedCards = [...player2Cards.cards];
           updatedCards.splice(item.index, 1);
           setPlayer2Cards(GinRummyScore(updatedCards));
+          await fetch("http://localhost:8080/api/match_move", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              host: host,
+              matchid: matchID,
+              move: 'drop',
+              dropped_card_name: item.card.name})
+          })
           setP1Playing("toTake")
           setP2Playing(null)
-          handleP1Play('dropzone')
+          handleP1Play()
       }
     };
   
     // P1自动出牌
-    function handleP1Play(place:'dropzone'|'stack') {
-      if (place == 'dropzone') {
-        if (dropZoneCards.length > 0) {
-          const lastCard = dropZoneCards.pop()
-          if (lastCard) {
-            setDropZoneCards(dropZoneCards);
-            setSendingNewCard('dropzone');
-            setP1Playing('toTake');
-            handleP1PickAndDrop(lastCard)
+    async function handleP1Play() {
+      
+      await fetch("http://localhost:8080/api/match_move", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          host: host,
+          matchid: matchID,
+          move: 'wait_opponent'})
+      }).then((response) => response.json())
+      .then((data) => {
+        console.log('P1Play', data)
+        const place = data["operation"]
+        const dropped_card = { order:data["order"], point: data["point"], name: data["name"], image: data["image"], color: data["color"], text: data["text"] }
+        if (place == 'dropzone') {
+          if (dropZoneCards.length > 0) {
+            const lastCard = dropZoneCards.pop()
+            if (lastCard) {
+              setDropZoneCards(dropZoneCards);
+              setSendingNewCard('dropzone');
+              setP1Playing('toDrop');
+              handleP1PickAndDrop(dropped_card, lastCard)
+            }
           }
-        }
-        else {
-          alert('ERROR: No card in Drop Zone!');
-          handleP1Play('stack')
-        }
-      } else if (place == 'stack'){
-          if (remainingCards.length > 0) {
-            const [newCard, ...rest] = remainingCards;
-            // setNextCard(newCard);
-            setRemainingCards(rest);
-            setSendingNewCard('stack');
-            setP1Playing('toTake');
-            handleP1PickAndDrop(newCard)
+          else {
+            alert('ERROR: No card in Drop Zone!');
           }
-      }
+        } else if (place == 'stack'){
+            if (remainingCards.length > 0) {
+              //const [newCard, ...rest] = remainingCards;
+              // setNextCard(newCard);
+              //setRemainingCards(rest);
+              //setSendingNewCard('stack');
+              setP1Playing('toTake');
+              //handleP1Pick()
+              const new_card = { order:data["order_pick"], point: data["point_pick"], name: data["name_pick"], image: data["image_pick"], color: data["color_pick"], text: data["text_pick"] }
+              
+              //console.log('get_card_from_stack, P1 to drop')
+              //const updatedCards = [...player1Cards.cards, new_card]
+              //setPlayer1Cards(GinRummyScore(updatedCards));
+              //console.log('get_card_from_stack, P1 to drop', updatedCards)
+              //console.log('get_card_from_stack, P1 to drop', player1Cards.cards)
+              handleP1PickAndDrop(dropped_card, new_card)
+            }
+        }
+      })
     }
-    function handleP1PickAndDrop(newCard: Card){
-      // mock P1 拿牌
+
+    function handleP1PickAndDrop(dropCard: Card, newCard: Card){
       setTimeout(() => {
-        const updatedP1Cards = [...player1Cards.cards, newCard]
-        setPlayer1Cards(GinRummyScore(updatedP1Cards));
+        console.log('P1Pick')
+        //const updatedCards = [...player1Cards.cards, newCard]
+        //setPlayer1Cards(GinRummyScore(updatedCards));
+        player1Cards.cards.push(newCard)
         setP1Playing('toDrop');
+
         // mock P1 出牌
         setTimeout(() => {
-          if (updatedP1Cards.length > 0) {
-            const randomIndex = 1;
-            const droppedCard = updatedP1Cards[randomIndex];
-            setP1DroppingCard({...droppedCard, index:randomIndex});
-  
-            updatedP1Cards.splice(randomIndex, 1);
-            setPlayer1Cards(GinRummyScore(updatedP1Cards));
+          var dropIndex = 1;
+          if (player1Cards.cards.length > 0) {
+            for (let i = 0; i < player1Cards.cards.length; i++) {
+              if (player1Cards.cards[i].name == dropCard.name) {
+                dropIndex = i
+                break;
+              }
+            }
+            
+            const droppedCard = player1Cards.cards[dropIndex];
+            setP1DroppingCard({...droppedCard, index:dropIndex});
+            player1Cards.cards.splice(dropIndex, 1);
+            setPlayer1Cards(GinRummyScore(player1Cards.cards));
+            console.log(droppedCard)
+            //console.log('P1Drop', player1Cards.cards)
   
             setTimeout(() => {
               setDropZoneCards((prev) => [...prev, droppedCard]);
@@ -389,14 +507,15 @@ export default function DealCards() {
                     )}
                   </motion.div>
                 )}
-
+      
                 {!dealing? (
                     <Button
                     className="absolute left-full ml-4 px-4 py-2 w-[100px] bg-blue-500 text-white rounded"
-                    onClick={() => setDealing(true)}
+                    onClick={startGame}
                     >
                     Deal
                     </Button>
+                    
                 ) :(
                   <div>
                     {currentPass && (

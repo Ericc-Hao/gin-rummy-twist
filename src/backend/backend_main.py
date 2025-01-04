@@ -1,15 +1,30 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from lib.authentication import Authentication
 
 app = Flask(__name__)
 CORS(app)
 
-@app.route('/api/test', methods=['GET', 'POST'])
-def return_home():
-    if request.method == 'POST':
-        print(request.json)
+auth = Authentication()
+
+@app.route('/api/signup', methods=['POST'])
+def signup_request():
+    if auth.create_account(request.json['username'], request.json['password']):
+        return jsonify({
+            'result': 0, 
+            "message": "OK"
+        })
     return jsonify({
-        'message': 'Welcome to the Gin Rummy Twist API!'
+        'result': 1, 
+        "message": "Account already exists"
+    })
+
+@app.route('/api/login', methods=['POST'])
+def login_request():
+    code, message = auth.verify_account(request.json['username'], request.json['password'])
+    return jsonify({
+        'result': code, 
+        "message": message
     })
 
 if __name__ == '__main__':

@@ -2,8 +2,13 @@
 # Contact: Qixuan Zhong (zhongq7@mcmaster.ca)
 #
 ################################################
+debug = 1
+unit_testing = 0
 import random
-from lib.bot import Bot
+if unit_testing:
+    from bot import Bot
+else:
+    from lib.bot import Bot
 import json
 order = 'order'
 point = 'point'
@@ -13,7 +18,7 @@ color = 'color'
 text = 'text'
 host = 1
 guest = 0
-debug = 1
+
 DECK = [
   { order:1, point: 1, name: 'clubs-01', image: '/cards-image/clubs/clubs-01.svg.png', color: 'text-green-700', text: '1' },
   { order:2, point: 2, name: 'clubs-02', image: '/cards-image/clubs/clubs-02.svg.png', color: 'text-green-700', text: '2' },
@@ -120,7 +125,6 @@ class Match():
 
     def choose_stack(self, is_host: int) -> dict:
         self.latest_operation = 'stack'
-        print("host choose to draw stack")
         new_card = self.deck.pop()
         if is_host:
             print("host get stack, ", new_card["name"]) if debug else None
@@ -171,5 +175,32 @@ class Match():
             new_card = self.guest_cards[-1]
         return self.latest_player, self.latest_operation, self.drop_zone[-1], new_card
 
-#my_match = Match("aisdugf")
-#print(my_match.get_matchid() == "aisdugf")
+def unit_test():
+    my_match = Match("aisdugf")
+    #print(my_match.get_matchid() == "aisdugf")
+    my_match.get_latest_operation()
+    my_match.choose_stack(1)
+    my_match.drop_card(1, my_match.host_cards[0]["name"])
+    my_match.get_latest_operation()
+    my_match.choose_stack(1)
+    my_match.drop_card(1, my_match.host_cards[0]["name"])
+    my_match.get_latest_operation()
+    my_match.choose_stack(1)
+    my_match.drop_card(1, my_match.host_cards[0]["name"])
+    my_match.get_latest_operation()
+    my_match.choose_stack(1)
+    my_match.drop_card(1, my_match.host_cards[0]["name"])
+    my_match.get_latest_operation()
+    my_match.choose_stack(1)
+    my_match.drop_card(1, my_match.host_cards[0]["name"])
+    my_match.get_latest_operation()
+
+    for i in range(10):
+        my_match.choose_stack(1)
+        my_match.drop_card(1, my_match.host_cards[0]["name"])
+        my_match.get_latest_operation()
+
+    print(my_match.guest_cards)
+
+if unit_testing:
+    unit_test()

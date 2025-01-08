@@ -78,7 +78,7 @@ type CalcScoreCard = {
           }
         }
       }
-  
+
       return { runGroups, setGroups };
     };
   
@@ -89,6 +89,10 @@ type CalcScoreCard = {
   
     runGroups.sort((a, b) => b.meldsPoint - a.meldsPoint || b.melds.length - a.melds.length);
     setGroups.sort((a, b) => b.meldsPoint - a.meldsPoint || b.melds.length - a.melds.length);
+  
+    
+    console.log(runGroups, setGroups);
+      
   
     // 选择最佳的 Runs
     runGroups.forEach((runGroup) => {

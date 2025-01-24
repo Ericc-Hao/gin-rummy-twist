@@ -485,7 +485,7 @@ export default function DealCards() {
 
                 {p1DroppingCard && (
                   <motion.div
-                    initial={{ x: p1DroppingCard.index? -100 * (p1DroppingCard.index-5) : -100, y: -150, opacity: 1 }} 
+                    initial={{ x: p1DroppingCard.index? -100 * (p1DroppingCard.index-5) : -100, y: -150, opacity: 1, zIndex:100 }} 
                     animate={{ x: 60, y: 0, opacity: 1 }}
                     transition={{ duration: 0.6 }}
                     className="absolute"

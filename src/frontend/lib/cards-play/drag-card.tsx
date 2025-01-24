@@ -1,6 +1,3 @@
-// 
-
-
 import Image from 'next/image';
 import { playingStatus, passingStatus,DraggableCardProps,Card,ChatBubbleProps } from '../models/card-animation.model';
 

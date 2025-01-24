@@ -80,7 +80,6 @@ export default function DealCards() {
       //   { order:5, point: 5, name: 'clubs-05', image: '/cards-image/clubs/clubs-05.svg.png', color: 'text-green-700', text: '5'  },
       //   { order:4, point: 4, name: 'hearts-04', image: '/cards-image/Hearts/hearts-04.svg.png',color: 'text-red-600' , text: '4'   },
       // ]
-        
       // setPlayer2Cards(GinRummyScore(cards));
 
 

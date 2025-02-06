@@ -56,7 +56,7 @@ export default function homePage() {
                                 {StartButton("/ginrummy/newgame", "Start a New Game")}
                                 {StartButton("", "Continue a Game")}
                                 {StartButton("", "Start a Tutorial")}
-                                {StartButton("", "Play with a Friend")}
+                                {StartButton("/ginrummy/pvp", "Play with a Friend")}
                             </div>
                         </DrawerContent>
                     </Drawer>

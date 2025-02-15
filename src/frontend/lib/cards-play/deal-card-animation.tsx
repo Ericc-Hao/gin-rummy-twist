@@ -294,7 +294,7 @@ export default function DealCards() {
               //const [newCard, ...rest] = remainingCards;
               // setNextCard(newCard);
               //setRemainingCards(rest);
-              //setSendingNewCard('stack');
+              setSendingNewCard('stack');
               setP1Playing('toTake');
               //handleP1Pick()
               const new_card = { order:data["order_pick"], point: data["point_pick"], name: data["name_pick"], image: data["image_pick"], color: data["color_pick"], text: data["text_pick"] }

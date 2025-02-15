@@ -72,7 +72,7 @@ export function HeaderBar() {
 
     return (
         <header className="sticky top-0 z-990 w-full flex items-center justify-between px-4 py-2 flex-row ">
-            {pathname !== "/home" ? (
+            {pathname == "/ginrummy/newgame" && (
                 <div className='flex flex-row gap-2'>
                 <TooltipProvider>
                     <Tooltip delayDuration={0}>
@@ -130,7 +130,22 @@ export function HeaderBar() {
 
                 </div>
 
-            ) : (<div>HOME</div>)}
+            ) }
+
+            {pathname == "/home" && (
+                <div>HOME</div>
+            )}
+
+            {pathname == "/ginrummy/pvp" && (
+                <div>
+                    <Link href={"/home"}
+                          className="w-full text-center transition-transform duration-300 hover:opacity-75 pr-2" 
+                        >
+                        HOME
+                    </Link> 
+                        / PVP
+                </div>
+            )}
 
 
 

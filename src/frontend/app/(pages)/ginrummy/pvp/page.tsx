@@ -9,7 +9,7 @@ export default function pvp() {
                 <HeaderBar></HeaderBar>
     
         {/* <div className="w-full h-full flex">  */}
-        <div className="w-full pt-[100px] flex flex-col items-center justify-center">
+        <div className="w-full flex flex-col items-center justify-center">
             <PVP></PVP>
         </div>
         {/* </div> */}
@@ -46,65 +46,65 @@ import {
 
 export function PVP() {
     const [isCreatingNewRoom, setIsCreatingNewRoom] = useState(false);
-
-    const [currentTitle, setCurrentTitle] = useState('Join a Room')
-    const [currentButton, setCurrenButton] = useState('Join')
-
+    const [currentTitle, setCurrentTitle] = useState('Join a Room');
+    const [currentButton, setCurrenButton] = useState('Join');
 
     useEffect(() => {
         console.log(isCreatingNewRoom);
         if (isCreatingNewRoom) {
-            setCurrentTitle('Create a Room')
-            setCurrenButton('Create')
-        } else{
-            setCurrentTitle('Join a Room')
-            setCurrenButton('Join')
-
+            setCurrentTitle('Create a Room');
+            setCurrenButton('Create');
+        } else {
+            setCurrentTitle('Join a Room');
+            setCurrenButton('Join');
         }
-    }, [isCreatingNewRoom]); 
-
-    function handleButton(){
-        // if (isCreatingNewRoom) {
-        //     alert('Create')
-        // } else{
-        //     alert('Join')
-        // }
-    }
+    }, [isCreatingNewRoom]);
 
     function handleSwitch(checked: boolean) {
         setIsCreatingNewRoom(checked);
     }
-    
-    return (
-        <Card className="w-[350px]">
-            <CardHeader>
-                <CardTitle>{currentTitle}</CardTitle>
-                <CardDescription>Switch to create if you are the holder.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <form>
-                    <div className="grid w-full items-center gap-4">
-                        <div className="flex items-center space-x-2">
-                            <Switch
-                                id="isCreatingNewRoom"
-                                checked={isCreatingNewRoom} 
-                                onCheckedChange={handleSwitch} 
-                            />
-                            <Label htmlFor="isCreatingNewRoom">Create</Label>
-                        </div>
 
-                        <div className="flex flex-col space-y-1.5">
-                            <Label htmlFor="number">Room NO.</Label>
-                            <Input id="number" placeholder="Enter number" />
+    return (
+        <div
+            className="w-full flex items-center justify-center"
+            style={{ 
+                height: "calc(100vh - 52px)",
+                backgroundImage: "url('/main-image/main_6.png')",
+                backgroundSize: "cover",
+                backgroundPosition: "center"
+            }}
+        >
+            <Card className="w-[350px] bg-white bg-opacity-90 shadow-lg p-4">
+                <CardHeader>
+                    <CardTitle>{currentTitle}</CardTitle>
+                    <CardDescription>Switch to create if you are the holder.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <form>
+                        <div className="grid w-full items-center gap-4">
+                            <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="isCreatingNewRoom"
+                                    checked={isCreatingNewRoom}
+                                    onCheckedChange={handleSwitch}
+                                />
+                                <Label htmlFor="isCreatingNewRoom">Create</Label>
+                            </div>
+
+                            <div className="flex flex-col space-y-1.5">
+                                <Label htmlFor="number">Room NO.</Label>
+                                <Input id="number" placeholder="Enter number" />
+                            </div>
                         </div>
-                    </div>
-                </form>
-            </CardContent>
-            <CardFooter className="flex justify-between">
-                <Button variant={'outline'}>Back</Button>
-                <Button onClick={handleButton}>{currentButton}</Button>
-            </CardFooter>
-        </Card>
+                    </form>
+                </CardContent>
+                <CardFooter className="flex justify-between">
+                    <Button variant={'outline'}>Back</Button>
+                    <Button>{currentButton}</Button>
+                </CardFooter>
+            </Card>
+        </div>
     );
 }
+
 

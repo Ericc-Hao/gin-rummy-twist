@@ -1,9 +1,9 @@
 "use client"
 
-// import { useSelector, useDispatch } from 'react-redux';
-// // import {  setUserInfo } from '@shared-store/slices/user';
-// import { AppDispatch, RootState } from '@shared-store/index'; 
-// import { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import {  setUserInfo } from '@shared-store/slices/user';
+import { AppDispatch, RootState } from '@shared-store/index'; 
+import { useEffect, useState } from 'react';
 
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -17,6 +17,8 @@ import {
   } from "@/components/ui/drawer"
   import { DialogTitle, DialogDescription } from "@radix-ui/react-dialog"; 
   import { VisuallyHidden } from "@radix-ui/react-visually-hidden"; 
+
+  import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 
 
@@ -32,11 +34,11 @@ export default function homePage() {
     return(
         <div className='h-full w-full '>
             <HeaderBar></HeaderBar>
-            <div className='flex felx-col items-center justify-center w-full flex-1 pt-[100px]'>
-                <div className="group relative flex flex-col w-[90%] h-[500px]  rounded-lg shadow-lg transition-all duration-300 ease-in-out">
+            <div className='flex felx-col items-center justify-center w-full flex-1 pt-[50px]'>
+                <div className="group relative flex flex-col w-[90%] h-[700px]  rounded-lg shadow-lg transition-all duration-300 ease-in-out">
                     <div className="flex h-full w-full">
-                        <Image  src="/main-image/home-4.jpg"
-                                alt="home-1"
+                        <Image  src="/main-image/main_6.png"
+                                alt="main_6"
                                 layout="fill"
                                 objectFit="cover"
                                 style={{ borderRadius: '4px', zIndex:-1 }}
@@ -54,8 +56,8 @@ export default function homePage() {
                             </VisuallyHidden>
                             <div className='flex flex-col w-[300px] gap-4 m-4 '>
                                 {StartButton("/ginrummy/newgame", "Start a New Game")}
-                                {StartButton("", "Continue a Game")}
-                                {StartButton("", "Start a Tutorial")}
+                                {/* {StartButton("", "Continue a Game")} */}
+                                {/* {StartButton("", "Start a Tutorial")} */}
                                 {StartButton("/ginrummy/pvp", "Play with a Friend")}
                             </div>
                         </DrawerContent>
@@ -66,16 +68,40 @@ export default function homePage() {
     )
 }
 
-function StartButton(href: string, name: string) {
+
+
+export function StartButton(href: string, name: string) {
+    const dispatch = useDispatch<AppDispatch>();
+    const user = useSelector((state: RootState) => state.user);
+    
+    const isDisabled = name == 'Play with a Friend' && (!user || user.username === '');
+    // const isDisabled = false;
+
+
     return (
-      <Button asChild className="w-full">
-        <Link
-          href={href}
-          className="w-full text-center transition-transform duration-300 hover:opacity-75" 
-        >
-          {name}
-        </Link>
-      </Button>
+        <TooltipProvider >
+            <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                    <div className="w-full">
+                        <Button asChild className="w-full" disabled={isDisabled}>
+                            <Link
+                                href={href}
+                                className={`w-full text-center transition-transform duration-300 hover:opacity-75 ${
+                                    isDisabled ? "pointer-events-none opacity-50" : ""
+                                }`}
+                            >
+                                {name}
+                            </Link>
+                        </Button>
+                    </div>
+                </TooltipTrigger>
+                {isDisabled && (
+                    <TooltipContent className='bg-gray-400'>
+                        <span  >Please Log in First</span>
+                    </TooltipContent>
+                )}
+            </Tooltip>
+        </TooltipProvider>
     );
-  }
+}
 

@@ -94,7 +94,7 @@ export function HeaderBar() {
                                 </DialogDescription>
                             </DialogHeader>
                             <div className='flex flex-col w-[300px] gap-4 m-4 '>
-                                    {StartButton('/home', "Save and Leave")}
+                                    {/* {StartButton('/home', "Save and Leave")} */}
                                     {StartButton('/home', "Leave (without save)")}
                                     {StartButton('/ginrummy/newgame', "Restart")}
                                     <Button variant="ghost" onClick={() => setOpenPauseDialog(false)}>Cancel</Button>
@@ -121,7 +121,7 @@ export function HeaderBar() {
                             <Button size="icon" variant={game.showSideBar === 'Grades' ? "secondary" : "ghost"} onClick={() => {changeShowSideBar('Grades')}}><ArchiveIcon  className="h-4 w-4" /></Button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" align="center" className="bg-black text-white px-3 py-2 rounded-md shadow-lg flex" style={{ zIndex: 1000 }}>
-                            <p>Grades</p>
+                            <p>Points</p>
                         </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>

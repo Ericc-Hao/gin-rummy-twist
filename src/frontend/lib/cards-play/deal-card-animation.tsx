@@ -33,7 +33,7 @@ function getRandomCards(cards: Card[]): Card[] {
   return [...cards].sort(() => 0.5 - Math.random()); // set random rards
   
 }
-
+const host = prompt('Please Enter IS_HOST');
 export default function DealCards() {
   const [dealing, setDealing] = useState(false);
   const [currentPass, setCurrentPass] = useState<passingStatus>(null)
@@ -55,7 +55,7 @@ export default function DealCards() {
   // get random stack of cards (shuffle the card)
   const shuffledCards = getRandomCards(CARDS); 
   const initialCardsNumber = 24
-  const host = 1
+  //const host = 1
 
   function resetAll(){
     setDealing(false)
@@ -261,7 +261,25 @@ export default function DealCards() {
   
     // P1自动出牌
     async function handleP1Play() {
-      
+      var ready = false;
+      while (ready == false){
+        console.log(ready)
+        await fetch("http://localhost:8080/api/match_move", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            host: host,
+            matchid: matchID,
+            move: 'opponent_status'})
+        }).then((response) => response.json())
+        .then((data) => {
+          ready = data["result"] == 0
+          console.log(data["result"])
+          console.log(ready)
+        })
+      }
       await fetch("http://localhost:8080/api/match_move", {
         method: "POST",
         headers: {

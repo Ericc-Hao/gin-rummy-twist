@@ -127,12 +127,33 @@ def move_request():
             "message": "OK"
         })
 
+    if request.json['move'] == "opponent_status":
+        sleep(1)
+        last_player, last_op, last_card, last_picked_card = target_match.get_latest_operation()
+        print(last_player, request.json['host'], last_op, last_card, last_picked_card)
+        if last_player == request.json['host']:
+            print("return 1")
+            return jsonify({
+                'result': 1, 
+                "message": "Still Waiting",
+            })
+        print("return 0")
+        return jsonify({
+            'result': 0, 
+                "message": "Ready",
+        })
+        
     if request.json['move'] == "wait_opponent":
+        last_player, last_op, last_card, last_picked_card = target_match.get_latest_operation()
+        """
         last_player = request.json['host']
-        while last_player == request.json['host']:
-            last_player, last_op, last_card, last_picked_card = target_match.get_latest_operation()
-            print(last_player, last_op, last_card, last_picked_card)
-            sleep(1)
+        if last_player == request.json['host']:
+            
+            print(last_player, request.json['host'], last_op, last_card, last_picked_card)
+            return jsonify({
+                'result': 1, 
+                "message": "Still Waiting",
+            })"""
         return jsonify({
             'result': 0, 
             "message": "OK",

@@ -16,8 +16,8 @@ name = 'name'
 image = 'image'
 color = 'color'
 text = 'text'
-host = 1
-guest = 0
+host = "1"
+guest = "0"
 
 DECK = [
   { order:1, point: 1, name: 'clubs-01', image: '/cards-image/clubs/clubs-01.svg.png', color: 'text-green-700', text: '1' },
@@ -101,7 +101,8 @@ class Match():
         random.shuffle(self.deck)
         self.drop_zone.append(self.deck.pop())
         self.initial_cards.append(self.drop_zone[-1])
-        self.Bot = Bot()
+        #self.Bot = Bot()
+        self.Bot = None
         for _ in range(12):
             self.host_cards.append(self.deck.pop())
             self.guest_cards.append(self.deck.pop())
@@ -123,10 +124,11 @@ class Match():
     def get_initial_cards(self) -> list:
         return self.initial_cards
 
-    def choose_stack(self, is_host: int) -> dict:
+    def choose_stack(self, is_host: str) -> dict:
+        print(is_host == 1)
         self.latest_operation = 'stack'
         new_card = self.deck.pop()
-        if is_host:
+        if is_host == "1":
             print("host get stack, ", new_card["name"]) if debug else None
             self.host_cards.append(new_card)
         else:
@@ -134,10 +136,10 @@ class Match():
             self.guest_cards.append(new_card)
         return new_card
     
-    def choose_drop_zone(self, is_host: int) -> dict:
+    def choose_drop_zone(self, is_host: str) -> dict:
         self.latest_operation = 'dropzone'
         new_card = self.drop_zone.pop()
-        if is_host:
+        if is_host == "1":
             print("host get drop zone, ", new_card["name"]) if debug else None
             self.host_cards.append(new_card)
         else:
@@ -146,8 +148,8 @@ class Match():
         return new_card
 
     
-    def drop_card(self, is_host: int, card_name: str) -> dict: 
-        if is_host:
+    def drop_card(self, is_host: str, card_name: str) -> dict: 
+        if is_host == "1":
             for i in range(len(self.host_cards)):
                 if self.host_cards[i]["name"] == card_name:
                     self.drop_zone.append(self.host_cards.pop(i))
@@ -172,7 +174,7 @@ class Match():
                 self.choose_drop_zone(guest)
             dropIndex = self.Bot.bot_drop(self.guest_cards)
             self.drop_card(guest, self.guest_cards[dropIndex]["name"])
-            new_card = self.guest_cards[-1]
+        new_card = self.guest_cards[-1]
         return self.latest_player, self.latest_operation, self.drop_zone[-1], new_card
 
 def unit_test():

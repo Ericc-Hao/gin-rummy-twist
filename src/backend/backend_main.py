@@ -46,13 +46,40 @@ def match_start_request():
         match_id = ''.join(random.choices("abcdefghijklmnopqrstuvwxyz", k=4))
         print(match_id)
     ongoing_matches[match_id] = Match(match_id)
-    init_cards = ongoing_matches[match_id].get_initial_cards()
+
+ 
     code, message = 0, "OK"
     return jsonify({
         'result': code, 
         'message': message,
         'match_id': match_id,
-        
+    })
+
+
+@app.route('/api/add_bot', methods=['POST'])
+def add_bot_request():
+    code, message = 0, "OK"
+    return jsonify({
+        'result': code, 
+        "message": message
+    })
+
+@app.route('/api/match_move', methods=['POST', 'GET'])
+def move_request():
+    print(request.json)
+    target_match = ongoing_matches.get(request.json['matchid'])
+    
+    if target_match == None:
+        return jsonify({
+            'result': 1, 
+            "message": "Match not found"
+        })
+    
+    if request.json['move'] == "init":
+        init_cards = target_match.get_initial_cards()
+        return jsonify({
+        'result': 0, 
+        'message': "ok",
         'order0':init_cards[0]["order"], 'point0':init_cards[0]["point"], 'name0':init_cards[0]["name"], 'image0':init_cards[0]["image"], 'color0':init_cards[0]["color"], 'text0':init_cards[0]["text"],
         'order1':init_cards[1]["order"], 'point1':init_cards[1]["point"], 'name1':init_cards[1]["name"], 'image1':init_cards[1]["image"], 'color1':init_cards[1]["color"], 'text1':init_cards[1]["text"],
         'order2':init_cards[2]["order"], 'point2':init_cards[2]["point"], 'name2':init_cards[2]["name"], 'image2':init_cards[2]["image"], 'color2':init_cards[2]["color"], 'text2':init_cards[2]["text"],
@@ -78,28 +105,7 @@ def match_start_request():
         'order22':init_cards[22]["order"], 'point22':init_cards[22]["point"], 'name22':init_cards[22]["name"], 'image22':init_cards[22]["image"], 'color22':init_cards[22]["color"], 'text22':init_cards[22]["text"],
         'order23':init_cards[23]["order"], 'point23':init_cards[23]["point"], 'name23':init_cards[23]["name"], 'image23':init_cards[23]["image"], 'color23':init_cards[23]["color"], 'text23':init_cards[23]["text"],
         'order24':init_cards[24]["order"], 'point24':init_cards[24]["point"], 'name24':init_cards[24]["name"], 'image24':init_cards[24]["image"], 'color24':init_cards[24]["color"], 'text24':init_cards[24]["text"],                                                                                                                                                                                                    
-    })
-
-
-@app.route('/api/add_bot', methods=['POST'])
-def add_bot_request():
-    code, message = 0, "OK"
-    return jsonify({
-        'result': code, 
-        "message": message
-    })
-
-@app.route('/api/match_move', methods=['POST', 'GET'])
-def move_request():
-    print(request.json)
-    target_match = ongoing_matches.get(request.json['matchid'])
-    
-    if target_match == None:
-        return jsonify({
-            'result': 1, 
-            "message": "Match not found"
         })
-    
     if request.json['move'] == "stack":
         new_card = target_match.choose_stack(request.json['host'])
         return jsonify({

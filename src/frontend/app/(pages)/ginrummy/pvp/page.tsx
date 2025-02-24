@@ -3,23 +3,8 @@
 import { HeaderBar } from '@/lib/my-components/header-bar';
 
 
-export default function pvp() {
-  return (
-    <div className='w-full '>
-                <HeaderBar></HeaderBar>
-    
-        {/* <div className="w-full h-full flex">  */}
-        <div className="w-full flex flex-col items-center justify-center">
-            <PVP></PVP>
-        </div>
-        {/* </div> */}
-    </div>
-  );
-}
-
-
-import * as React from "react"
 import { useState,useEffect, useRef } from 'react';
+import * as React from "react"
 
 
 import { Button } from "@/components/ui/button"
@@ -36,15 +21,21 @@ import { Label } from "@/components/ui/label"
 // import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
-export function PVP() {
+export default function PVPPage() {
+  return (
+    <div className='w-full '>
+                <HeaderBar></HeaderBar>
+        <div className="w-full flex flex-col items-center justify-center">
+            <JoinCard></JoinCard>
+        </div>
+        {/* </div> */}
+    </div>
+  );
+}
+
+
+function JoinCard() {
     const [isCreatingNewRoom, setIsCreatingNewRoom] = useState(false);
     const [currentTitle, setCurrentTitle] = useState('Join a Room');
     const [currentButton, setCurrenButton] = useState('Join');

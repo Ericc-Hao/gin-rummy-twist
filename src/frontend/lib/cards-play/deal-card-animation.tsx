@@ -320,7 +320,7 @@ export default function DealCards() {
 
         // mock P1 出牌
         setTimeout(() => {
-          var dropIndex = 1;
+          let dropIndex = 1;
           if (player1Cards.cards.length > 0) {
             for (let i = 0; i < player1Cards.cards.length; i++) {
               if (player1Cards.cards[i].name == dropCard.name) {

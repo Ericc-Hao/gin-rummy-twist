@@ -39,8 +39,8 @@ jobs:
             --region us-east1 \
             --allow-unauthenticated \
             --port 8000 \
-            --memory 8Gi \
-            --cpu 4
+            --memory 10Gi \
+            --cpu 5
 
   comment:
     runs-on: ubuntu-latest
@@ -56,5 +56,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: "🚀 Backend Deployment succeeded! Check the API at **${{ env.BACKEND_URL }}**"
+              body: "🚀 Backend Deployment succeeded! Check the changes at [backend.ginrummys.ca](https://backend.ginrummys.ca/)"
             })

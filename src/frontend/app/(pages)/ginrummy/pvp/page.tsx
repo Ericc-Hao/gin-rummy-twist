@@ -60,12 +60,12 @@ function JoinCard() {
             className="w-full flex items-center justify-center"
             style={{ 
                 height: "calc(100vh - 52px)",
-                backgroundImage: "url('/main-image/main_6.png')",
+                backgroundImage: "url('/main-image/poster.jpg')",
                 backgroundSize: "cover",
                 backgroundPosition: "center"
             }}
         >
-            <Card className="w-[350px] bg-white bg-opacity-90 shadow-lg p-4">
+            <Card className="w-[350px] bg-white bg-opacity-95 shadow-lg p-4 border-spacing-1">
                 <CardHeader>
                     <CardTitle>{currentTitle}</CardTitle>
                     <CardDescription>Switch to create if you are the holder.</CardDescription>

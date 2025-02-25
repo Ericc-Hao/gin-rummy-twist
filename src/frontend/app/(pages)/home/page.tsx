@@ -37,8 +37,8 @@ export default function homePage() {
             <div className='flex felx-col items-center justify-center w-full flex-1 pt-[50px]'>
                 <div className="group relative flex flex-col w-[90%] h-[700px]  rounded-lg shadow-lg transition-all duration-300 ease-in-out">
                     <div className="flex h-full w-full">
-                        <Image  src="/main-image/main_6.png"
-                                alt="main_6"
+                        <Image  src="/main-image/poster.jpg"
+                                alt="poster"
                                 layout="fill"
                                 objectFit="cover"
                                 style={{ borderRadius: '4px', zIndex:-1 }}

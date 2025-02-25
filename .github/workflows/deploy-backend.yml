@@ -40,7 +40,7 @@ jobs:
             --allow-unauthenticated \
             --port 8000 \
             --memory 10Gi \
-            --cpu 5
+            --cpu 4
 
   comment:
     runs-on: ubuntu-latest

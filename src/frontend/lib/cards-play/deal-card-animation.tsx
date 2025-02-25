@@ -29,7 +29,7 @@ import { AvatarDisplay,ChatBubble  } from '@my-components/avatar'
 import { start } from 'repl';
 import { drop } from 'lodash';
 
-const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
+const backend_url = "https://backend.ginrummys.ca";
 
 function getRandomCards(cards: Card[]): Card[] {
   return [...cards].sort(() => 0.5 - Math.random()); // set random rards

@@ -25,7 +25,7 @@ import { AppDispatch } from '@shared-store/index';
 
 import { useRouter } from "next/navigation"
 
-const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
+const backend_url = "https://backend.ginrummys.ca";
 
 const formSchema = z.object({
   username: z.string().min(2, {

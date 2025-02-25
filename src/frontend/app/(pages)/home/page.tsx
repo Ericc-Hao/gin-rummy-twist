@@ -15,14 +15,14 @@ import {
     DrawerContent,
     DrawerTrigger,
   } from "@/components/ui/drawer"
-  import { DialogTitle, DialogDescription } from "@radix-ui/react-dialog"; 
-  import { VisuallyHidden } from "@radix-ui/react-visually-hidden"; 
+import { DialogTitle, DialogDescription } from "@radix-ui/react-dialog"; 
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden"; 
 
-  import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
-
-
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 export default function homePage() {
+
+    const backend_url = process.env.NEXT_PUBLIC_BACKEND_URL || "https://backend.ginrummys.ca";
 
     // 不要删
     // const dispatch = useDispatch<AppDispatch>();

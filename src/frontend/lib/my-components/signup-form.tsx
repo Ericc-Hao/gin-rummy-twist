@@ -23,6 +23,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { useEffect } from "react";
 
+const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
 const formSchema = z
   .object({
     username: z.string().min(2, {
@@ -59,7 +60,7 @@ export function SignUpForm() {
     console.log(values)
     console.log("sign up success")
     // On submit, send a POST request to backend server to communicate the request.
-    fetch("http://localhost:8080/api/signup", {
+    fetch(`${backend_url}/api/signup`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

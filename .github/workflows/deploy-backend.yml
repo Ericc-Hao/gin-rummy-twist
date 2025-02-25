@@ -1,0 +1,60 @@
+name: Deploy Backend to Google Cloud Run using Artifact Registry
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'src/backend/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Configure Docker for Google Artifact Registry
+        run: gcloud auth configure-docker us-east1-docker.pkg.dev
+
+      - name: Build and Push Backend Docker Image
+        run: |
+          IMAGE_NAME="us-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gin-rummy/backend/flask-app:${{ github.sha }}"
+          docker build -t $IMAGE_NAME ./src/backend
+          docker push $IMAGE_NAME
+
+      - name: Deploy Backend to Google Cloud Run
+        id: deploy
+        run: |
+          gcloud run deploy gin-rummy-backend \
+            --image us-east1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/gin-rummy/backend/flask-app:${{ github.sha }} \
+            --platform managed \
+            --region us-east1 \
+            --allow-unauthenticated \
+            --port 8000 \
+            --memory 10Gi \
+            --cpu 4
+
+  comment:
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: success()
+    steps:
+      - name: Post a comment on PR
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "🚀 Backend Deployment succeeded! Check the changes at [backend.ginrummys.ca](https://backend.ginrummys.ca/)"
+            })

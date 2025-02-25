@@ -4,7 +4,7 @@ import ClientProvider from '@shared-store/ClientProvider'
 
 
 export const metadata: Metadata = {
-  title: 'Cookie Gin Rummy',
+  title: 'Gin Rummy Dozenal',
 };
 
 export default function RootLayout({

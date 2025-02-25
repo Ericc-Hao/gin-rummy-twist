@@ -29,6 +29,8 @@ import { AvatarDisplay,ChatBubble  } from '@my-components/avatar'
 import { start } from 'repl';
 import { drop } from 'lodash';
 
+const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
+
 function getRandomCards(cards: Card[]): Card[] {
   return [...cards].sort(() => 0.5 - Math.random()); // set random rards
   
@@ -65,7 +67,7 @@ export default function DealCards() {
     const initialCards: Card[] = [];
     const p1Cards: Card[] = [];
     const p2Cards: Card[] = [];
-    await fetch("http://localhost:8080/api/match_create").then((response) => response.json()).then((data) => {
+    await fetch(`${backend_url}/api/match_create`).then((response) => response.json()).then((data) => {
        setMatchID(data['match_id'])
        setDropZoneCards([{ order:data["order0"], point: data["point0"], name: data["name0"], image: data["image0"], color: data["color0"], text: data["text0"] }])
        p1Cards.push({ order:data["order1"], point: data["point1"], name: data["name1"], image: data["image1"], color: data["color1"], text: data["text1"] })
@@ -102,7 +104,7 @@ export default function DealCards() {
 
   async function get_card_from_stack(is_P2: boolean){
     //fetch a new card
-    await fetch("http://localhost:8080/api/match_move", {
+    await fetch(`${backend_url}/api/match_move`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -197,7 +199,7 @@ export default function DealCards() {
           setCurrentPass(null)
         }
         if (dropZoneCards && dropZoneCards.length > 0) {
-          await fetch("http://localhost:8080/api/match_move", {
+          await fetch(`${backend_url}/api/match_move`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -242,7 +244,7 @@ export default function DealCards() {
           const updatedCards = [...player2Cards.cards];
           updatedCards.splice(item.index, 1);
           setPlayer2Cards(GinRummyScore(updatedCards));
-          await fetch("http://localhost:8080/api/match_move", {
+          await fetch(`${backend_url}/api/match_move`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -261,8 +263,7 @@ export default function DealCards() {
   
     // P1自动出牌
     async function handleP1Play() {
-      
-      await fetch("http://localhost:8080/api/match_move", {
+      await fetch(`${backend_url}/api/match_move`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

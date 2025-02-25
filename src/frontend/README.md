@@ -3,6 +3,7 @@
 First, run the development server:
 
 ```bash
+source .env.local
 npm run dev
 ```
 

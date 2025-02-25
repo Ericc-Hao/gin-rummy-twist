@@ -12,7 +12,7 @@ Welcome to "Gin Rummy, With a Twist"! This project is a digital recreation of th
 
 ## Tech Stack
 - **Frontend**: Next.js, Redux, Shadcn/ui for a responsive and dynamic user interface.
-- **Backend**: Spring Boot for API and game logic, PostgreSQL for database management.
+- **Backend**: Flask for API and game logic, PostgreSQL for database management.
 - **Hosting**: Deployed on Google Cloud Platform for scalability and availability.
 
 ## Contribute

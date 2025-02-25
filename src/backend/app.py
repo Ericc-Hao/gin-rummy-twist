@@ -1,15 +1,25 @@
 from time import sleep
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 from lib.authentication import Authentication
 from lib.match import Match
 import random
+import datetime
 
 app = Flask(__name__)
 CORS(app)
 
+
+
 auth = Authentication()
 ongoing_matches = {}
+server_start_time = datetime.datetime.now()
+
+@app.route("/")
+def index():
+    return render_template("status.html", 
+                           version = "0.0.1-rc0",
+                           start_time = server_start_time.timestamp())
 
 @app.route('/api/signup', methods=['POST'])
 def signup_request():

@@ -70,7 +70,7 @@ export default function homePage() {
 
 
 
-export function StartButton(href: string, name: string) {
+function StartButton(href: string, name: string) {
     const dispatch = useDispatch<AppDispatch>();
     const user = useSelector((state: RootState) => state.user);
     

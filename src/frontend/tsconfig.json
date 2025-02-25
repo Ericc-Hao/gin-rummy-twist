@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -18,15 +22,39 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "@cards-play":["./lib/cards-play/*"],
-      "@data":["./lib/data/*"],
-      "@models":["./lib/models/*"],
-      "@my-components*": ["./lib/my-components/*"],
-      "@shared-store/*": ["./lib/shared-store/*"],
-      "@components*": ["./components/*"],
-    }
+      "@/*": [
+        "./*"
+      ],
+      "@cards-play": [
+        "./lib/cards-play/*"
+      ],
+      "@data": [
+        "./lib/data/*"
+      ],
+      "@models": [
+        "./lib/models/*"
+      ],
+      "@my-components*": [
+        "./lib/my-components/*"
+      ],
+      "@shared-store/*": [
+        "./lib/shared-store/*"
+      ],
+      "@components*": [
+        "./components/*"
+      ]
+    },
+    "target": "ES2017"
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "shared-store/index.js", ".next/types/app/(pages)/ginrummy/newgame/page.tsx"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    "shared-store/index.js",
+    ".next/types/app/(pages)/ginrummy/newgame/page.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

@@ -67,7 +67,7 @@ export default function DealCards() {
     const initialCards: Card[] = [];
     const p1Cards: Card[] = [];
     const p2Cards: Card[] = [];
-    await fetch(`${backend_url}/api/match_create`).then((response) => response.json()).then((data) => {
+    await fetch(`${backend_url}/api/match_start`).then((response) => response.json()).then((data) => {
        setMatchID(data['match_id'])
        setDropZoneCards([{ order:data["order0"], point: data["point0"], name: data["name0"], image: data["image0"], color: data["color0"], text: data["text0"] }])
        p1Cards.push({ order:data["order1"], point: data["point1"], name: data["name1"], image: data["image1"], color: data["color1"], text: data["text1"] })

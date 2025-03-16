@@ -71,7 +71,7 @@ def match_create_request():
         'message': "OK",
         'match_id': match_id,})
 
-@app.route('/api/room_status', methods=['GET'])
+@app.route('/api/room_status', methods=['POST'])
 def check_room_status():
     match_id = request.json['matchid']
     if not match_id in rooms():

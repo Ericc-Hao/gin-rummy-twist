@@ -38,3 +38,25 @@ export async function joinRoom(matchID: string): Promise<JoinRoomResponse> {
     return { result: -1, message: "Join failed due to network error" };
   }
 }
+
+export interface RoomStatusResponse {
+  result: number;
+  message: string;
+}
+
+export async function checkRoomStatus(matchID: string): Promise<RoomStatusResponse> {
+  try {
+    const response = await fetch(`${backend_url}/api/room_status`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ matchid: matchID })
+    });
+    const data = await response.json();
+    return { result: data.result, message: data.message };
+  } catch (err) {
+    console.error("Failed to check room status", err);
+    return { result: -1, message: "Network error" };
+  }
+}

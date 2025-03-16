@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 // import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import  { createRoom, joinRoom } from "@/lib/match_formation/match_formation";
+import  { createRoom, joinRoom, checkRoomStatus } from "@/lib/match_formation/match_formation";
 
 
 export default function PVPPage() {
@@ -44,6 +44,8 @@ function JoinCard() {
 
     const [actionMessage, setActionMessage] = useState<string | null>(null);
 
+    const [ableToStart, setAbleToStart] = useState<boolean>(false)
+
 
     useEffect(() => {
         console.log(isCreatingNewRoom);
@@ -56,10 +58,34 @@ function JoinCard() {
         }
     }, [isCreatingNewRoom]);
 
+    useEffect(() => {
+        let intervalId: NodeJS.Timeout;
+      
+        if (createdRoomID && isCreatingNewRoom) {
+          intervalId = setInterval(async () => {
+            const status = await checkRoomStatus(createdRoomID);
+            console.log("Room status checked:", status);
+            // setActionMessage(status.message);
+      
+            if (status.result === 0) {
+              // Second player has joined, stop polling
+              clearInterval(intervalId);
+              setActionMessage("Second player has joined. You can now start!");
+              setAbleToStart(true)
+            }
+          }, 2000); // every 2 seconds
+        }
+      
+        return () => {
+          if (intervalId) clearInterval(intervalId); // cleanup on unmount or mode change
+        };
+      }, [createdRoomID, isCreatingNewRoom]);
+
     function handleSwitch(checked: boolean) {
         setIsCreatingNewRoom(checked);
         setRoomNumber(""); 
         setActionMessage(null); 
+        setAbleToStart(false)
     }
 
     async function handleJoinOrClick(status: string) {
@@ -150,7 +176,7 @@ function JoinCard() {
                         </Button>
                         </div>
                     ) : (
-                        <Button className="ml-auto" >Start</Button>
+                        <Button className="ml-auto" disabled={!ableToStart}>Start</Button>
                     )}
                 </CardFooter>
 

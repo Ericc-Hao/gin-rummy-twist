@@ -47,7 +47,7 @@ def login_request():
 def join_request():
     match_id = request.json['matchid']
     code, message = 0, "OK"
-    if not match_id in rooms():
+    if not match_id in rooms.keys():
         code, message = 420, "Room Not Found"
     if rooms[match_id]:
         code, message = 421, "Room Already Full"

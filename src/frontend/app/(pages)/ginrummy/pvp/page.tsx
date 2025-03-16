@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 // import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import MatchFormation from "@/lib/match_formation/match_formation";
 
 
 export default function PVPPage() {
@@ -84,7 +85,9 @@ function JoinCard() {
 
                             <div className="flex flex-col space-y-1.5">
                                 <Label htmlFor="number">Room NO.</Label>
-                                <Input id="number" placeholder="Enter number" />
+                                { isCreatingNewRoom && <MatchFormation />} 
+                                { ! isCreatingNewRoom && <Input id="number" placeholder="Enter number" />}
+                                
                             </div>
                         </div>
                     </form>

@@ -13,6 +13,8 @@ CORS(app)
 
 auth = Authentication()
 ongoing_matches = {}
+rooms = {}
+
 server_start_time = datetime.datetime.now()
 
 @app.route("/")
@@ -43,18 +45,49 @@ def login_request():
 
 @app.route('/api/join', methods=['POST'])
 def join_request():
+    match_id = request.json['matchid']
     code, message = 0, "OK"
+    if not match_id in rooms():
+        code, message = 420, "Room Not Found"
+    if rooms[match_id]:
+        code, message = 421, "Room Already Full"
+    else:
+        code, message = 200, "Joined"
+        rooms[match_id] = True
     return jsonify({
         'result': code, 
         "message": message
     })
 
 @app.route('/api/match_create', methods=['GET'])
-def match_start_request():
+def match_create_request():
     match_id = "test"
-    if match_id in ongoing_matches:
+    if match_id in rooms:
         match_id = ''.join(random.choices("abcdefghijklmnopqrstuvwxyz", k=4))
         print(match_id)
+    rooms[match_id] = False
+    return jsonify({
+        'result': 0, 
+        'message': "OK",
+        'match_id': match_id,})
+
+@app.route('/api/room_status', methods=['GET'])
+def check_room_status():
+    match_id = request.json['matchid']
+    if not match_id in rooms():
+        code, message = 1, "Room Not Found"
+    if rooms[match_id]:
+        code, message = 0, "Second Player Joined"
+    else:
+        code, message = 2, "Second Player not yet joined"
+    return jsonify({
+        'result': code, 
+        "message": message
+    })
+
+@app.route('/api/match_start', methods=['GET'])
+def match_start_request():
+    match_id = request.json['matchid']
     ongoing_matches[match_id] = Match(match_id)
     init_cards = ongoing_matches[match_id].get_initial_cards()
     code, message = 0, "OK"

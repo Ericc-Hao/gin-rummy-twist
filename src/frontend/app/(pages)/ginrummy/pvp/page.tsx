@@ -58,12 +58,23 @@ function JoinCard() {
 
     function handleSwitch(checked: boolean) {
         setIsCreatingNewRoom(checked);
+        setRoomNumber(""); 
+        setActionMessage(null); 
     }
 
     async function handleJoinOrClick(status: string) {
         if (status === "Join") {
           const joinResult = await joinRoom(roomNumber);
-          setActionMessage(joinResult.message); 
+       
+          
+            // ✅ 如果 Join 成功，设定 room 状态
+            if (joinResult.result === 200) {
+                setCreatedRoomID(roomNumber);
+                setActionMessage(joinResult.message); 
+            } else {
+                alert(joinResult.message)
+            }
+
         } else if (status === "Create") {
           const newMatchID = await createRoom(); 
           if (newMatchID) {
@@ -90,13 +101,13 @@ function JoinCard() {
             <Card className="w-[350px] bg-white bg-opacity-95 shadow-lg p-4 border-spacing-1">
                 <CardHeader>
                     <CardTitle>{currentTitle}</CardTitle>
-                    {!roomNumber && <CardDescription>Switch to create if you are the holder.</CardDescription>}
+                    {!createdRoomID && <CardDescription>Switch to create if you are the holder.</CardDescription>}
                 </CardHeader>
                 <CardContent>
                     {actionMessage ? (
                         <div>
                             <div className="text-center text-gray-800 font-semibold text-sm">Room Number: </div>
-                            <div className="text-3xl font-bold text-center text-amber-900 my-4">{roomNumber}</div>
+                            <div className="text-3xl font-bold text-center text-amber-900 my-4">{createdRoomID}</div>
                             <div className="text-center text-gray-800 font-semibold text-sm"> {actionMessage}</div>
                         </div>
                   
@@ -128,10 +139,15 @@ function JoinCard() {
                 </CardContent>
 
                 <CardFooter className="flex justify-between">
-                    {!roomNumber ? (
+                    {!createdRoomID ? (
                         <div className="flex justify-between w-full">
                         <Button variant={'outline'}>Back</Button>
-                        <Button onClick={() => handleJoinOrClick(currentButton)}>{currentButton}</Button>
+                        <Button
+                            onClick={() => handleJoinOrClick(currentButton)}
+                            disabled={!isCreatingNewRoom && roomNumber.trim() === ""}
+                            >
+                            {currentButton}
+                        </Button>
                         </div>
                     ) : (
                         <Button className="ml-auto" >Start</Button>

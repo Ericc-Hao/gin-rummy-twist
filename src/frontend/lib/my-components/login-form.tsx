@@ -25,6 +25,8 @@ import { AppDispatch } from '@shared-store/index';
 
 import { useRouter } from "next/navigation"
 
+const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
+
 const formSchema = z.object({
   username: z.string().min(2, {
     message: "Username must be at least 2 characters.",
@@ -44,7 +46,7 @@ export function LogInForm() {
 
   const onLogin = async (data: z.infer<typeof formSchema>) => {
     console.log("login data: ", data); //TO BE DELETED
-    await fetch("http://localhost:8080/api/login", {
+    await fetch(`${backend_url}/api/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

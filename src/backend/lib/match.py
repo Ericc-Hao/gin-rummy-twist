@@ -89,7 +89,7 @@ DECK = [
   { order:16, point: 12, name: 'spades-K', image: '/cards-image/spades/Spades-K.svg.png',color: 'text-black' , text: 'K'  },
 ]
 class Match():
-    def __init__(self, match_id: str):
+    def __init__(self, match_id: str, bot: bool = False):
         self.match_id = match_id
         self.deck = DECK.copy()
         self.drop_zone = []
@@ -101,7 +101,8 @@ class Match():
         random.shuffle(self.deck)
         self.drop_zone.append(self.deck.pop())
         self.initial_cards.append(self.drop_zone[-1])
-        self.Bot = Bot()
+        if bot:
+            self.Bot = Bot()
         for _ in range(12):
             self.host_cards.append(self.deck.pop())
             self.guest_cards.append(self.deck.pop())

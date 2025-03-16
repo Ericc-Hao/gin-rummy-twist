@@ -59,13 +59,16 @@ def join_request():
         "message": message
     })
 
-@app.route('/api/match_create', methods=['GET'])
+@app.route('/api/match_create', methods=['POST'])
 def match_create_request():
     match_id = "test"
     if match_id in rooms:
         match_id = ''.join(random.choices("abcdefghijklmnopqrstuvwxyz", k=4))
         print(match_id)
     rooms[match_id] = False
+    if request.json['bot'] == "True":
+        ongoing_matches[match_id] = Match(match_id, bot=True)
+
     return jsonify({
         'result': 0, 
         'message': "OK",
@@ -74,7 +77,7 @@ def match_create_request():
 @app.route('/api/room_status', methods=['POST'])
 def check_room_status():
     match_id = request.json['matchid']
-    if not match_id in rooms():
+    if not match_id in rooms:
         code, message = 1, "Room Not Found"
     if rooms[match_id]:
         code, message = 0, "Second Player Joined"
@@ -85,7 +88,7 @@ def check_room_status():
         "message": message
     })
 
-@app.route('/api/match_start', methods=['GET'])
+@app.route('/api/match_start', methods=['POST'])
 def match_start_request():
     match_id = request.json['matchid']
     ongoing_matches[match_id] = Match(match_id)

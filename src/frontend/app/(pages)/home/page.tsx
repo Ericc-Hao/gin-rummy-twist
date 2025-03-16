@@ -74,8 +74,8 @@ function StartButton(href: string, name: string) {
     const dispatch = useDispatch<AppDispatch>();
     const user = useSelector((state: RootState) => state.user);
     
-    const isDisabled = name == 'Play with a Friend' && (!user || user.username === '');
-    // const isDisabled = false;
+    // const isDisabled = name == 'Play with a Friend' && (!user || user.username === '');
+    const isDisabled = false;
 
 
     return (

@@ -203,6 +203,30 @@ def move_request():
         "message": message
     })
 
+
+game_started = {}
+
+@app.route('/api/set_game_start', methods=['POST'])
+def set_game_start():
+    match_id = request.json.get('matchid')
+    # if match_id not in rooms:
+    #     return jsonify({'result': 1, 'message': 'Room Not Found'})
+    game_started[match_id] = True
+    return jsonify({'result': 0, 'message': 'Game started successfully'})
+
+@app.route('/api/is_game_started', methods=['POST'])
+def is_game_started():
+    match_id = request.json.get('matchid')
+    if match_id not in rooms:
+        return jsonify({'result': 1, 'message': 'Room Not Found'})
+    started = game_started.get(match_id, False)
+    if started:
+        return jsonify({'result': 0, 'message': 'Game has started'})
+    else:
+        return jsonify({'result': 2, 'message': 'Game not started yet'})
+
+
+
 if __name__ == '__main__':
     
     app.run(debug=True, port=8080)

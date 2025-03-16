@@ -37,7 +37,7 @@ function getRandomCards(cards: Card[]): Card[] {
   
 }
 
-export default function DealCards() {
+export default function DealCards({roomId} : { roomId:string }) {
   const [dealing, setDealing] = useState(false);
   const [currentPass, setCurrentPass] = useState<passingStatus>(null)
 
@@ -53,7 +53,7 @@ export default function DealCards() {
 
   const [scoreSummary, setScoreSummary] = useState<ScoreSummary>()
 
-  const [matchID, setMatchID] = useState<string | null>(null)
+  const [matchID, setMatchID] = useState<string>(roomId)
 
   // get random stack of cards (shuffle the card)
   const shuffledCards = getRandomCards(CARDS); 
@@ -83,6 +83,7 @@ export default function DealCards() {
       console.log('startGame', data)
       setMatchID(data['match_id'])
     })
+
     await fetch(`${backend_url}/api/match_start`, {
       method: "POST",
       headers: {

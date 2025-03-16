@@ -72,7 +72,7 @@ export function HeaderBar() {
 
     return (
         <header className="sticky top-0 z-990 w-full flex items-center justify-between px-4 py-2 flex-row ">
-            {pathname == "/ginrummy/newgame" && (
+            {/^\/game\/[^/]+$/.test(pathname)&& (
                 <div className='flex flex-row gap-2'>
                 <TooltipProvider>
                     <Tooltip delayDuration={0}>
@@ -96,9 +96,8 @@ export function HeaderBar() {
                             <div className='flex flex-col w-[300px] gap-4 m-4 '>
                                     {/* {StartButton('/home', "Save and Leave")} */}
                                     {StartButton('/home', "Leave (without save)")}
-                                    {StartButton('/ginrummy/newgame', "Restart")}
+                                    {/* {StartButton('/game/mynewgame', "Restart")} */}
                                     <Button variant="ghost" onClick={() => setOpenPauseDialog(false)}>Cancel</Button>
-                                    {/* {StartButton("/ginrummy/newgame", "Start New Game")} */}
                                 </div>
                         </DialogContent>
                     </Dialog>
@@ -136,7 +135,7 @@ export function HeaderBar() {
                 <div>HOME</div>
             )}
 
-            {pathname == "/ginrummy/pvp" && (
+            {pathname == "/pvp" && (
                 <div>
                     <Link href={"/home"}
                           className="w-full text-center transition-transform duration-300 hover:opacity-75 pr-2" 

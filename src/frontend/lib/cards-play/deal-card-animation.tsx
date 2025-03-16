@@ -29,7 +29,8 @@ import { AvatarDisplay,ChatBubble  } from '@my-components/avatar'
 import { start } from 'repl';
 import { drop } from 'lodash';
 
-const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
+//const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
+const backend_url = "http://localhost:8080";
 
 function getRandomCards(cards: Card[]): Card[] {
   return [...cards].sort(() => 0.5 - Math.random()); // set random rards
@@ -67,11 +68,34 @@ export default function DealCards() {
     const initialCards: Card[] = [];
     const p1Cards: Card[] = [];
     const p2Cards: Card[] = [];
-    await fetch(`${backend_url}/api/match_start`).then((response) => response.json()).then((data) => {
-       setMatchID(data['match_id'])
-       setDropZoneCards([{ order:data["order0"], point: data["point0"], name: data["name0"], image: data["image0"], color: data["color0"], text: data["text0"] }])
-       p1Cards.push({ order:data["order1"], point: data["point1"], name: data["name1"], image: data["image1"], color: data["color1"], text: data["text1"] })
-       p2Cards.push({ order:data["order2"], point: data["point2"], name: data["name2"], image: data["image2"], color: data["color2"], text: data["text2"] })
+
+    await fetch(`${backend_url}/api/match_create`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        bot: 'True'
+      })
+    })
+    .then((response) => response.json())
+    .then((data) => {
+      console.log('startGame', data)
+      setMatchID(data['match_id'])
+    })
+    await fetch(`${backend_url}/api/match_start`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        host: host,
+        matchid: matchID
+      })
+    }).then((response) => response.json()).then((data) => {
+      setDropZoneCards([{ order:data["order0"], point: data["point0"], name: data["name0"], image: data["image0"], color: data["color0"], text: data["text0"] }])
+        p1Cards.push({ order:data["order1"], point: data["point1"], name: data["name1"], image: data["image1"], color: data["color1"], text: data["text1"] })
+        p2Cards.push({ order:data["order2"], point: data["point2"], name: data["name2"], image: data["image2"], color: data["color2"], text: data["text2"] })
         p1Cards.push({ order:data["order3"], point: data["point3"], name: data["name3"], image: data["image3"], color: data["color3"], text: data["text3"] })
         p2Cards.push({ order:data["order4"], point: data["point4"], name: data["name4"], image: data["image4"], color: data["color4"], text: data["text4"] })
         p1Cards.push({ order:data["order5"], point: data["point5"], name: data["name5"], image: data["image5"], color: data["color5"], text: data["text5"] })

@@ -1,4 +1,9 @@
 import { useState,useEffect, useRef } from 'react';
+
+const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
+
+
+
 export default function MatchFormation(){
     
     const [matchID, setMatchID] = useState<string | null>(null)
@@ -6,7 +11,7 @@ export default function MatchFormation(){
     
     async function create_room(){
             console.log("aisudgaiusdghia")
-            await fetch("http://localhost:8080/api/match_create", {
+            await fetch(`${backend_url}/api/match_create`, {
                     method: "GET",
                     headers: {
                     "Content-Type": "application/json",

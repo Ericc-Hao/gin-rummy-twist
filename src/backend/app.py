@@ -91,8 +91,16 @@ def check_room_status():
 @app.route('/api/match_start', methods=['POST'])
 def match_start_request():
     match_id = request.json['matchid']
-    ongoing_matches[match_id] = Match(match_id)
-    init_cards = ongoing_matches[match_id].get_initial_cards()
+
+      # ✅ 只有第一次调用时才创建 Match
+    if match_id not in ongoing_matches:
+        ongoing_matches[match_id] = Match(match_id)
+
+    match_obj = ongoing_matches[match_id]
+    init_cards = match_obj.get_initial_cards()
+
+    # ongoing_matches[match_id] = Match(match_id)
+    # init_cards = ongoing_matches[match_id].get_initial_cards()
     code, message = 0, "OK"
     return jsonify({
         'result': code, 
@@ -125,6 +133,38 @@ def match_start_request():
         'order23':init_cards[23]["order"], 'point23':init_cards[23]["point"], 'name23':init_cards[23]["name"], 'image23':init_cards[23]["image"], 'color23':init_cards[23]["color"], 'text23':init_cards[23]["text"],
         'order24':init_cards[24]["order"], 'point24':init_cards[24]["point"], 'name24':init_cards[24]["name"], 'image24':init_cards[24]["image"], 'color24':init_cards[24]["color"], 'text24':init_cards[24]["text"],                                                                                                                                                                                                    
     })
+
+# @app.route('/api/match_start', methods=['POST'])
+# def match_start_request():
+#     match_id = request.json['matchid']
+#     host = request.json['host']  # "0" or "1"
+
+#     if match_id not in ongoing_matches:
+#         ongoing_matches[match_id] = Match(match_id)
+
+#     match_obj = ongoing_matches[match_id]
+
+#     # 如果没有初始化牌，初始化一次
+#     if not hasattr(match_obj, 'initial_cards'):
+#         match_obj.initial_cards = match_obj.get_initial_cards()
+#         match_obj.player_cards = {
+#             "0": match_obj.initial_cards[1:24:2],  # host0 拿奇数 index 的牌
+#             "1": match_obj.initial_cards[2:25:2],  # host1 拿偶数 index 的牌
+#         }
+#         match_obj.drop_card = match_obj.initial_cards[0]
+
+#     # 返回当前玩家该看到的内容
+#     cards = match_obj.player_cards.get(host, [])
+#     drop_card = match_obj.drop_card
+
+#     response = {
+#         'result': 0,
+#         'message': "OK",
+#         'match_id': match_id,
+#         'drop_card': drop_card,
+#         'cards': cards
+#     }
+#     return jsonify(response)
 
 
 @app.route('/api/add_bot', methods=['POST'])
@@ -224,6 +264,25 @@ def is_game_started():
         return jsonify({'result': 0, 'message': 'Game has started'})
     else:
         return jsonify({'result': 2, 'message': 'Game not started yet'})
+
+
+game_dealing_started = {}
+
+
+@app.route('/api/set_game_dealing_started', methods=['POST'])
+def set_game_dealing_started():
+    match_id = request.json.get('matchid')
+    game_dealing_started[match_id] = True
+    return jsonify({'result': 0, 'message': 'Game dealing started'})
+
+@app.route('/api/is_game_dealing_started', methods=['POST'])
+def is_game_dealing_started():
+    match_id = request.json.get('matchid')
+    started = game_dealing_started.get(match_id, False)
+    if started:
+        return jsonify({'result': 0, 'message': 'Dealing started'})
+    else:
+        return jsonify({'result': 1, 'message': 'Not started yet'})
 
 
 

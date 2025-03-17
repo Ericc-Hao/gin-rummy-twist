@@ -14,7 +14,7 @@ export interface DraggableCardProps {
     card: Card;
     index: number;
     moveCard: (fromIndex: number, toIndex: number,wholeCardList:Card[]) => void;
-    p2Playing:'toTake'|'toDrop' | null;
+    p2Playing: playingStatus
     wholeCardList: Card[]
 }
 
@@ -61,6 +61,6 @@ export interface PlayerSummary{
     Runs?:Card[]
   }
 
-export type playingStatus ='toTake'|'toDrop' | null
+export type playingStatus ='toTake'|'toDrop' | 'toDeal' | 'passOrPick' | null
 export type passingStatus = 1|2|null
 export type sendingNewCardPlace = 'stack'|'dropzone' | null

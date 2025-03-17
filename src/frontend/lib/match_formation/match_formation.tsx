@@ -84,3 +84,13 @@ export async function isGameStarted(matchid: string) {
       });
       return await res.json();
   }
+
+
+export  async function getLastMoveOfOpponent(playerId: string, matchId: string) {
+    const res = await fetch(`${backend_url}/api/match_move`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ host: playerId, matchid: matchId, move: "wait_opponent" })
+    });
+    return await res.json();
+  }

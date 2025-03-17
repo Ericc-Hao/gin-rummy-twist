@@ -24,6 +24,7 @@ export default function GamePage() {
 
     const fullRoomId = Array.isArray(routRroomId) ? routRroomId[0] : routRroomId;
     const roomId = fullRoomId.split("-")[0];
+    const host = fullRoomId.split("-")[1] ?? '1';
 
     // console.log(roomId);
     
@@ -75,7 +76,7 @@ export default function GamePage() {
                     className="bg-gray-100 h-full flex flex-col items-center justify-center transition-all duration-500 ease-in-out"
                     style={{flex: game.showSideBar ? 1 : 2, }}
                 >
-                    <DealCards roomId={roomId}/>
+                    <DealCards roomId={roomId} host={host}/>
                 </div>
             </div>
         </div>

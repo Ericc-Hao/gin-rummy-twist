@@ -92,7 +92,7 @@ def check_room_status():
 def match_start_request():
     match_id = request.json['matchid']
 
-      # ✅ 只有第一次调用时才创建 Match
+    # ✅ 只有第一次调用时才创建 Match
     if match_id not in ongoing_matches:
         ongoing_matches[match_id] = Match(match_id)
 
@@ -166,12 +166,29 @@ def move_request():
             'text':new_card["text"]
         })
     
+    # if request.json['move'] == "dropzone":
+    #     target_match.choose_drop_zone(request.json['host'])
+    #     return jsonify({
+    #         'result': 0, 
+    #         "message": "OK"
+    #     })
+
     if request.json['move'] == "dropzone":
-        target_match.choose_drop_zone(request.json['host'])
+        if len(target_match.drop_zone) == 0:
+            return jsonify({'result': 1, 'message': 'Drop zone is empty'})
+        
+        new_card = target_match.choose_drop_zone(request.json['host'])
         return jsonify({
-            'result': 0, 
-            "message": "OK"
+            'result': 0,
+            'message': 'OK',
+            'order': new_card["order"],
+            'point': new_card["point"],
+            'name': new_card["name"],
+            'image': new_card["image"],
+            'color': new_card["color"],
+            'text': new_card["text"]
         })
+
     
     if request.json['move'] == "drop": 
         target_match.drop_card(request.json['host'], request.json['dropped_card_name'])
@@ -250,6 +267,26 @@ def is_game_dealing_started():
         return jsonify({'result': 0, 'message': 'Dealing started'})
     else:
         return jsonify({'result': 1, 'message': 'Not started yet'})
+
+
+pass_status = {}  # 用于记录 match_id -> 是否 host 已点击 pass
+
+@app.route('/api/set_passed', methods=['POST'])
+def set_passed():
+    match_id = request.json.get('matchid')
+    pass_status[match_id] = True
+    return jsonify({'result': 0, 'message': 'Pass set'})
+
+@app.route('/api/is_passed', methods=['POST'])
+def is_passed():
+    match_id = request.json.get('matchid')
+    if pass_status.get(match_id, False):
+        # 检测到 pass 之后就清掉
+        pass_status[match_id] = False
+        return jsonify({'result': 0, 'message': 'Host passed'})
+    else:
+        return jsonify({'result': 1, 'message': 'Not passed yet'})
+
 
 
 

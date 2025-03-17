@@ -168,6 +168,26 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
       console.error("fetchInitialCardsForGuest failed:", err);
     }
   }
+// 非host看pass
+  useEffect(() => {
+    if (host === "0" && dealing && currentPass === null) {
+      const interval = setInterval(async () => {
+        const res = await fetch(`${backend_url}/api/is_passed`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ matchid: matchID })
+        });
+        const data = await res.json();
+        if (data.result === 0) {
+          setP1Playing(null)
+          setP2Playing("toTake");
+          clearInterval(interval);
+        }
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [dealing]);
+  
   
   
 
@@ -315,7 +335,13 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
         handleRobotAutoPlay()
       } else {
         // TODO: 
-        getAnotherPlayerAction()
+        // getAnotherPlayerAction()
+        fetch(`${backend_url}/api/set_passed`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ matchid: matchID })
+        });
+        
       }
       
       setCurrentPass(null)
@@ -516,74 +542,76 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
     }
 
     async function getAnotherPlayerAction() {
-      try {
-        const response = await fetch(`${backend_url}/api/match_move`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            host: host,
-            matchid: matchID,
-            move: "wait_opponent"
-          })
-        });
-    
-        const data = await response.json();
-        const operation = data.operation;
-    
-        // 对方打出的牌（用于动画显示）
-        const droppedCard = {
-          order: data.order,
-          point: data.point,
-          name: data.name,
-          image: data.image,
-          color: data.color,
-          text: data.text,
-        };
-    
-        // 对方拿到的牌（用于加入手牌动画）
-        const pickedCard = {
-          order: data.order_pick,
-          point: data.point_pick,
-          name: data.name_pick,
-          image: data.image_pick,
-          color: data.color_pick,
-          text: data.text_pick,
-        };
-    
-        // 设置送牌动画来源（stack 或 dropzone）
-        setSendingNewCard(operation);
-    
-        // 加入Player1的手牌中（用于动画）
-        const updatedCards = [...player1Cards.cards, pickedCard];
-        setPlayer1Cards(GinRummyScore(updatedCards));
-    
-        // 模拟打牌动画
-        setTimeout(() => {
-          // 找出要打出的牌的位置
-          const dropIndex = updatedCards.findIndex((card) => card.name === droppedCard.name);
-          if (dropIndex !== -1) {
-            const cardToDrop = updatedCards[dropIndex];
-            setP1DroppingCard({ ...cardToDrop, index: dropIndex });
-    
-            // 从手牌中移除
-            updatedCards.splice(dropIndex, 1);
-            setPlayer1Cards(GinRummyScore(updatedCards));
-    
-            setTimeout(() => {
-              // 添加到弃牌堆
-              setDropZoneCards((prev) => [...prev, cardToDrop]);
-    
-              // 状态更新
-              setP1DroppingCard(null);
-              setP1Playing(null);
-              setP2Playing("toTake");
-            }, 400);
-          }
-        }, 800);
-    
-      } catch (error) {
-        console.error("getAnotherPlayerAction error:", error);
-      }
+      const interval = setInterval(async () => {
+        try {
+          const response = await fetch(`${backend_url}/api/match_move`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              host: host,
+              matchid: matchID,
+              move: "wait_opponent"
+            })
+          });
+      
+          const data = await response.json();
+          const operation = data.operation;
+      
+          // 对方打出的牌（用于动画显示）
+          const droppedCard = {
+            order: data.order,
+            point: data.point,
+            name: data.name,
+            image: data.image,
+            color: data.color,
+            text: data.text,
+          };
+      
+          // 对方拿到的牌（用于加入手牌动画）
+          const pickedCard = {
+            order: data.order_pick,
+            point: data.point_pick,
+            name: data.name_pick,
+            image: data.image_pick,
+            color: data.color_pick,
+            text: data.text_pick,
+          };
+      
+          // 设置送牌动画来源（stack 或 dropzone）
+          setSendingNewCard(operation);
+      
+          // 加入Player1的手牌中（用于动画）
+          const updatedCards = [...player1Cards.cards, pickedCard];
+          setPlayer1Cards(GinRummyScore(updatedCards));
+      
+          // 模拟打牌动画
+          setTimeout(() => {
+            // 找出要打出的牌的位置
+            const dropIndex = updatedCards.findIndex((card) => card.name === droppedCard.name);
+            if (dropIndex !== -1) {
+              const cardToDrop = updatedCards[dropIndex];
+              setP1DroppingCard({ ...cardToDrop, index: dropIndex });
+      
+              // 从手牌中移除
+              updatedCards.splice(dropIndex, 1);
+              setPlayer1Cards(GinRummyScore(updatedCards));
+      
+              setTimeout(() => {
+                // 添加到弃牌堆
+                setDropZoneCards((prev) => [...prev, cardToDrop]);
+      
+                // 状态更新
+                setP1DroppingCard(null);
+                setP1Playing(null);
+                setP2Playing("toTake");
+              }, 400);
+            }
+          }, 800);
+      
+        } catch (error) {
+          console.error("getAnotherPlayerAction error:", error);
+        }
+      }, 2000);
     }
     
 

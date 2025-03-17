@@ -147,22 +147,40 @@ class Match():
         return new_card
 
     
-    def drop_card(self, is_host: int, card_name: str) -> dict: 
-        if is_host:
-            for i in range(len(self.host_cards)):
-                if self.host_cards[i]["name"] == card_name:
-                    self.drop_zone.append(self.host_cards.pop(i))
-                    break
-            self.latest_player = host
-            print("host drop, ", self.drop_zone[-1]["name"]) if debug else None
-        else:
-            for i in range(len(self.guest_cards)):
-                if self.guest_cards[i]["name"] == card_name:
-                    self.drop_zone.append(self.guest_cards.pop(i))
-                    break
-            self.latest_player = guest
-            print("guest drop, ", self.drop_zone[-1]["name"]) if debug else None
-        return self.drop_zone[-1]
+    # def drop_card(self, is_host: int, card_name: str) -> dict: 
+    #     if is_host:
+    #         for i in range(len(self.host_cards)):
+    #             if self.host_cards[i]["name"] == card_name:
+    #                 self.drop_zone.append(self.host_cards.pop(i))
+    #                 break
+    #         self.latest_player = host
+    #         print("host drop, ", self.drop_zone[-1]["name"]) if debug else None
+    #     else:
+    #         for i in range(len(self.guest_cards)):
+    #             if self.guest_cards[i]["name"] == card_name:
+    #                 self.drop_zone.append(self.guest_cards.pop(i))
+    #                 break
+    #         self.latest_player = guest
+    #         print("guest drop, ", self.drop_zone[-1]["name"]) if debug else None
+    #     return self.drop_zone[-1]
+
+    def drop_card(self, host, card_name):
+        try:
+            player_cards = self.players_cards.get(host, [])
+            card_to_drop = next((c for c in player_cards if c['name'] == card_name), None)
+            if card_to_drop:
+                player_cards.remove(card_to_drop)
+                self.drop_zone.append(card_to_drop)
+                self.update_operation(host, 'drop', card_to_drop)
+                if debug and self.drop_zone:
+                    print("host drop, ", self.drop_zone[-1]["name"])
+                return self.drop_zone[-1]
+            else:
+                print("[ERROR] Card not found in player's hand.")
+                return None
+        except Exception as e:
+            print("[ERROR in drop_card()]:", e)
+            return None
 
     def get_latest_operation(self) -> tuple:
         if self.Bot != None:

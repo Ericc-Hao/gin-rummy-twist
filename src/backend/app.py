@@ -91,8 +91,16 @@ def check_room_status():
 @app.route('/api/match_start', methods=['POST'])
 def match_start_request():
     match_id = request.json['matchid']
-    ongoing_matches[match_id] = Match(match_id)
-    init_cards = ongoing_matches[match_id].get_initial_cards()
+
+    # ✅ 只有第一次调用时才创建 Match
+    if match_id not in ongoing_matches:
+        ongoing_matches[match_id] = Match(match_id)
+
+    match_obj = ongoing_matches[match_id]
+    init_cards = match_obj.get_initial_cards()
+
+    # ongoing_matches[match_id] = Match(match_id)
+    # init_cards = ongoing_matches[match_id].get_initial_cards()
     code, message = 0, "OK"
     return jsonify({
         'result': code, 
@@ -126,7 +134,6 @@ def match_start_request():
         'order24':init_cards[24]["order"], 'point24':init_cards[24]["point"], 'name24':init_cards[24]["name"], 'image24':init_cards[24]["image"], 'color24':init_cards[24]["color"], 'text24':init_cards[24]["text"],                                                                                                                                                                                                    
     })
 
-
 @app.route('/api/add_bot', methods=['POST'])
 def add_bot_request():
     code, message = 0, "OK"
@@ -159,12 +166,29 @@ def move_request():
             'text':new_card["text"]
         })
     
+    # if request.json['move'] == "dropzone":
+    #     target_match.choose_drop_zone(request.json['host'])
+    #     return jsonify({
+    #         'result': 0, 
+    #         "message": "OK"
+    #     })
+
     if request.json['move'] == "dropzone":
-        target_match.choose_drop_zone(request.json['host'])
+        if len(target_match.drop_zone) == 0:
+            return jsonify({'result': 1, 'message': 'Drop zone is empty'})
+        
+        new_card = target_match.choose_drop_zone(request.json['host'])
         return jsonify({
-            'result': 0, 
-            "message": "OK"
+            'result': 0,
+            'message': 'OK',
+            'order': new_card["order"],
+            'point': new_card["point"],
+            'name': new_card["name"],
+            'image': new_card["image"],
+            'color': new_card["color"],
+            'text': new_card["text"]
         })
+
     
     if request.json['move'] == "drop": 
         target_match.drop_card(request.json['host'], request.json['dropped_card_name'])
@@ -202,6 +226,69 @@ def move_request():
         'result': code, 
         "message": message
     })
+
+
+game_started = {}
+
+@app.route('/api/set_game_start', methods=['POST'])
+def set_game_start():
+    match_id = request.json.get('matchid')
+    # if match_id not in rooms:
+    #     return jsonify({'result': 1, 'message': 'Room Not Found'})
+    game_started[match_id] = True
+    return jsonify({'result': 0, 'message': 'Game started successfully'})
+
+@app.route('/api/is_game_started', methods=['POST'])
+def is_game_started():
+    match_id = request.json.get('matchid')
+    if match_id not in rooms:
+        return jsonify({'result': 1, 'message': 'Room Not Found'})
+    started = game_started.get(match_id, False)
+    if started:
+        return jsonify({'result': 0, 'message': 'Game has started'})
+    else:
+        return jsonify({'result': 2, 'message': 'Game not started yet'})
+
+
+game_dealing_started = {}
+
+
+@app.route('/api/set_game_dealing_started', methods=['POST'])
+def set_game_dealing_started():
+    match_id = request.json.get('matchid')
+    game_dealing_started[match_id] = True
+    return jsonify({'result': 0, 'message': 'Game dealing started'})
+
+@app.route('/api/is_game_dealing_started', methods=['POST'])
+def is_game_dealing_started():
+    match_id = request.json.get('matchid')
+    started = game_dealing_started.get(match_id, False)
+    if started:
+        return jsonify({'result': 0, 'message': 'Dealing started'})
+    else:
+        return jsonify({'result': 1, 'message': 'Not started yet'})
+
+
+pass_status = {}  # 用于记录 match_id -> 是否 host 已点击 pass
+
+@app.route('/api/set_passed', methods=['POST'])
+def set_passed():
+    match_id = request.json.get('matchid')
+    pass_status[match_id] = True
+    return jsonify({'result': 0, 'message': 'Pass set'})
+
+@app.route('/api/is_passed', methods=['POST'])
+def is_passed():
+    match_id = request.json.get('matchid')
+    if pass_status.get(match_id, False):
+        # 检测到 pass 之后就清掉
+        pass_status[match_id] = False
+        return jsonify({'result': 0, 'message': 'Host passed'})
+    else:
+        return jsonify({'result': 1, 'message': 'Not passed yet'})
+
+
+
 
 if __name__ == '__main__':
     

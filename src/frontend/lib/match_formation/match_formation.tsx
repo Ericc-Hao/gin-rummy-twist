@@ -63,3 +63,34 @@ export async function checkRoomStatus(matchID: string): Promise<RoomStatusRespon
     return { result: -1, message: "Network error" };
   }
 }
+
+
+    // 设置游戏为已开始
+export  async function setGameStart(matchid: string) {
+      const res = await fetch(`${backend_url}/api/set_game_start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ matchid }),
+      });
+      return await res.json();
+  }
+  
+  // 查询游戏是否开始
+export async function isGameStarted(matchid: string) {
+      const res = await fetch(`${backend_url}/api/is_game_started`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ matchid }),
+      });
+      return await res.json();
+  }
+
+
+export  async function getLastMoveOfOpponent(playerId: string, matchId: string) {
+    const res = await fetch(`${backend_url}/api/match_move`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ host: playerId, matchid: matchId, move: "wait_opponent" })
+    });
+    return await res.json();
+  }

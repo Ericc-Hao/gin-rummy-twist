@@ -55,10 +55,10 @@ export default function homePage() {
                                 <DialogDescription>Choose your game mode and start playing!</DialogDescription>
                             </VisuallyHidden>
                             <div className='flex flex-col w-[300px] gap-4 m-4 '>
-                                {StartButton("/ginrummy/newgame", "Start a New Game")}
+                                {StartButton("/game/mynewgame", "Start a New Game")}
                                 {/* {StartButton("", "Continue a Game")} */}
                                 {/* {StartButton("", "Start a Tutorial")} */}
-                                {StartButton("/ginrummy/pvp", "Play with a Friend")}
+                                {StartButton("/pvp", "Play with a Friend")}
                             </div>
                         </DrawerContent>
                     </Drawer>

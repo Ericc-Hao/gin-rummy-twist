@@ -20,7 +20,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 // import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
-import  { createRoom, joinRoom, checkRoomStatus } from "@/lib/match_formation/match_formation";
+import  { createRoom, joinRoom, checkRoomStatus, setGameStart , isGameStarted} from "@/lib/match_formation/match_formation";
+
+import { useParams, useRouter } from "next/navigation";
 
 
 export default function PVPPage() {
@@ -46,6 +48,8 @@ function JoinCard() {
 
     const [ableToStart, setAbleToStart] = useState<boolean>(false)
 
+    const router = useRouter();
+
 
     useEffect(() => {
         console.log(isCreatingNewRoom);
@@ -58,14 +62,13 @@ function JoinCard() {
         }
     }, [isCreatingNewRoom]);
 
+    // create 查询玩家是否已经加入
     useEffect(() => {
         let intervalId: NodeJS.Timeout;
       
         if (createdRoomID && isCreatingNewRoom) {
           intervalId = setInterval(async () => {
             const status = await checkRoomStatus(createdRoomID);
-            console.log("Room status checked:", status);
-            // setActionMessage(status.message);
       
             if (status.result === 0) {
               // Second player has joined, stop polling
@@ -81,6 +84,29 @@ function JoinCard() {
         };
       }, [createdRoomID, isCreatingNewRoom]);
 
+      // join 查询游戏是否开始
+      useEffect(() => {
+        let intervalId: NodeJS.Timeout;
+      
+        // 如果是 Join 模式，并且已设置 RoomID，就开始轮询是否游戏已开始
+        if (createdRoomID && !isCreatingNewRoom) {
+          intervalId = setInterval(async () => {
+            const status = await isGameStarted(createdRoomID);
+            console.log("Game start status:", status);
+      
+            if (status.result === 0) {
+              clearInterval(intervalId);
+              router.push(`/game/${createdRoomID}-0`);
+            }
+          }, 2000);
+        }
+      
+        return () => {
+          if (intervalId) clearInterval(intervalId);
+        };
+      }, [createdRoomID, !isCreatingNewRoom]);
+      
+
     function handleSwitch(checked: boolean) {
         setIsCreatingNewRoom(checked);
         setRoomNumber(""); 
@@ -93,7 +119,6 @@ function JoinCard() {
           const joinResult = await joinRoom(roomNumber);
        
           
-            // ✅ 如果 Join 成功，设定 room 状态
             if (joinResult.result === 200) {
                 setCreatedRoomID(roomNumber);
                 setActionMessage(joinResult.message); 
@@ -111,7 +136,8 @@ function JoinCard() {
             setActionMessage("Failed to create room.");
           }
         }
-      }
+    }
+    
       
       
     return (
@@ -176,7 +202,20 @@ function JoinCard() {
                         </Button>
                         </div>
                     ) : (
-                        <Button className="ml-auto" disabled={!ableToStart}>Start</Button>
+                        <Button
+                            className="ml-auto"
+                            disabled={!ableToStart}
+                            onClick={async () => {
+                                const res = await setGameStart(createdRoomID!);
+                                if (res.result === 0) {
+                                router.push(`/game/${createdRoomID}-1`);
+                                } else {
+                                alert("Failed to start game: " + res.message);
+                                }
+                            }}
+                            >
+                            Start
+                        </Button>
                     )}
                 </CardFooter>
 

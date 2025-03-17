@@ -66,8 +66,11 @@ def match_create_request():
         match_id = ''.join(random.choices("abcdefghijklmnopqrstuvwxyz", k=4))
         print(match_id)
     rooms[match_id] = False
+    need_bot = False
     if request.json['bot'] == "True":
-        ongoing_matches[match_id] = Match(match_id, bot=True)
+        need_bot = True
+        print("Bot needed")
+    ongoing_matches[match_id] = Match(match_id, bot=need_bot)
 
     return jsonify({
         'result': 0, 
@@ -134,6 +137,7 @@ def match_start_request():
         'order24':init_cards[24]["order"], 'point24':init_cards[24]["point"], 'name24':init_cards[24]["name"], 'image24':init_cards[24]["image"], 'color24':init_cards[24]["color"], 'text24':init_cards[24]["text"],                                                                                                                                                                                                    
     })
 
+
 @app.route('/api/add_bot', methods=['POST'])
 def add_bot_request():
     code, message = 0, "OK"
@@ -197,35 +201,37 @@ def move_request():
             "message": "OK"
         })
 
+    if request.json['move'] == "opponent_status":
+        sleep(1)
+        last_player, last_op, last_card, last_picked_card = target_match.get_latest_operation()
+        print(last_player, request.json['host'], last_op, last_card, last_picked_card)
+        if last_player == request.json['host']:
+            print("return 1")
+            return jsonify({
+                'result': 1, 
+                "message": "Still Waiting",
+            })
+        print("return 0")
+        return jsonify({
+            'result': 0, 
+                "message": "Ready",
+        })
+        
     if request.json['move'] == "wait_opponent":
+        last_player, last_op, last_card, last_picked_card = target_match.get_latest_operation()
+        """
         last_player = request.json['host']
-        while last_player == request.json['host']:
-            last_player, last_op, last_card, last_picked_card = target_match.get_latest_operation()
-            print(last_player, last_op, last_card, last_picked_card)
-            sleep(1)
+        if last_player == request.json['host']:
+            
+            print(last_player, request.json['host'], last_op, last_card, last_picked_card)
+            return jsonify({
+                'result': 1, 
+                "message": "Still Waiting",
+            })"""
         return jsonify({
             'result': 0, 
             "message": "OK",
-            'operation': last_op,
-            'order':last_card["order"], 
-            'point':last_card["point"], 
-            'name':last_card["name"], 
-            'image':last_card["image"], 
-            'color':last_card["color"], 
-            'text':last_card["text"],
-            'order_pick':last_picked_card["order"], 
-            'point_pick':last_picked_card["point"], 
-            'name_pick':last_picked_card["name"], 
-            'image_pick':last_picked_card["image"], 
-            'color_pick':last_picked_card["color"], 
-            'text_pick':last_picked_card["text"]
         })
-    
-    code, message = 0, "OK"
-    return jsonify({
-        'result': code, 
-        "message": message
-    })
 
 
 game_started = {}

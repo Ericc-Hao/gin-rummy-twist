@@ -218,7 +218,7 @@ def move_request():
         print("return 0")
         return jsonify({
             'result': 0, 
-                "message": "Ready",
+            "message": "Ready",
         })
         
     if request.json['move'] == "wait_opponent":
@@ -239,7 +239,7 @@ def move_request():
                 "message": "Still Waiting",
             })"""
         return jsonify({
-            'result': 0, 
+            'result': last_player, 
             "message": "OK",
             "operation": last_op,
             "dropped_card": json.dumps(last_card),

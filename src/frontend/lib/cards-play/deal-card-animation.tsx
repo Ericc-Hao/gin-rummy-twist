@@ -421,7 +421,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
   
     // P1自动出牌
     async function handleP1Play() {
-      var ready = false;
+      let ready = false;
       while (ready == false){
         console.log(ready)
         await fetch(`${backend_url}/api/match_move`, {
@@ -457,7 +457,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
         const dropped_card = { order:data["dropped_card"]["order"], point: data["dropped_card"]["point"], name: data["dropped_card"]["name"], image: data["dropped_card"]["image"], color: data["dropped_card"]["color"], text: data["dropped_card"]["text"] }
         // card player get
         const new_card = { order:data["new_card"]["order"], point: data["new_card"]["point"], name: data["new_card"]["name"], image: data["new_card"]["image"], color: data["new_card"]["color"], text: data["new_card"]["text"] }
-        
+
         if (place == 'dropzone') {
           if (dropZoneCards.length > 0) {
             const lastCard = dropZoneCards.pop()

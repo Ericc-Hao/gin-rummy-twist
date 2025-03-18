@@ -5,9 +5,10 @@ from lib.authentication import Authentication
 from lib.match import Match
 import random
 import datetime
+import json
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=['http://localhost:3000'])
 
 
 
@@ -67,6 +68,7 @@ def match_create_request():
         print(match_id)
     rooms[match_id] = False
     need_bot = False
+    print(request.json, "isBot?", request.json['bot'])
     if request.json['bot'] == "True":
         need_bot = True
         print("Bot needed")
@@ -138,17 +140,19 @@ def match_start_request():
     })
 
 
-@app.route('/api/add_bot', methods=['POST'])
-def add_bot_request():
-    code, message = 0, "OK"
-    return jsonify({
-        'result': code, 
-        "message": message
-    })
+# @app.route('/api/add_bot', methods=['POST'])
+# def add_bot_request():
+#     code, message = 0, "OK"
+#     return jsonify({
+#         'result': code, 
+#         "message": message
+#     })
 
+
+# missing operation
 @app.route('/api/match_move', methods=['POST', 'GET'])
 def move_request():
-    print(request.json)
+    print("info", request.json)
     target_match = ongoing_matches.get(request.json['matchid'])
     
     if target_match == None:
@@ -214,11 +218,17 @@ def move_request():
         print("return 0")
         return jsonify({
             'result': 0, 
-                "message": "Ready",
+            "message": "Ready",
         })
         
     if request.json['move'] == "wait_opponent":
+        # last_card : dropped card
+        # last_picked_card : picked card
         last_player, last_op, last_card, last_picked_card = target_match.get_latest_operation()
+        print("operation", last_player, last_op, last_card, last_picked_card)
+
+        print("last_drop_type", type(last_card), last_card)
+        print("last_picked_type", type(last_picked_card), last_picked_card)
         """
         last_player = request.json['host']
         if last_player == request.json['host']:
@@ -229,8 +239,11 @@ def move_request():
                 "message": "Still Waiting",
             })"""
         return jsonify({
-            'result': 0, 
+            'result': last_player, 
             "message": "OK",
+            "operation": last_op,
+            "dropped_card": json.dumps(last_card),
+            "new_card": json.dumps(last_picked_card)
         })
 
 

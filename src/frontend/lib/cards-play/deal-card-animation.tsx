@@ -29,8 +29,8 @@ import { AvatarDisplay,ChatBubble  } from '@my-components/avatar'
 import { start } from 'repl';
 import { drop } from 'lodash';
 
-//const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
-const backend_url = "http://localhost:8080";
+const backend_url = "http://127.0.0.1:8000"
+// const backend_url = "http://localhost:8080";
 
 function getRandomCards(cards: Card[]): Card[] {
   return [...cards].sort(() => 0.5 - Math.random()); // set random rards
@@ -78,6 +78,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
       setP1Playing("toDeal");
       // TODO: 这里要有个api看对面的move
       // getAnotherPlayerAction()
+      handleP1Play()
     }
   }, [whosTurn]);
 
@@ -420,10 +421,10 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
   
     // P1自动出牌
     async function handleP1Play() {
-      var ready = false;
+      let ready = false;
       while (ready == false){
         console.log(ready)
-        await fetch("http://localhost:8080/api/match_move", {
+        await fetch(`${backend_url}/api/match_move`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -452,7 +453,11 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
       .then((data) => {
         console.log('P1Play', data)
         const place = data["operation"]
-        const dropped_card = { order:data["order"], point: data["point"], name: data["name"], image: data["image"], color: data["color"], text: data["text"] }
+        // player dropped cards
+        const dropped_card = { order:data["dropped_card"]["order"], point: data["dropped_card"]["point"], name: data["dropped_card"]["name"], image: data["dropped_card"]["image"], color: data["dropped_card"]["color"], text: data["dropped_card"]["text"] }
+        // card player get
+        const new_card = { order:data["new_card"]["order"], point: data["new_card"]["point"], name: data["new_card"]["name"], image: data["new_card"]["image"], color: data["new_card"]["color"], text: data["new_card"]["text"] }
+
         if (place == 'dropzone') {
           if (dropZoneCards.length > 0) {
             const lastCard = dropZoneCards.pop()

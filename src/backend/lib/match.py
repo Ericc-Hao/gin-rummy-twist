@@ -99,7 +99,7 @@ class Match():
         self.guest_cards = []
         self.initial_cards = []
         self.latest_operation = None
-        self.latest_player = None
+        self.latest_player = guest
         random.shuffle(self.deck)
         # Initialize drop zone with one card from deck.
         self.drop_zone.append(self.deck.pop())

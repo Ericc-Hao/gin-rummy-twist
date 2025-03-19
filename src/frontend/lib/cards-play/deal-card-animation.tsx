@@ -107,6 +107,13 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
     }
   }, [host, dealing]);
 
+
+  // 打印dropzone牌
+  useEffect(() => {
+    console.log("66666666666666666666666dropZoneCards updated:", dropZoneCards);
+  }, [dropZoneCards]);
+  
+
   async function fetchInitialCardsForGuest() {
     console.log("fetchInitialCardsForGuest called")
     try {
@@ -133,7 +140,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
         text: data["text0"]
       };
       setDropZoneCards([dropCard]);
-      console.log("dropZoneCards_fetchInitialCardsForGuest", dropZoneCards)
+      // console.log("dropZoneCards_fetchInitialCardsForGuest", dropZoneCards)
   
       // 解析 Player1 和 Player2 的卡牌
       for (let i = 1; i <= 23; i += 2) {
@@ -398,14 +405,21 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
               matchid: matchID,
               move: 'dropzone'})
           })
-          const lastCard = dropZoneCards.pop()
+          const newDropZoneCards = [...dropZoneCards];
+          const lastCard = newDropZoneCards.pop();
+          // setDropZoneCards(newDropZoneCards);
+
+          // console.log('************************************************: ',dropZoneCards, lastCard);
+          
           if (lastCard) {
             setSendingNewCard('dropzone');
             setP2Playing('toDrop');
             setTimeout(() => {
               const updatedCards = [...player2Cards.cards, lastCard]
               setPlayer2Cards(GinRummyScore(updatedCards));
-              setDropZoneCards(dropZoneCards);
+              // setDropZoneCards(dropZoneCards);
+              setDropZoneCards(newDropZoneCards);
+
             }, 100);
           } 
         } else {
@@ -422,14 +436,16 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
           alert('need to pick a card first');
           break;
         case 'toDrop':
-          dropZoneCards.push(item.card);
+          // dropZoneCards.push(item.card);
           // Qixuan Noted: Bug here
           // 这边直接push进去就行，这样set并不会将card放入dropzonecards
           // 你如果print出来就会发现实际上没加入dropzonecards
           // 如果P1从弃牌堆拿牌就会露馅
-          //const updatedDropZoneCards = [...dropZoneCards, item.card];
-          //setDropZoneCards(updatedDropZoneCards);
-          //console.log("dropzoneafterdrop", dropZoneCards)
+          // const updatedDropZoneCards = [...dropZoneCards, item.card];
+          // setDropZoneCards(dropZoneCards);
+          setDropZoneCards([...dropZoneCards, item.card]);
+
+          // console.log("*********************************dropzoneafterdrop", dropZoneCards)
           const updatedCards = [...player2Cards.cards];
           updatedCards.splice(item.index, 1);
           setPlayer2Cards(GinRummyScore(updatedCards));

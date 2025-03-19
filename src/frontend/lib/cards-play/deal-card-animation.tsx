@@ -29,8 +29,8 @@ import { AvatarDisplay,ChatBubble  } from '@my-components/avatar'
 import { start } from 'repl';
 import { drop } from 'lodash';
 
-const backend_url = "http://127.0.0.1:8000"
-// const backend_url = "http://localhost:8080";
+//const backend_url = "http://127.0.0.1:8080"
+const backend_url = "http://localhost:8080";
 
 function getRandomCards(cards: Card[]): Card[] {
   return [...cards].sort(() => 0.5 - Math.random()); // set random rards
@@ -133,6 +133,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
         text: data["text0"]
       };
       setDropZoneCards([dropCard]);
+      console.log("dropZoneCards_fetchInitialCardsForGuest", dropZoneCards)
   
       // 解析 Player1 和 Player2 的卡牌
       for (let i = 1; i <= 23; i += 2) {
@@ -172,10 +173,26 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
   }
   console.log("Mark 1 called")
   useEffect(() => {
-    if (host === "0" && whosTurn === "1") {
-      console.log("Mark 2 called")
-      handleP1Play()
-    }})
+    if (host === "0" && dealing && currentPass === null) {
+      const interval = setInterval(async () => {
+        const res = await fetch(`${backend_url}/api/is_passed`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ matchid: matchID })
+        });
+        const data = await res.json();
+        if (data.result === 0) {
+          setP1Playing(null)
+          setP2Playing("toTake");
+          clearInterval(interval);
+        }
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [dealing]);
+  
+  
+  
 
   function resetAll(){
     setDealing(false)
@@ -313,7 +330,21 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
     function handlePass(){
       setP2Playing(null);
       setP1Playing('toTake')
-      handleP1Play()
+      console.log("222222222222222222: ", roomId);
+      
+      if (roomId == 'mynewgame'){
+        handleP1Play()//Changed to handleRobotAutoPlay() once
+      } else {
+        // TODO: 
+        // getAnotherPlayerAction()
+        fetch(`${backend_url}/api/set_passed`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ matchid: matchID })
+        });
+        
+      }
+      
       setCurrentPass(null)
     }
 
@@ -415,12 +446,18 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
           })
           setP1Playing("toTake")
           setP2Playing(null)
-          handleP1Play()
+          if (roomId == 'mynewgame'){
+            handleP1Play()
+          } else {
+            // TODO: 
+            //getAnotherPlayerAction()
+            handleP1Play()
+          }
       }
     };
   
     // P1自动出牌
-    async function handleP1Play() {
+    async function handleP1Play() {// Changed to handleRobotAutoPlay once
       let ready = false;
       while (ready == false){
         console.log(ready)
@@ -459,6 +496,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
         const new_card = { order:data["new_card"]["order"], point: data["new_card"]["point"], name: data["new_card"]["name"], image: data["new_card"]["image"], color: data["new_card"]["color"], text: data["new_card"]["text"] }
 
         if (place == 'dropzone') {
+          console.log("dropZoneCards", dropZoneCards)
           if (dropZoneCards.length > 0) {
             const lastCard = dropZoneCards.pop()
             if (lastCard) {
@@ -528,6 +566,82 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
         }, 1000);
       }, 300);
     }
+
+    async function getAnotherPlayerAction() {
+      const interval = setInterval(async () => {
+        try {
+          const response = await fetch(`${backend_url}/api/match_move`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              host: host,
+              matchid: matchID,
+              move: "wait_opponent"
+            })
+          });
+      
+          const data = await response.json();
+          const operation = data.operation;
+      
+          // 对方打出的牌（用于动画显示）
+          const droppedCard = {
+            order: data.order,
+            point: data.point,
+            name: data.name,
+            image: data.image,
+            color: data.color,
+            text: data.text,
+          };
+      
+          // 对方拿到的牌（用于加入手牌动画）
+          const pickedCard = {
+            order: data.order_pick,
+            point: data.point_pick,
+            name: data.name_pick,
+            image: data.image_pick,
+            color: data.color_pick,
+            text: data.text_pick,
+          };
+      
+          // 设置送牌动画来源（stack 或 dropzone）
+          setSendingNewCard(operation);
+      
+          // 加入Player1的手牌中（用于动画）
+          const updatedCards = [...player1Cards.cards, pickedCard];
+          setPlayer1Cards(GinRummyScore(updatedCards));
+      
+          // 模拟打牌动画
+          setTimeout(() => {
+            // 找出要打出的牌的位置
+            const dropIndex = updatedCards.findIndex((card) => card.name === droppedCard.name);
+            if (dropIndex !== -1) {
+              const cardToDrop = updatedCards[dropIndex];
+              setP1DroppingCard({ ...cardToDrop, index: dropIndex });
+      
+              // 从手牌中移除
+              updatedCards.splice(dropIndex, 1);
+              setPlayer1Cards(GinRummyScore(updatedCards));
+      
+              setTimeout(() => {
+                // 添加到弃牌堆
+                setDropZoneCards((prev) => [...prev, cardToDrop]);
+      
+                // 状态更新
+                setP1DroppingCard(null);
+                setP1Playing(null);
+                setP2Playing("toTake");
+              }, 400);
+            }
+          }, 800);
+      
+        } catch (error) {
+          console.error("getAnotherPlayerAction error:", error);
+        }
+      }, 2000);
+    }
+    
+
+
 
     function handleKnock(){
       const roundData = {

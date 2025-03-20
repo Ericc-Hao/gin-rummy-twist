@@ -200,30 +200,30 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
     }
   }
   // console.log("Mark 1 called")
-  useEffect(() => {
-    if (host === "0" && dealing && currentPass === null && !hasHandlePass.current) {
-      const interval = setInterval(async () => {
-        const res = await fetch(`${backend_url}/api/is_passed`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ matchid: matchID })
-        });
-        const data = await res.json();
-        if (data.result === 0) {
-          setP1Playing(null)
-          setP2Playing("toTake");
-          clearInterval(interval);
-        }
-        else if (data.result === 2 && !hasHandlePass.current) {
-          hasHandlePass.current = true
-          console.log("P1 passed, P2 to play")
-          handleP1Play();
-          clearInterval(interval)
-        }
-      }, 2000);
-      return () => clearInterval(interval);
-    }
-  }, [dealing]);
+  // useEffect(() => {
+  //   if (host === "0" && dealing && currentPass === null && !hasHandlePass.current) {
+  //     const interval = setInterval(async () => {
+  //       const res = await fetch(`${backend_url}/api/is_passed`, {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ matchid: matchID })
+  //       });
+  //       const data = await res.json();
+  //       if (data.result === 0) {
+  //         setP1Playing(null)
+  //         // setP2Playing("toTake");
+  //         clearInterval(interval);
+  //       }
+  //       else if (data.result === 2 && !hasHandlePass.current) {
+  //         hasHandlePass.current = true
+  //         console.log("P1 passed, P2 to play")
+  //         handleP1Play();
+  //         clearInterval(interval)
+  //       }
+  //     }, 2000);
+  //     return () => clearInterval(interval);
+  //   }
+  // }, [dealing]);
 
   useEffect(() => {
     if (host === "0" && dealing && currentPass === null && !hasHandlePass.current) {
@@ -236,13 +236,22 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
           });
   
           const data = await res.json();
-  
+          // p1 点了pass
           if (data.result === 0) {
             console.log("✅ P1 passed detected. Stopping interval.");
             hasHandlePass.current = true; // ✅ 标记不再重复进入
             setP1Playing(null);
-            setP2Playing("toTake");
+            setP2Playing('toTake')
+            // setP2Playing("toTake");
             clearInterval(interval); // ✅ 正确终止轮询
+          }
+          // p1 从drop zone拿牌了
+          else if (data.result === 2 && !hasHandlePass.current) {
+            hasHandlePass.current = true
+            console.log("P1 passed, P2 to play")
+            handleP1Play();
+            setP2Playing(null);
+            clearInterval(interval)
           }
         } catch (e) {
           console.error("Polling is_passed failed", e);
@@ -535,7 +544,6 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
   
     // P1自动出牌
     async function handleP1Play() {// Changed to handleRobotAutoPlay once
-      
       let ready = false;
       while (ready == false){
         // console.log(ready)
@@ -555,6 +563,8 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
           // console.log(ready)
         })
       }
+      setP2Playing(null)
+
       const interval = setInterval(async () => {
         try {
           const res = await fetch(`${backend_url}/api/match_move`, {

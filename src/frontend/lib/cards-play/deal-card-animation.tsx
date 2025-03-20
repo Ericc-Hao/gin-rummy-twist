@@ -75,6 +75,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
   // }, []);
 
   const hasHandledP1Play = useRef(false);
+  const hasHandlePass = useRef(false)
 
   useEffect(() => {
     console.log("!!!!!!!!!! whosTurn: ", whosTurn, "host:", host);
@@ -82,7 +83,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
     if (whosTurn === "1" && host === "0" && !hasHandledP1Play.current) {
       setP1Playing("toDeal");
       hasHandledP1Play.current = true;
-      console.log("✅ handleP1Play triggered once");
+      // console.log("✅ handleP1Play triggered once");
       handleP1Play();
     }
   }, [whosTurn, host]);
@@ -114,10 +115,9 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
   }, [host, dealing]);
 
 
-  // 打印dropzone牌
   useEffect(() => {
-    console.log("66666666666666666666666dropZoneCards updated:", dropZoneCards);
-  }, [dropZoneCards]);
+    console.log("✅ player1Cards updated:", player1Cards.cards);
+  }, [player1Cards]);
   
 
   async function fetchInitialCardsForGuest() {
@@ -145,7 +145,6 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
         color: data["color0"],
         text: data["text0"]
       };
-      console.log("sssssssssssssssssssssssssssssss: ", dropCard);
       
       setDropZoneCards([dropCard]);
       // console.log("dropZoneCards_fetchInitialCardsForGuest", dropZoneCards)
@@ -206,13 +205,6 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
     }
   }, [dealing]);
   
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     console.log("🃏 DropZoneCards (polling):", dropZoneCards);
-  //   }, 2000);
-  
-  //   return () => clearInterval(interval); // 清理 interval，避免内存泄漏
-  // }, [dropZoneCards]);
 
   // 每次 dropZoneCards 更新，同步更新 ref
   useEffect(() => {
@@ -220,8 +212,6 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
   }, [dropZoneCards]);
 
   
-  
-
   function resetAll(){
     setDealing(false)
   }
@@ -484,8 +474,6 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
           setP1Playing("toTake")
           setP2Playing(null)
 
-          console.log("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj");
-          
           if (roomId == 'mynewgame'){
             handleP1Play()
           } else {
@@ -498,7 +486,6 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
   
     // P1自动出牌
     async function handleP1Play() {// Changed to handleRobotAutoPlay once
-      console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
       
       let ready = false;
       while (ready == false){
@@ -530,28 +517,34 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
           move: 'wait_opponent'})
       }).then((response) => response.json())
       .then((data) => {
+        console.log('daaaaaaaaaaaaaaaaaaaaaaaaaaaaataaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: ', data);
+        // console.log('2222222222222daaaaaaaaaaaaaaaaaaaaaaaaaaaaataaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: ',data['dropped_card']);
+        
+        
         // console.log('P1Play', data)
         const place = data["operation"]
+
+        
         // player dropped cards
-        const dropped_card = { order:data["dropped_card"]["order"], point: data["dropped_card"]["point"], name: data["dropped_card"]["name"], image: data["dropped_card"]["image"], color: data["dropped_card"]["color"], text: data["dropped_card"]["text"] }
+        const dropped_card_str = data['dropped_card']
+        const dropped_card_obj = JSON.parse(dropped_card_str);
+
+        const dropped_card = { 
+          order:dropped_card_obj.order, 
+          point: dropped_card_obj.point, 
+          name: dropped_card_obj.name, 
+          image: dropped_card_obj.image, 
+          color: dropped_card_obj.color,
+          text: dropped_card_obj.text
+        }
+
+
+        console.log('2222222222222daaaaaaaaaaaaaaaaaaaaaaaaaaaaataaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: ',dropped_card);
         // card player get
         const new_card = { order:data["new_card"]["order"], point: data["new_card"]["point"], name: data["new_card"]["name"], image: data["new_card"]["image"], color: data["new_card"]["color"], text: data["new_card"]["text"] }
 
-        // if (place == 'dropzone') {
-        //   console.log("dropZoneCards", dropZoneCards)
-        //   if (dropZoneCards.length > 0) {
-        //     const lastCard = dropZoneCards.pop()
-        //     if (lastCard) {
-        //       setDropZoneCards(dropZoneCards);
-        //       setSendingNewCard('dropzone');
-        //       setP1Playing('toDrop');
-        //       handleP1PickAndDrop(dropped_card, lastCard)
-        //     }
-        //   }
-        //   else {
-        //     alert('ERROR: No card in Drop Zone!');
-        //   }
-        // } 
+        console.log('carddddddddddddddddddddddddddddddddddddddddds: ',player1Cards.cards);
+        
 
         if (place == 'dropzone') {
           console.log("dropZoneCards (ref)", dropZoneRef.current);
@@ -592,11 +585,17 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
     }
 
     function handleP1PickAndDrop(dropCard: Card, newCard: Card){
+
+      console.log(player1Cards.cards);
+      console.log('handleP1PickAndDropppppppppppppppppppppppppppp: ',dropCard, newCard);
+      
       setTimeout(() => {
         console.log('P1Pick')
-        //const updatedCards = [...player1Cards.cards, newCard]
-        //setPlayer1Cards(GinRummyScore(updatedCards));
-        player1Cards.cards.push(newCard)
+        // console.log(player1Cards.cards);
+        
+        const updatedCards = [...player1Cards.cards, newCard]
+        setPlayer1Cards(GinRummyScore(updatedCards));
+        // player1Cards.cards.push(newCard)
         setP1Playing('toDrop');
 
         // mock P1 出牌
@@ -810,14 +809,22 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
                   className="absolute"
                   style={{zIndex: 6,boxShadow: '0 4px 8px rgba(255, 255, 255, 0.5)'}}
                   >
-                        <Image
+                        {/* <Image
                             src="/cards-image/back.svg.png"
                             alt={`Card ${index + 1}`}
                             width={100}
                             height={150}
                             draggable="false"
                             className="object-contain cursor-not-allowed"
-                        />
+                        /> */}
+                        <DraggableCard
+                          key={index}
+                          index={index??10}
+                          card={card}
+                          moveCard={(from, to,wholeCardList) => moveCard(from, to,wholeCardList)}
+                          p2Playing ={p2Playing}
+                          wholeCardList = {player2Cards.cards}
+                      />
                     </motion.div>
             ))}
 

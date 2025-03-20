@@ -58,6 +58,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
   const [whosTurn, setWhosTurn] = useState<string>("1")
   
   const dropZoneRef = useRef<Card[]>([]); // 初始化 ref
+  const hasHandlePass = useRef(false)
 
 
   // get random stack of cards (shuffle the card)
@@ -83,8 +84,8 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
     if (whosTurn === "1" && host === "0" && !hasHandledP1Play.current) {
       setP1Playing("toDeal");
       hasHandledP1Play.current = true;
-      // console.log("✅ handleP1Play triggered once");
-      handleP1Play();
+      console.log("✅ handleP1Play triggered once");
+      //handleP1Play();
     }
   }, [whosTurn, host]);
 
@@ -199,6 +200,11 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
           setP1Playing(null)
           setP2Playing("toTake");
           clearInterval(interval);
+        }
+        else if (data.result === 2 && !hasHandlePass.current) {
+          hasHandlePass.current = true
+          console.log("P1 passed, P2 to play")
+          handleP1Play();
         }
       }, 2000);
       return () => clearInterval(interval);
@@ -506,82 +512,65 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
           // console.log(ready)
         })
       }
-      await fetch(`${backend_url}/api/match_move`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          host: host,
-          matchid: matchID,
-          move: 'wait_opponent'})
-      }).then((response) => response.json())
-      .then((data) => {
-        console.log('daaaaaaaaaaaaaaaaaaaaaaaaaaaaataaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: ', data);
-        // console.log('2222222222222daaaaaaaaaaaaaaaaaaaaaaaaaaaaataaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: ',data['dropped_card']);
-        
-        
-        // console.log('P1Play', data)
-        const place = data["operation"]
+      const interval = setInterval(async () => {
+        try {
+          const res = await fetch(`${backend_url}/api/match_move`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              host: host,
+              matchid: matchID,
+              move: 'wait_opponent'})
+          })
+          const data = await res.json();
+            console.log('P1Play', data)
 
-        
-        // player dropped cards
-        const dropped_card_str = data['dropped_card']
-        const dropped_card_obj = JSON.parse(dropped_card_str);
-
-        const dropped_card = { 
-          order:dropped_card_obj.order, 
-          point: dropped_card_obj.point, 
-          name: dropped_card_obj.name, 
-          image: dropped_card_obj.image, 
-          color: dropped_card_obj.color,
-          text: dropped_card_obj.text
-        }
-
-
-        console.log('2222222222222daaaaaaaaaaaaaaaaaaaaaaaaaaaaataaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa: ',dropped_card);
-        // card player get
-        const new_card = { order:data["new_card"]["order"], point: data["new_card"]["point"], name: data["new_card"]["name"], image: data["new_card"]["image"], color: data["new_card"]["color"], text: data["new_card"]["text"] }
-
-        console.log('carddddddddddddddddddddddddddddddddddddddddds: ',player1Cards.cards);
-        
-
-        if (place == 'dropzone') {
-          console.log("dropZoneCards (ref)", dropZoneRef.current);
-          if (dropZoneRef.current.length > 0) {
-            const newDropZone = [...dropZoneRef.current];
-            const lastCard = newDropZone.pop();
-            if (lastCard) {
-              setDropZoneCards(newDropZone); // 正确更新 state
-              setSendingNewCard('dropzone');
-              setP1Playing('toDrop');
-              handleP1PickAndDrop(dropped_card, lastCard);
+            const place = data["operation"]
+            // player dropped cards
+            const dropped_card_str = data['dropped_card']
+            const dropped_card_obj = JSON.parse(dropped_card_str);
+            const dropped_card = { order:dropped_card_obj.order, point:dropped_card_obj.point, name:dropped_card_obj.name, image: dropped_card_obj.image, color: dropped_card_obj.color, text: dropped_card_obj.text }
+            // card player get
+            const new_card = { order:data["new_card"]["order"], point: data["new_card"]["point"], name: data["new_card"]["name"], image: data["new_card"]["image"], color: data["new_card"]["color"], text: data["new_card"]["text"] }
+    
+            if (place == 'dropzone') {
+              console.log("dropZoneCards", dropZoneCards)
+              if (dropZoneCards.length > 0) {
+                const lastCard = dropZoneCards.pop()
+                if (lastCard) {
+                  setDropZoneCards(dropZoneCards);
+                  setSendingNewCard('dropzone');
+                  setP1Playing('toDrop');
+                  handleP1PickAndDrop(dropped_card, lastCard)
+                }
+              }
+              else {
+                alert('ERROR: No card in Drop Zone!');
+              }
+            } else if (place == 'stack'){
+                if (remainingCards.length > 0) {
+                  //const [newCard, ...rest] = remainingCards;
+                  // setNextCard(newCard);
+                  //setRemainingCards(rest);
+                  setSendingNewCard('stack');
+                  setP1Playing('toTake');
+                  //handleP1Pick()
+                  const new_card = { order:data["order_pick"], point: data["point_pick"], name: data["name_pick"], image: data["image_pick"], color: data["color_pick"], text: data["text_pick"] }
+                  
+                  //console.log('get_card_from_stack, P1 to drop')
+                  //const updatedCards = [...player1Cards.cards, new_card]
+                  //setPlayer1Cards(GinRummyScore(updatedCards));
+                  //console.log('get_card_from_stack, P1 to drop', updatedCards)
+                  //console.log('get_card_from_stack, P1 to drop', player1Cards.cards)
+                  handleP1PickAndDrop(dropped_card, new_card)
+                }
             }
-          } else {
-            alert('ERROR: No card in Drop Zone!');
-          }
+        }catch (err) {
+          console.error("Polling failed:", err);
         }
-        
-        
-        else if (place == 'stack'){
-            if (remainingCards.length > 0) {
-              //const [newCard, ...rest] = remainingCards;
-              // setNextCard(newCard);
-              //setRemainingCards(rest);
-              setSendingNewCard('stack');
-              setP1Playing('toTake');
-              //handleP1Pick()
-              const new_card = { order:data["order_pick"], point: data["point_pick"], name: data["name_pick"], image: data["image_pick"], color: data["color_pick"], text: data["text_pick"] }
-              
-              //console.log('get_card_from_stack, P1 to drop')
-              //const updatedCards = [...player1Cards.cards, new_card]
-              //setPlayer1Cards(GinRummyScore(updatedCards));
-              //console.log('get_card_from_stack, P1 to drop', updatedCards)
-              //console.log('get_card_from_stack, P1 to drop', player1Cards.cards)
-              handleP1PickAndDrop(dropped_card, new_card)
-            }
-        }
-      })
+      }, 2000);
     }
 
     function handleP1PickAndDrop(dropCard: Card, newCard: Card){

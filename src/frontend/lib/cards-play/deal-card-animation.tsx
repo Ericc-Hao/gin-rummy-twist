@@ -40,7 +40,7 @@ function getRandomCards(cards: Card[]): Card[] {
   
 }
 
-export default function DealCards({ roomId, host }: { roomId: string; host: string }) {
+export default function DealCards({ roomId, host,}: { roomId: string; host: string}) {
   const [dealing, setDealing] = useState(false);
   const [currentPass, setCurrentPass] = useState<passingStatus>(null)
 
@@ -62,6 +62,8 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
   
   const dropZoneRef = useRef<Card[]>([]); // 初始化 ref
   const hasHandlePass = useRef(false)
+
+  // const [host, setHost] = useState("1"); // 初始host可以是“1”或“0”
 
   // const p1ActionReady = useRef<boolean>(false)
 
@@ -109,7 +111,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
 
   // 非 host 玩家监听 host 是否点击了 Deal（轮询）
   useEffect(() => {
-    if (host === "0" && !dealing) {
+    if (host !== whosTurn && !dealing) {
 
       const interval = setInterval(async () => {
         try {
@@ -216,7 +218,7 @@ useEffect(() => {
 
 // 核心轮询逻辑：非 host 检测是否 passed
 useEffect(() => {
-  if (host === "0" && dealing && currentPassRef.current === null && !hasHandledPass.current) {
+  if (host !== whosTurn && dealing && currentPassRef.current === null && !hasHandledPass.current) {
     console.log("🔄 Start polling /api/is_passed ...");
 
     let count = 0; // 最大轮询次数限制（避免死循环）
@@ -355,6 +357,14 @@ useEffect(() => {
   
   function resetAll(){
     setDealing(false)
+    setDropZoneCards([])
+    if (whosTurn == host) {
+      setP2Playing('toDeal')
+      setP1Playing(null)
+    } else {
+      setP1Playing('toDeal')
+      setP2Playing(null)
+    }
   }
 
   async function startGame(){ 
@@ -900,63 +910,122 @@ useEffect(() => {
       }, 2000);
     }
     
-
-
-
     function handleKnock() {
-      const isGin = player2Cards.DeadwoodsPoint === 0;
-      const isBigGin = isGin && player2Cards.cards.length === 11;
-      const opponentDeadwood = player1Cards.DeadwoodsPoint || 0;
-      const playerDeadwood = player2Cards.DeadwoodsPoint || 0;
+      console.log('hoooooooooooooooooooooooooooooost: ', host);
+      
+      const isHost = host === '1'; // 我是不是host
+      // const isMeKnocking = true;  // 点击 Knock 的就是“我自己”
+
+      console.log('ishhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhost: ', isHost);
+      
+
+      const myCards = player2Cards // 自己手牌
+      const opponentCards = player1Cards  // 对手手牌
+
+      console.log(")))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))");
+      console.log('myCards: ',myCards);
+      console.log('opponentCards: ', opponentCards);
+      
+      
+      
+      
+      const myDeadwood = myCards.DeadwoodsPoint || 0;
+      const opponentDeadwood = opponentCards.DeadwoodsPoint || 0;
+    
+      const isGin = myDeadwood === 0;
+      const isBigGin = isGin && myCards.cards.length === 11;
     
       let baseScore = 0;
       let bonus = 0;
       let result = "Knock";
     
-      // 如果 Gin
       if (isGin) {
         baseScore = opponentDeadwood;
-        bonus = isBigGin ? 31 : 25; // Big Gin Bonus or Gin Bonus
+        bonus = isBigGin ? 39 : 30; // Dozenal: Big Gin = 39z, Gin = 30z
         result = isBigGin ? "Big Gin" : "Gin";
-      } else if (playerDeadwood < opponentDeadwood) {
-        baseScore = opponentDeadwood - playerDeadwood;
-      } else if (playerDeadwood > opponentDeadwood) {
-        // 被 Undercut
-        baseScore = -(playerDeadwood - opponentDeadwood);
-        bonus = 25;
-        result = "Undercut";
+      } else if (myDeadwood < opponentDeadwood) {
+        baseScore = opponentDeadwood - myDeadwood;
       } else {
-        // Deadwood 相同也算 Undercut（按标准规则）
-        baseScore = 0;
-        bonus = 25;
+        // Undercut 判定
+        baseScore = myDeadwood - opponentDeadwood; // 差值
+        bonus = 30;
         result = "Undercut";
+      }
+    
+      // ✅ 判断谁得分
+      let knockerScore = 0, knockerBonus = 0, opponentScore = 0, opponentBonus = 0;
+      if (result === "Undercut") {
+        opponentScore = baseScore;
+        opponentBonus = bonus;
+      } else {
+        knockerScore = baseScore;
+        knockerBonus = bonus;
+      }
+    
+      // p1 是 host，p2 是 guest
+      let p1Score = 0, p1Bonus = 0, p2Score = 0, p2Bonus = 0;
+
+      if (result === "Undercut") {
+        // 对手得分（这里你是 guest，那对手就是 p1）
+        p1Score = baseScore;
+        p1Bonus = bonus;
+      } else {
+        // 你自己得分
+        p2Score = baseScore;
+        p2Bonus = bonus;
       }
     
       const roundData = {
         round: (scoreSummary?.rounds?.length || 0) + 1,
-        p1Score: result === "Undercut" ? baseScore : 0,
-        p1Bonus: result === "Undercut" ? bonus : 0,
-        p1Total: result === "Undercut" ? baseScore + bonus : 0,
-        p2Score: result !== "Undercut" ? baseScore : 0,
-        p2Bonus: result !== "Undercut" ? bonus : 0,
-        p2Total: result !== "Undercut" ? baseScore + bonus : 0,
-        result: result,
+        p1Score,
+        p1Bonus,
+        p1Total: p1Score + p1Bonus,
+        p2Score,
+        p2Bonus,
+        p2Total: p2Score + p2Bonus,
+        result,
       };
     
       setScoreSummary(prev => {
         const prevSummary: ScoreSummary = prev || { rounds: [], p1TotalScore: 0, p2TotalScore: 0 };
         const updatedRounds = [...prevSummary.rounds, roundData];
-    
         const p1TotalScore = updatedRounds.reduce((acc, r) => acc + r.p1Total, 0);
         const p2TotalScore = updatedRounds.reduce((acc, r) => acc + r.p2Total, 0);
-    
         return {
           rounds: updatedRounds,
           p1TotalScore,
           p2TotalScore,
         };
       });
+
+      if (result === "Undercut") {
+        // 对手赢
+        if (host == '0') {
+          console.log("✅ Winner of this round: 1");
+          
+          setWhosTurn('1')
+        } else {
+          console.log("✅ Winner of this round: 0");
+          setWhosTurn('0')
+        }
+      } else {
+        // 自己赢
+        if (host == '0') {
+          console.log("✅ Winner of this round: 0");
+          
+          setWhosTurn('0')
+        } else {
+          console.log("✅ Winner of this round: 1");
+          setWhosTurn('1')
+        }
+
+      }
+      
+      
+
     }
+    
+    
     
     
     function DropZone(){
@@ -1096,7 +1165,7 @@ useEffect(() => {
                     )}
                   </motion.div>
                 )}
-      
+      {whosTurn}
                 {!dealing && whosTurn == host ? (
                     <Button
                     className="absolute left-full ml-4 px-4 py-2 w-[100px] bg-blue-500 text-white rounded"
@@ -1231,7 +1300,7 @@ useEffect(() => {
                 left: 'calc(50% + 60px)',
               }}
             >
-                <ChatBubble content={'DRAW OR PASS'}  bgColor={'bg-yellow-200'} />
+                <ChatBubble content={'PICK OR PASS'}  bgColor={'bg-yellow-200'} />
               
             </div>
           )}
@@ -1283,8 +1352,8 @@ useEffect(() => {
                         whiteSpace: 'nowrap',
                         left: 'calc(50% + 500px)',
                         borderRadius:'50%',
-                        backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'red' : 'gray',
-                        cursor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'pointer' : 'not-allowed',
+                        backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 120 ? 'red' : 'gray',
+                        cursor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 120 ? 'pointer' : 'not-allowed',
                       }}
                       onClick={handleKnock}
                     >
@@ -1294,15 +1363,19 @@ useEffect(() => {
 
               <DialogContent >
                 <DialogHeader>
-                  <DialogTitle className="flex flex-col items-center justify-center">You Win this round</DialogTitle>
-                  <DialogDescription className="flex flex-col items-center justify-center"> Round end by knocking! </DialogDescription>
+                  <DialogTitle className="flex flex-col items-center justify-center">
+                    {whosTurn == host ? "You Win this round 😊 " : "You Loss this round 😢"}
+                  </DialogTitle>
+                  {/* <DialogDescription className="flex flex-col items-center justify-center"> Round end by knocking! </DialogDescription> */}
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <Table>
                     <TableHeader className="bg-gray-200">
                       <TableRow>
                         <TableCell className="font-bold text-center"></TableCell>
-                        <TableCell colSpan={3} className="font-bold text-center"> Robot</TableCell>
+                        <TableCell colSpan={3} className="font-bold text-center">
+                          {roomId === 'mynewgame' ? 'Robot' : 'Opponent'}
+                        </TableCell>
                         <TableCell colSpan={3} className="font-bold text-center"> You</TableCell>
                         <TableCell  className="font-bold text-center"></TableCell>
                       </TableRow>

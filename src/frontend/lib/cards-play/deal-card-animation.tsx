@@ -58,7 +58,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
   const [whosTurn, setWhosTurn] = useState<string>("1")
   
   const dropZoneRef = useRef<Card[]>([]); // 初始化 ref
-  const hasHandlePass = useRef(false)
+  // const hasHandlePass = useRef(false)
 
 
   // get random stack of cards (shuffle the card)

@@ -23,9 +23,8 @@ export function AvatarDisplay({
           style={{
             borderRadius: '50%',
             boxShadow:
-              (p2Playing && player === 2) ||
-              (p1Playing && player === 1) ||
-              (currentPass === player)
+              (p2Playing !== null && player === 2) ||
+              (p1Playing !== null && player === 1)
                 ? '0 0 20px rgba(250,225, 0, 1)'
                 : 'none',
           }}
@@ -34,6 +33,9 @@ export function AvatarDisplay({
       </div>
     );
   }
+  
+  // || (currentPass === player)
+
   
   // 头像旁边的气泡提示框
   export  const ChatBubble: React.FC<ChatBubbleProps> = ({ content, bgColor}) => {

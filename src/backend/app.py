@@ -299,6 +299,8 @@ def set_passed():
 @app.route('/api/is_passed', methods=['POST'])
 def is_passed():
     match_id = request.json.get('matchid')
+    if ongoing_matches.get(request.json['matchid']).latest_player == '1':
+        return jsonify({'result': 2, 'message': 'Host Made a move'})
     if pass_status.get(match_id, False):
         # 检测到 pass 之后就清掉
         pass_status[match_id] = False

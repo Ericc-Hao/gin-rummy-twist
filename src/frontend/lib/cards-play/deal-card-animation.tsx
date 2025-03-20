@@ -28,9 +28,12 @@ import { decimalToDozenal } from './count-dozenal';
 import { AvatarDisplay,ChatBubble  } from '@my-components/avatar'
 import { start } from 'repl';
 import { drop } from 'lodash';
+import { boolean } from 'zod';
 
 //const backend_url = "http://127.0.0.1:8080"
-const backend_url = "http://localhost:8080";
+// const backend_url = "http://localhost:8080";
+const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
+
 
 function getRandomCards(cards: Card[]): Card[] {
   return [...cards].sort(() => 0.5 - Math.random()); // set random rards
@@ -56,31 +59,53 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
   const [matchID, setMatchID] = useState<string>(roomId)
 
   const [whosTurn, setWhosTurn] = useState<string>("1")
+  
+  const dropZoneRef = useRef<Card[]>([]); // 初始化 ref
+  const hasHandlePass = useRef(false)
+
+  // const p1ActionReady = useRef<boolean>(false)
+
 
   // get random stack of cards (shuffle the card)
   const shuffledCards = getRandomCards(CARDS); 
   const initialCardsNumber = 24
   // const host = 1
 
-  console.log("host: ",host);
-  console.log("roomId: ",roomId);
-  console.log("whosTurn: ",whosTurn);
+  // console.log("host: ",host);
+  // console.log("roomId: ",roomId);
+  // console.log("whosTurn: ",whosTurn);
 
   // useEffect(() => {
   //   setPlayer1Cards({cards:[]});
   //   setPlayer2Cards({cards:[]});
   // }, []);
 
+  const hasHandledP1Play = useRef(false);
+
   useEffect(() => {
-    if (whosTurn === "1" && host == "1") {
+    console.log("!!!!!!!!!! whosTurn: ", whosTurn, "host:", host);
+    if (whosTurn === "1" && host === "1" && !hasHandledP1Play.current) {
       setP2Playing("toDeal");
-    } else{
+      // setP2Playing(null);
+      hasHandledP1Play.current = true;
+      console.log("✅ handleP1Play triggered once");
+      //handleP1Play();
+    } 
+    
+    if (whosTurn === "1" && host === "0" && !hasHandledP1Play.current) {
       setP1Playing("toDeal");
-      // TODO: 这里要有个api看对面的move
-      // getAnotherPlayerAction()
-      handleP1Play()
-    }
-  }, [whosTurn]);
+      // setP2Playing(null);
+      hasHandledP1Play.current = true;
+      console.log("✅ handleP1Play triggered once");
+      //handleP1Play();
+    } 
+    
+    // else{
+    //   setP2Playing("toDeal");
+    //   setP1Playing(null);
+    // }
+  }, [whosTurn, host]);
+
 
   // 非 host 玩家监听 host 是否点击了 Deal（轮询）
   useEffect(() => {
@@ -108,10 +133,9 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
   }, [host, dealing]);
 
 
-  // 打印dropzone牌
   useEffect(() => {
-    console.log("66666666666666666666666dropZoneCards updated:", dropZoneCards);
-  }, [dropZoneCards]);
+    console.log("✅ player1Cards updated:", player1Cards.cards);
+  }, [player1Cards]);
   
 
   async function fetchInitialCardsForGuest() {
@@ -139,6 +163,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
         color: data["color0"],
         text: data["text0"]
       };
+      
       setDropZoneCards([dropCard]);
       // console.log("dropZoneCards_fetchInitialCardsForGuest", dropZoneCards)
   
@@ -178,29 +203,156 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
       console.error("fetchInitialCardsForGuest failed:", err);
     }
   }
-  console.log("Mark 1 called")
-  useEffect(() => {
-    if (host === "0" && dealing && currentPass === null) {
-      const interval = setInterval(async () => {
+
+  // 放在组件顶部
+const hasHandledPass = useRef(false);
+const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+const currentPassRef = useRef(currentPass);
+
+// 每次 currentPass 更新时，更新 ref 值
+useEffect(() => {
+  currentPassRef.current = currentPass;
+}, [currentPass]);
+
+// 核心轮询逻辑：非 host 检测是否 passed
+useEffect(() => {
+  if (host === "0" && dealing && currentPassRef.current === null && !hasHandledPass.current) {
+    console.log("🔄 Start polling /api/is_passed ...");
+
+    let count = 0; // 最大轮询次数限制（避免死循环）
+    const MAX_ATTEMPTS = 20;
+
+    const interval = setInterval(async () => {
+      if (hasHandledPass.current) {
+        clearInterval(interval);
+        return;
+      }
+
+      if (count++ >= MAX_ATTEMPTS) {
+        console.warn("⚠️ Polling timeout: No pass detected after max attempts.");
+        clearInterval(interval);
+        return;
+      }
+
+      try {
         const res = await fetch(`${backend_url}/api/is_passed`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ matchid: matchID })
         });
+
         const data = await res.json();
+        console.log(`📡 Polling result:`, data.result);
+
         if (data.result === 0) {
-          setP1Playing(null)
+          // ✅ Host 点击了 PASS
+          console.log("✅ Host PASS detected. P2 to play.");
+          hasHandledPass.current = true;
+          setP1Playing(null);
           setP2Playing("toTake");
           clearInterval(interval);
+        } else if (data.result === 2) {
+          // ✅ Host 从 DropZone 拿牌了（没点击 PASS）
+          console.log("🔁 Host took from DropZone, now P1 playing");
+          hasHandledPass.current = true;
+          handleP1Play(); // 触发 host 自动出牌逻辑
+          setP2Playing(null);
+          clearInterval(interval);
+        } else {
+          // result = 1：尚未点击 pass，也未拿牌，继续轮询
+          console.log("⏳ Host still waiting... continue polling.");
         }
-      }, 2000);
-      return () => clearInterval(interval);
-    }
-  }, [dealing]);
+
+      } catch (err) {
+        console.error("❌ Polling is_passed failed:", err);
+      }
+    }, 2000);
+
+    // 清理 interval
+    return () => {
+      console.log("🛑 Cleanup polling interval");
+      clearInterval(interval);
+    };
+  }
+}, [dealing, host, matchID]);
+
+
+
+
+
+  // console.log("Mark 1 called")
+  // useEffect(() => {
+  //   if (host === "0" && dealing && currentPass === null && !hasHandlePass.current) {
+  //     const interval = setInterval(async () => {
+  //       const res = await fetch(`${backend_url}/api/is_passed`, {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ matchid: matchID })
+  //       });
+  //       const data = await res.json();
+  //       if (data.result === 0) {
+  //         setP1Playing(null)
+  //         // setP2Playing("toTake");
+  //         clearInterval(interval);
+  //       }
+  //       else if (data.result === 2 && !hasHandlePass.current) {
+  //         hasHandlePass.current = true
+  //         console.log("P1 passed, P2 to play")
+  //         handleP1Play();
+  //         clearInterval(interval)
+  //       }
+  //     }, 2000);
+  //     return () => clearInterval(interval);
+  //   }
+  // }, [dealing]);
+
+  // useEffect(() => {
+  //   if (host === "0" && dealing && currentPass === null) {
+  //     const interval = setInterval(async () => {
+  //       try {
+  //         const res = await fetch(`${backend_url}/api/is_passed`, {
+  //           method: "POST",
+  //           headers: { "Content-Type": "application/json" },
+  //           body: JSON.stringify({ matchid: matchID })
+  //         });
   
+  //         const data = await res.json();
+  //         // p1 点了pass
+  //         if (data.result === 0) {
+  //           console.log("✅ P1 passed detected. Stopping interval.");
+  //           hasHandlePass.current = true; // ✅ 标记不再重复进入
+  //           setP1Playing(null);
+  //           setP2Playing('toTake')
+  //           // setP2Playing("toTake");
+  //           clearInterval(interval); // ✅ 正确终止轮询
+  //         }
+  //         // p1 从drop zone拿牌了
+  //         else if (data.result === 2 && !hasHandlePass.current) {
+  //           hasHandlePass.current = true
+  //           console.log("P1 passed, P2 to play")
+  //           console.log();
+            
+  //           handleP1Play();
+  //           setP2Playing(null);
+  //           clearInterval(interval)
+  //         }
+  //       } catch (e) {
+  //         console.error("Polling is_passed failed", e);
+  //       }
+  //     }, 2000);
+  
+  //     return () => clearInterval(interval); // ✅ 正确清理
+  //   }
+  // }, [dealing, host,  matchID]);
   
   
 
+  // 每次 dropZoneCards 更新，同步更新 ref
+  useEffect(() => {
+    dropZoneRef.current = dropZoneCards;
+  }, [dropZoneCards]);
+
+  
   function resetAll(){
     setDealing(false)
   }
@@ -300,14 +452,14 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
     .then((data) => {
       const newCard = { order:data["order"], point: data["point"], name: data["name"], image: data["image"], color: data["color"], text: data["text"] };
       setSendingNewCard('stack'); 
-      console.log('get_card_from_stack, newCard', newCard)
+      // console.log('get_card_from_stack, newCard', newCard)
       if (is_P2){
         setP2Playing('toDrop');
-        console.log('get_card_from_stack, P2 to drop')
+        // console.log('get_card_from_stack, P2 to drop')
         const updatedCards = [...player2Cards.cards, newCard]
         setPlayer2Cards(GinRummyScore(updatedCards));
-        console.log('get_card_from_stack, P2 to drop', updatedCards)
-        console.log('get_card_from_stack, P2 to drop', player2Cards.cards)
+        // console.log('get_card_from_stack, P2 to drop', updatedCards)
+        // console.log('get_card_from_stack, P2 to drop', player2Cards.cards)
       }
     }
   )
@@ -328,7 +480,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
       setPlayer1Cards({cards:[]})
       setPlayer2Cards({cards:[]})
       setRemainingCards([])
-      setDropZoneCards([])
+      // setDropZoneCards([])
       setSendingNewCard(null)
      }
     }, [dealing]);
@@ -337,7 +489,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
     function handlePass(){
       setP2Playing(null);
       setP1Playing('toTake')
-      console.log("222222222222222222: ", roomId);
+      // console.log("222222222222222222: ", roomId);
       
       if (roomId == 'mynewgame'){
         handleP1Play()//Changed to handleRobotAutoPlay() once
@@ -390,6 +542,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
     // P2从dropzone拿 下一张牌
     // dropzone拿牌规则：LIFO，新牌添加在最后，pop取出，显示是从后往前显示
     async function handleDropZone(){
+
       if (p2Playing == 'toTake' || currentPass == 2){
         if (currentPass == 2) {
           setCurrentPass(null)
@@ -462,6 +615,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
           })
           setP1Playing("toTake")
           setP2Playing(null)
+
           if (roomId == 'mynewgame'){
             handleP1Play()
           } else {
@@ -476,7 +630,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
     async function handleP1Play() {// Changed to handleRobotAutoPlay once
       let ready = false;
       while (ready == false){
-        console.log(ready)
+        // console.log(ready)
         await fetch(`${backend_url}/api/match_move`, {
           method: "POST",
           headers: {
@@ -489,99 +643,185 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
         }).then((response) => response.json())
         .then((data) => {
           ready = data["result"] == 0
-          console.log(data["result"])
-          console.log(ready)
+          // console.log(data["result"])
+          // console.log(ready)
         })
       }
-      await fetch(`${backend_url}/api/match_move`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          host: host,
-          matchid: matchID,
-          move: 'wait_opponent'})
-      }).then((response) => response.json())
-      .then((data) => {
-        console.log('P1Play', data)
-        const place = data["operation"]
-        // player dropped cards
-        const dropped_card = { order:data["dropped_card"]["order"], point: data["dropped_card"]["point"], name: data["dropped_card"]["name"], image: data["dropped_card"]["image"], color: data["dropped_card"]["color"], text: data["dropped_card"]["text"] }
-        // card player get
-        const new_card = { order:data["new_card"]["order"], point: data["new_card"]["point"], name: data["new_card"]["name"], image: data["new_card"]["image"], color: data["new_card"]["color"], text: data["new_card"]["text"] }
+      setP2Playing(null)
 
-        if (place == 'dropzone') {
-          console.log("dropZoneCards", dropZoneCards)
-          if (dropZoneCards.length > 0) {
-            const lastCard = dropZoneCards.pop()
-            if (lastCard) {
-              setDropZoneCards(dropZoneCards);
-              setSendingNewCard('dropzone');
-              setP1Playing('toDrop');
-              handleP1PickAndDrop(dropped_card, lastCard)
-            }
-          }
-          else {
-            alert('ERROR: No card in Drop Zone!');
-          }
-        } else if (place == 'stack'){
-            if (remainingCards.length > 0) {
-              //const [newCard, ...rest] = remainingCards;
-              // setNextCard(newCard);
-              //setRemainingCards(rest);
-              setSendingNewCard('stack');
-              setP1Playing('toTake');
-              //handleP1Pick()
-              const new_card = { order:data["order_pick"], point: data["point_pick"], name: data["name_pick"], image: data["image_pick"], color: data["color_pick"], text: data["text_pick"] }
-              
-              //console.log('get_card_from_stack, P1 to drop')
-              //const updatedCards = [...player1Cards.cards, new_card]
-              //setPlayer1Cards(GinRummyScore(updatedCards));
-              //console.log('get_card_from_stack, P1 to drop', updatedCards)
-              //console.log('get_card_from_stack, P1 to drop', player1Cards.cards)
-              handleP1PickAndDrop(dropped_card, new_card)
-            }
+      let alreadyHandled = false;
+      const interval = setInterval(async () => {
+        if (alreadyHandled){
+          clearInterval(interval);
         }
-      })
-    }
+         
+        
+        try {
+          const res = await fetch(`${backend_url}/api/match_move`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              host: host,
+              matchid: matchID,
+              move: 'wait_opponent'})
+          })
+          const data = await res.json();
+            console.log('P1Play', data)
 
-    function handleP1PickAndDrop(dropCard: Card, newCard: Card){
-      setTimeout(() => {
-        console.log('P1Pick')
-        //const updatedCards = [...player1Cards.cards, newCard]
-        //setPlayer1Cards(GinRummyScore(updatedCards));
-        player1Cards.cards.push(newCard)
-        setP1Playing('toDrop');
+            const place = data["operation"]
+            // player dropped cards
+            const dropped_card_str = data['dropped_card']
+            const dropped_card_obj = JSON.parse(dropped_card_str);
+            const dropped_card = { order:dropped_card_obj.order, point:dropped_card_obj.point, name:dropped_card_obj.name, image: dropped_card_obj.image, color: dropped_card_obj.color, text: dropped_card_obj.text }
+            // card player get
 
-        // mock P1 出牌
-        setTimeout(() => {
-          let dropIndex = 1;
-          if (player1Cards.cards.length > 0) {
-            for (let i = 0; i < player1Cards.cards.length; i++) {
-              if (player1Cards.cards[i].name == dropCard.name) {
-                dropIndex = i
-                break;
+            const new_card_str = data['new_card']
+            const new_card_obj = JSON.parse(new_card_str);
+            // const new_card = { order:data["new_card"]["order"], point: data["new_card"]["point"], name: data["new_card"]["name"], image: data["new_card"]["image"], color: data["new_card"]["color"], text: data["new_card"]["text"] }
+            const new_card = { order:new_card_obj.order, point:new_card_obj.point, name:new_card_obj.name, image: new_card_obj.image, color: new_card_obj.color, text: new_card_obj.text }
+            
+            if (place && dropped_card_str && new_card_str) {
+              alreadyHandled = true;
+              clearInterval(interval);
+            }
+
+
+            if (place == 'dropzone') {
+              console.log("dropZoneCards (ref)", dropZoneRef.current);
+              // if (dropZoneRef.current.length > 0) {
+                const newDropZone = [...dropZoneRef.current];
+                const lastCard = newDropZone.pop();
+                // const lastCard = new_card;
+
+                console.log("9999999999999999999999999999999999999999999: ",lastCard);
+                
+                if (lastCard) {
+                  setDropZoneCards(newDropZone); // ✅ 提前更新 DropZone 状态
+                  setSendingNewCard('dropzone');
+                  setP1Playing('toDrop');
+              
+                  // 👇 处理动画
+                  handleP1PickAndDrop(dropped_card, lastCard);
               }
+              
+              // } else {
+              //   alert('ERROR: No card in Drop Zone!');
+              // }
             }
             
-            const droppedCard = player1Cards.cards[dropIndex];
-            setP1DroppingCard({...droppedCard, index:dropIndex});
-            player1Cards.cards.splice(dropIndex, 1);
-            setPlayer1Cards(GinRummyScore(player1Cards.cards));
-            console.log(droppedCard)
-            //console.log('P1Drop', player1Cards.cards)
-  
-            setTimeout(() => {
-              setDropZoneCards((prev) => [...prev, droppedCard]);
-              setP1Playing(null)
-              setP1DroppingCard(null);
-              setP2Playing('toTake')
-            }, 400);
-          }
-        }, 1000);
-      }, 300);
+            else if (place == 'stack'){
+                if (remainingCards.length > 0) {
+                  //const [newCard, ...rest] = remainingCards;
+                  // setNextCard(newCard);
+                  //setRemainingCards(rest);
+                  setSendingNewCard('stack');
+                  setP1Playing('toDrop');
+
+                  //handleP1Pick()
+                  // const new_card = { order:data["order_pick"], point: data["point_pick"], name: data["name_pick"], image: data["image_pick"], color: data["color_pick"], text: data["text_pick"] }
+                  
+                  //console.log('get_card_from_stack, P1 to drop')
+                  //const updatedCards = [...player1Cards.cards, new_card]
+                  //setPlayer1Cards(GinRummyScore(updatedCards));
+                  //console.log('get_card_from_stack, P1 to drop', updatedCards)
+                  //console.log('get_card_from_stack, P1 to drop', player1Cards.cards)
+                  handleP1PickAndDrop(dropped_card, new_card)
+                
+                }
+            }
+
+
+        }catch (err) {
+          console.error("Polling failed:", err);
+        }
+      }, 2000);
     }
+
+    // function handleP1PickAndDrop(dropCard: Card, newCard: Card){
+
+    //   console.log(player1Cards.cards);
+    //   console.log('handleP1PickAndDropppppppppppppppppppppppppppp: ',dropCard, newCard);
+
+    //   p1ActionReady.current = true
+
+    //   setTimeout(() => {
+    //     console.log('P1Pick')
+    //     // console.log(player1Cards.cards);
+        
+    //     const updatedCards = [...player1Cards.cards, newCard]
+    //     setPlayer1Cards(GinRummyScore(updatedCards));
+    //     // player1Cards.cards.push(newCard)
+    //     setP1Playing('toDrop');
+
+    //     // mock P1 出牌
+    //     setTimeout(() => {
+    //       let dropIndex = 1;
+    //       if (player1Cards.cards.length > 0) {
+    //         for (let i = 0; i < player1Cards.cards.length; i++) {
+    //           if (player1Cards.cards[i].name == dropCard.name) {
+    //             dropIndex = i
+    //             break;
+    //           }
+    //         }
+            
+    //         const droppedCard = player1Cards.cards[dropIndex];
+    //         setP1DroppingCard({...droppedCard, index:dropIndex});
+    //         player1Cards.cards.splice(dropIndex, 1);
+    //         setPlayer1Cards(GinRummyScore(player1Cards.cards));
+    //         console.log("debuggggggggggggggggggggggggggggggggggggggggggggggggggg: ", dropIndex,droppedCard)
+    //         //console.log('P1Drop', player1Cards.cards)
+  
+    //         setTimeout(() => {
+    //           setDropZoneCards((prev) => [...prev, droppedCard]);
+    //           setP1Playing(null)
+    //           setP1DroppingCard(null);
+    //           setP2Playing('toTake')
+    //           p1ActionReady.current = false
+              
+           
+    //         }, 400);
+    //       }
+    //     }, 1000);
+    //   }, 300);
+    // }
+
+    function handleP1PickAndDrop(dropCard: Card, newCard: Card) {
+      console.log('🟡 handleP1PickAndDrop start:', dropCard, newCard);
+    
+      // ✅ 1. 先显示拿牌动画（添加 newCard）
+      const newHand = [...player1Cards.cards, newCard];
+      setPlayer1Cards(GinRummyScore(newHand));
+      setP1Playing('toDrop'); // 表明动画阶段是“刚拿完牌，准备出牌”
+    
+      // ✅ 2. 等拿牌动画结束后再开始出牌
+      setTimeout(() => {
+        const dropIndex = newHand.findIndex((card) => card.name === dropCard.name);
+        if (dropIndex === -1) {
+          console.warn("⚠️ Drop card not found after adding newCard:", dropCard.name);
+          return;
+        }
+    
+        const droppedCard = newHand[dropIndex];
+        newHand.splice(dropIndex, 1);
+    
+        // ✅ 更新手牌和动画状态
+        setPlayer1Cards(GinRummyScore(newHand));
+        setP1DroppingCard({ ...droppedCard, index: dropIndex });
+    
+        // ✅ 3. 出牌动画后再更新 DropZone
+        setTimeout(() => {
+          setDropZoneCards((prev) => [...prev, droppedCard]);
+          setP1Playing(null);
+          setP1DroppingCard(null);
+          setP2Playing('toTake');
+        }, 500);
+      }, 800); // 等待拿牌动画走完（和 transition.duration 配合）
+    }
+    
+
+
 
     async function getAnotherPlayerAction() {
       const interval = setInterval(async () => {
@@ -765,14 +1005,22 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
                   className="absolute"
                   style={{zIndex: 6,boxShadow: '0 4px 8px rgba(255, 255, 255, 0.5)'}}
                   >
-                        <Image
+                        {/* <Image
                             src="/cards-image/back.svg.png"
                             alt={`Card ${index + 1}`}
                             width={100}
                             height={150}
                             draggable="false"
                             className="object-contain cursor-not-allowed"
-                        />
+                        /> */}
+                        <DraggableCard
+                          key={index}
+                          index={index??10}
+                          card={card}
+                          moveCard={(from, to,wholeCardList) => moveCard(from, to,wholeCardList)}
+                          p2Playing ={p2Playing}
+                          wholeCardList = {player2Cards.cards}
+                      />
                     </motion.div>
             ))}
 

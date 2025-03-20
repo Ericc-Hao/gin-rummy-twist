@@ -1,6 +1,8 @@
 // matchFormation.ts（不再是 React 组件！）
 //const backend_url = process.env.BACKEND_URL;
-const backend_url = "http://localhost:8080";
+// const backend_url = "http://localhost:8080";
+const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
+
 export async function createRoom(): Promise<string | null> {
   try {
     const response = await fetch(`${backend_url}/api/match_create`, {

@@ -206,7 +206,11 @@ class Match():
             else:
                 raise Exception("Invalid drop index from bot_drop or guest_cards empty!")
         
-        new_card = self.guest_cards[-1] if self.guest_cards else {}
+        
+        if self.latest_player == guest:
+            new_card = self.guest_cards[-1] if self.guest_cards else {}
+        else:
+            new_card = self.host_cards[-1] if self.host_cards else {}
         last_drop = self.drop_zone[-1] if self.drop_zone else {}
         return self.latest_player, self.latest_operation, last_drop, new_card
 

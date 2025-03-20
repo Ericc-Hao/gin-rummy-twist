@@ -8,7 +8,7 @@ import datetime
 import json
 
 app = Flask(__name__)
-CORS(app, origins=['http://localhost:3000'])
+CORS(app, origins=['http://localhost:3000', "https://ginrummys.ca"])
 
 
 

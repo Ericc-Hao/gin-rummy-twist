@@ -21,7 +21,7 @@ server_start_time = datetime.datetime.now()
 @app.route("/")
 def index():
     return render_template("status.html", 
-                           version = "0.0.1-rc0",
+                           version = "0.0.1-rc1",
                            start_time = server_start_time.timestamp())
 
 @app.route('/api/signup', methods=['POST'])

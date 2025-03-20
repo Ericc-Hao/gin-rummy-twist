@@ -76,17 +76,30 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
   // }, []);
 
   const hasHandledP1Play = useRef(false);
-  const hasHandlePass = useRef(false)
+  // const hasHandlePass = useRef(false)
 
   useEffect(() => {
     console.log("!!!!!!!!!! whosTurn: ", whosTurn, "host:", host);
-    
-    if (whosTurn === "1" && host === "0" && !hasHandledP1Play.current) {
-      setP1Playing("toDeal");
+    if (whosTurn === "1" && host === "1" && !hasHandledP1Play.current) {
+      setP2Playing("toDeal");
+      // setP2Playing(null);
       hasHandledP1Play.current = true;
       console.log("✅ handleP1Play triggered once");
       //handleP1Play();
-    }
+    } 
+    
+    if (whosTurn === "1" && host === "0" && !hasHandledP1Play.current) {
+      setP1Playing("toDeal");
+      // setP2Playing(null);
+      hasHandledP1Play.current = true;
+      console.log("✅ handleP1Play triggered once");
+      //handleP1Play();
+    } 
+    
+    // else{
+    //   setP2Playing("toDeal");
+    //   setP1Playing(null);
+    // }
   }, [whosTurn, host]);
 
 
@@ -188,7 +201,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
   }
   // console.log("Mark 1 called")
   useEffect(() => {
-    if (host === "0" && dealing && currentPass === null) {
+    if (host === "0" && dealing && currentPass === null && !hasHandlePass.current) {
       const interval = setInterval(async () => {
         const res = await fetch(`${backend_url}/api/is_passed`, {
           method: "POST",
@@ -205,11 +218,41 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
           hasHandlePass.current = true
           console.log("P1 passed, P2 to play")
           handleP1Play();
+          clearInterval(interval)
         }
       }, 2000);
       return () => clearInterval(interval);
     }
   }, [dealing]);
+
+  useEffect(() => {
+    if (host === "0" && dealing && currentPass === null && !hasHandlePass.current) {
+      const interval = setInterval(async () => {
+        try {
+          const res = await fetch(`${backend_url}/api/is_passed`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ matchid: matchID })
+          });
+  
+          const data = await res.json();
+  
+          if (data.result === 0) {
+            console.log("✅ P1 passed detected. Stopping interval.");
+            hasHandlePass.current = true; // ✅ 标记不再重复进入
+            setP1Playing(null);
+            setP2Playing("toTake");
+            clearInterval(interval); // ✅ 正确终止轮询
+          }
+        } catch (e) {
+          console.error("Polling is_passed failed", e);
+        }
+      }, 2000);
+  
+      return () => clearInterval(interval); // ✅ 正确清理
+    }
+  }, [dealing, host, currentPass, matchID]);
+  
   
 
   // 每次 dropZoneCards 更新，同步更新 ref
@@ -530,26 +573,28 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
             const place = data["operation"]
             // player dropped cards
             const dropped_card_str = data['dropped_card']
-            const dropped_card_obj = JSON.parse(dropped_card_str);
+            const dropped_card_obj = JSON.parse(dropped_card_str);
             const dropped_card = { order:dropped_card_obj.order, point:dropped_card_obj.point, name:dropped_card_obj.name, image: dropped_card_obj.image, color: dropped_card_obj.color, text: dropped_card_obj.text }
             // card player get
             const new_card = { order:data["new_card"]["order"], point: data["new_card"]["point"], name: data["new_card"]["name"], image: data["new_card"]["image"], color: data["new_card"]["color"], text: data["new_card"]["text"] }
     
             if (place == 'dropzone') {
-              console.log("dropZoneCards", dropZoneCards)
-              if (dropZoneCards.length > 0) {
-                const lastCard = dropZoneCards.pop()
+              console.log("dropZoneCards (ref)", dropZoneRef.current);
+              if (dropZoneRef.current.length > 0) {
+                const newDropZone = [...dropZoneRef.current];
+                const lastCard = newDropZone.pop();
                 if (lastCard) {
-                  setDropZoneCards(dropZoneCards);
+                  setDropZoneCards(newDropZone); // 正确更新 state
                   setSendingNewCard('dropzone');
                   setP1Playing('toDrop');
-                  handleP1PickAndDrop(dropped_card, lastCard)
+                  handleP1PickAndDrop(dropped_card, lastCard);
                 }
-              }
-              else {
+              } else {
                 alert('ERROR: No card in Drop Zone!');
               }
-            } else if (place == 'stack'){
+            }
+            
+            else if (place == 'stack'){
                 if (remainingCards.length > 0) {
                   //const [newCard, ...rest] = remainingCards;
                   // setNextCard(newCard);

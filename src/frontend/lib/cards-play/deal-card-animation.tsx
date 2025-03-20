@@ -31,8 +31,8 @@ import { drop } from 'lodash';
 import { boolean } from 'zod';
 
 //const backend_url = "http://127.0.0.1:8080"
-// const backend_url = "http://localhost:8080";
-const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
+const backend_url = "http://localhost:8080";
+// const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
 
 
 function getRandomCards(cards: Card[]): Card[] {
@@ -682,6 +682,10 @@ useEffect(() => {
             // const new_card = { order:data["new_card"]["order"], point: data["new_card"]["point"], name: data["new_card"]["name"], image: data["new_card"]["image"], color: data["new_card"]["color"], text: data["new_card"]["text"] }
             const new_card = { order:new_card_obj.order, point:new_card_obj.point, name:new_card_obj.name, image: new_card_obj.image, color: new_card_obj.color, text: new_card_obj.text }
             
+            console.log('8888888888888888888888888888888888888888: ', new_card);
+            
+
+
             if (place && dropped_card_str && new_card_str) {
               alreadyHandled = true;
               clearInterval(interval);
@@ -899,36 +903,61 @@ useEffect(() => {
 
 
 
-    function handleKnock(){
+    function handleKnock() {
+      const isGin = player2Cards.DeadwoodsPoint === 0;
+      const isBigGin = isGin && player2Cards.cards.length === 11;
+      const opponentDeadwood = player1Cards.DeadwoodsPoint || 0;
+      const playerDeadwood = player2Cards.DeadwoodsPoint || 0;
+    
+      let baseScore = 0;
+      let bonus = 0;
+      let result = "Knock";
+    
+      // 如果 Gin
+      if (isGin) {
+        baseScore = opponentDeadwood;
+        bonus = isBigGin ? 31 : 25; // Big Gin Bonus or Gin Bonus
+        result = isBigGin ? "Big Gin" : "Gin";
+      } else if (playerDeadwood < opponentDeadwood) {
+        baseScore = opponentDeadwood - playerDeadwood;
+      } else if (playerDeadwood > opponentDeadwood) {
+        // 被 Undercut
+        baseScore = -(playerDeadwood - opponentDeadwood);
+        bonus = 25;
+        result = "Undercut";
+      } else {
+        // Deadwood 相同也算 Undercut（按标准规则）
+        baseScore = 0;
+        bonus = 25;
+        result = "Undercut";
+      }
+    
       const roundData = {
         round: (scoreSummary?.rounds?.length || 0) + 1,
-        p1Score: 0, 
-        p1Bonus: 0,
-        p1Total: 0,  
-        p2Score: player1Cards.DeadwoodsPoint! - player2Cards.DeadwoodsPoint!,
-        p2Bonus: 0,
-        p2Total: player1Cards.DeadwoodsPoint! - player2Cards.DeadwoodsPoint!,
-        result: "Knock"
+        p1Score: result === "Undercut" ? baseScore : 0,
+        p1Bonus: result === "Undercut" ? bonus : 0,
+        p1Total: result === "Undercut" ? baseScore + bonus : 0,
+        p2Score: result !== "Undercut" ? baseScore : 0,
+        p2Bonus: result !== "Undercut" ? bonus : 0,
+        p2Total: result !== "Undercut" ? baseScore + bonus : 0,
+        result: result,
       };
-
+    
       setScoreSummary(prev => {
         const prevSummary: ScoreSummary = prev || { rounds: [], p1TotalScore: 0, p2TotalScore: 0 };
-    
         const updatedRounds = [...prevSummary.rounds, roundData];
     
-        const p1TotalScore = updatedRounds.reduce((acc, round) => {
-          return acc + round.p1Total;
-        }, 0);
-        const p2TotalScore = updatedRounds.reduce((acc, round) => {
-          return acc + round.p2Total;
-        }, 0);
+        const p1TotalScore = updatedRounds.reduce((acc, r) => acc + r.p1Total, 0);
+        const p2TotalScore = updatedRounds.reduce((acc, r) => acc + r.p2Total, 0);
+    
         return {
           rounds: updatedRounds,
-          p1TotalScore: p1TotalScore,
-          p2TotalScore: p2TotalScore
+          p1TotalScore,
+          p2TotalScore,
         };
       });
     }
+    
     
     function DropZone(){
       const [{ isOver }, drop] = useDrop({

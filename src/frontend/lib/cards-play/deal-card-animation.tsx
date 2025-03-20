@@ -56,31 +56,37 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
   const [matchID, setMatchID] = useState<string>(roomId)
 
   const [whosTurn, setWhosTurn] = useState<string>("1")
+  
+  const dropZoneRef = useRef<Card[]>([]); // 初始化 ref
+
 
   // get random stack of cards (shuffle the card)
   const shuffledCards = getRandomCards(CARDS); 
   const initialCardsNumber = 24
   // const host = 1
 
-  console.log("host: ",host);
-  console.log("roomId: ",roomId);
-  console.log("whosTurn: ",whosTurn);
+  // console.log("host: ",host);
+  // console.log("roomId: ",roomId);
+  // console.log("whosTurn: ",whosTurn);
 
   // useEffect(() => {
   //   setPlayer1Cards({cards:[]});
   //   setPlayer2Cards({cards:[]});
   // }, []);
 
+  const hasHandledP1Play = useRef(false);
+
   useEffect(() => {
-    if (whosTurn === "1" && host == "1") {
-      setP2Playing("toDeal");
-    } else{
+    console.log("!!!!!!!!!! whosTurn: ", whosTurn, "host:", host);
+    
+    if (whosTurn === "1" && host === "0" && !hasHandledP1Play.current) {
       setP1Playing("toDeal");
-      // TODO: 这里要有个api看对面的move
-      // getAnotherPlayerAction()
-      handleP1Play()
+      hasHandledP1Play.current = true;
+      console.log("✅ handleP1Play triggered once");
+      handleP1Play();
     }
-  }, [whosTurn]);
+  }, [whosTurn, host]);
+
 
   // 非 host 玩家监听 host 是否点击了 Deal（轮询）
   useEffect(() => {
@@ -139,6 +145,8 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
         color: data["color0"],
         text: data["text0"]
       };
+      console.log("sssssssssssssssssssssssssssssss: ", dropCard);
+      
       setDropZoneCards([dropCard]);
       // console.log("dropZoneCards_fetchInitialCardsForGuest", dropZoneCards)
   
@@ -178,7 +186,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
       console.error("fetchInitialCardsForGuest failed:", err);
     }
   }
-  console.log("Mark 1 called")
+  // console.log("Mark 1 called")
   useEffect(() => {
     if (host === "0" && dealing && currentPass === null) {
       const interval = setInterval(async () => {
@@ -198,6 +206,19 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
     }
   }, [dealing]);
   
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     console.log("🃏 DropZoneCards (polling):", dropZoneCards);
+  //   }, 2000);
+  
+  //   return () => clearInterval(interval); // 清理 interval，避免内存泄漏
+  // }, [dropZoneCards]);
+
+  // 每次 dropZoneCards 更新，同步更新 ref
+  useEffect(() => {
+    dropZoneRef.current = dropZoneCards;
+  }, [dropZoneCards]);
+
   
   
 
@@ -300,14 +321,14 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
     .then((data) => {
       const newCard = { order:data["order"], point: data["point"], name: data["name"], image: data["image"], color: data["color"], text: data["text"] };
       setSendingNewCard('stack'); 
-      console.log('get_card_from_stack, newCard', newCard)
+      // console.log('get_card_from_stack, newCard', newCard)
       if (is_P2){
         setP2Playing('toDrop');
-        console.log('get_card_from_stack, P2 to drop')
+        // console.log('get_card_from_stack, P2 to drop')
         const updatedCards = [...player2Cards.cards, newCard]
         setPlayer2Cards(GinRummyScore(updatedCards));
-        console.log('get_card_from_stack, P2 to drop', updatedCards)
-        console.log('get_card_from_stack, P2 to drop', player2Cards.cards)
+        // console.log('get_card_from_stack, P2 to drop', updatedCards)
+        // console.log('get_card_from_stack, P2 to drop', player2Cards.cards)
       }
     }
   )
@@ -328,7 +349,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
       setPlayer1Cards({cards:[]})
       setPlayer2Cards({cards:[]})
       setRemainingCards([])
-      setDropZoneCards([])
+      // setDropZoneCards([])
       setSendingNewCard(null)
      }
     }, [dealing]);
@@ -337,7 +358,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
     function handlePass(){
       setP2Playing(null);
       setP1Playing('toTake')
-      console.log("222222222222222222: ", roomId);
+      // console.log("222222222222222222: ", roomId);
       
       if (roomId == 'mynewgame'){
         handleP1Play()//Changed to handleRobotAutoPlay() once
@@ -462,6 +483,9 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
           })
           setP1Playing("toTake")
           setP2Playing(null)
+
+          console.log("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj");
+          
           if (roomId == 'mynewgame'){
             handleP1Play()
           } else {
@@ -474,9 +498,11 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
   
     // P1自动出牌
     async function handleP1Play() {// Changed to handleRobotAutoPlay once
+      console.log("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
+      
       let ready = false;
       while (ready == false){
-        console.log(ready)
+        // console.log(ready)
         await fetch(`${backend_url}/api/match_move`, {
           method: "POST",
           headers: {
@@ -489,8 +515,8 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
         }).then((response) => response.json())
         .then((data) => {
           ready = data["result"] == 0
-          console.log(data["result"])
-          console.log(ready)
+          // console.log(data["result"])
+          // console.log(ready)
         })
       }
       await fetch(`${backend_url}/api/match_move`, {
@@ -504,28 +530,47 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
           move: 'wait_opponent'})
       }).then((response) => response.json())
       .then((data) => {
-        console.log('P1Play', data)
+        // console.log('P1Play', data)
         const place = data["operation"]
         // player dropped cards
         const dropped_card = { order:data["dropped_card"]["order"], point: data["dropped_card"]["point"], name: data["dropped_card"]["name"], image: data["dropped_card"]["image"], color: data["dropped_card"]["color"], text: data["dropped_card"]["text"] }
         // card player get
         const new_card = { order:data["new_card"]["order"], point: data["new_card"]["point"], name: data["new_card"]["name"], image: data["new_card"]["image"], color: data["new_card"]["color"], text: data["new_card"]["text"] }
 
+        // if (place == 'dropzone') {
+        //   console.log("dropZoneCards", dropZoneCards)
+        //   if (dropZoneCards.length > 0) {
+        //     const lastCard = dropZoneCards.pop()
+        //     if (lastCard) {
+        //       setDropZoneCards(dropZoneCards);
+        //       setSendingNewCard('dropzone');
+        //       setP1Playing('toDrop');
+        //       handleP1PickAndDrop(dropped_card, lastCard)
+        //     }
+        //   }
+        //   else {
+        //     alert('ERROR: No card in Drop Zone!');
+        //   }
+        // } 
+
         if (place == 'dropzone') {
-          console.log("dropZoneCards", dropZoneCards)
-          if (dropZoneCards.length > 0) {
-            const lastCard = dropZoneCards.pop()
+          console.log("dropZoneCards (ref)", dropZoneRef.current);
+          if (dropZoneRef.current.length > 0) {
+            const newDropZone = [...dropZoneRef.current];
+            const lastCard = newDropZone.pop();
             if (lastCard) {
-              setDropZoneCards(dropZoneCards);
+              setDropZoneCards(newDropZone); // 正确更新 state
               setSendingNewCard('dropzone');
               setP1Playing('toDrop');
-              handleP1PickAndDrop(dropped_card, lastCard)
+              handleP1PickAndDrop(dropped_card, lastCard);
             }
-          }
-          else {
+          } else {
             alert('ERROR: No card in Drop Zone!');
           }
-        } else if (place == 'stack'){
+        }
+        
+        
+        else if (place == 'stack'){
             if (remainingCards.length > 0) {
               //const [newCard, ...rest] = remainingCards;
               // setNextCard(newCard);
@@ -569,7 +614,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
             setP1DroppingCard({...droppedCard, index:dropIndex});
             player1Cards.cards.splice(dropIndex, 1);
             setPlayer1Cards(GinRummyScore(player1Cards.cards));
-            console.log(droppedCard)
+            console.log("debuggggggggggggggggggggggggggggggggggggggggggggggggggg: ", dropIndex,droppedCard)
             //console.log('P1Drop', player1Cards.cards)
   
             setTimeout(() => {

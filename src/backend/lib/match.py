@@ -95,6 +95,7 @@ class Match():
     def __init__(self, match_id: str, bot: bool = False):
         self.match_id = match_id
         self.current_round = -2
+        self.initialize_match()
         if bot:
             self.Bot = Bot()
         else:

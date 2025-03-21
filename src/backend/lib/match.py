@@ -20,6 +20,7 @@ text = 'text'
 host = "1"
 guest = "0"
 
+
 DECK = [
   { order:1, point: 1, name: 'clubs-01', image: '/cards-image/clubs/clubs-01.svg.png', color: 'text-green-700', text: '1' },
   { order:2, point: 2, name: 'clubs-02', image: '/cards-image/clubs/clubs-02.svg.png', color: 'text-green-700', text: '2' },
@@ -93,6 +94,18 @@ DECK = [
 class Match():
     def __init__(self, match_id: str, bot: bool = False):
         self.match_id = match_id
+        self.current_round = -2
+        if bot:
+            self.Bot = Bot()
+        else:
+            self.Bot = None
+
+    
+
+    def initialize_match(self, cur_round = -1):
+        if cur_round <= self.current_round:
+            return
+        self.current_round = cur_round
         self.deck = DECK.copy()
         self.drop_zone = []
         self.host_cards = []
@@ -104,10 +117,6 @@ class Match():
         # Initialize drop zone with one card from deck.
         self.drop_zone.append(self.deck.pop())
         self.initial_cards.append(self.drop_zone[-1])
-        if bot:
-            self.Bot = Bot()
-        else:
-            self.Bot = None
         for _ in range(12):
             self.host_cards.append(self.deck.pop())
             self.guest_cards.append(self.deck.pop())
@@ -120,6 +129,8 @@ class Match():
         for card in self.guest_cards:
             print('guest initial:', card["name"]) if debug else None
         print(len(self.guest_cards), len(self.host_cards), len(self.deck), len(self.drop_zone)) if debug else None
+        self.new_card = self.host_cards[-1]
+
 
     def get_matchid(self) -> str:
         return self.match_id
@@ -129,25 +140,25 @@ class Match():
 
     def choose_stack(self, is_host: str) -> dict:
         self.latest_operation = 'stack'
-        new_card = self.deck.pop()
+        self.new_card = self.deck.pop()
         if is_host == "1":
-            print("host get stack, ", new_card["name"]) if debug else None
-            self.host_cards.append(new_card)
+            print("host get stack, ", self.new_card["name"]) if debug else None
+            self.host_cards.append(self.new_card)
         else:
-            print("guest get stack, ", new_card["name"]) if debug else None
-            self.guest_cards.append(new_card)
-        return new_card
+            print("guest get stack, ", self.new_card["name"]) if debug else None
+            self.guest_cards.append(self.new_card)
+        return self.new_card
     
     def choose_drop_zone(self, is_host: str) -> dict:
         self.latest_operation = 'dropzone'
-        new_card = self.drop_zone.pop()
+        self.new_card = self.drop_zone.pop()
         if is_host == "1":
-            print("host get drop zone, ", new_card["name"]) if debug else None
-            self.host_cards.append(new_card)
+            print("host get drop zone, ", self.new_card["name"]) if debug else None
+            self.host_cards.append(self.new_card)
         else:
-            print("guest get drop zone, ", new_card["name"]) if debug else None
-            self.guest_cards.append(new_card)
-        return new_card
+            print("guest get drop zone, ", self.new_card["name"]) if debug else None
+            self.guest_cards.append(self.new_card)
+        return self.new_card
 
     def drop_card(self, is_host: str, card_name: str) -> dict:
         dropped = None
@@ -207,12 +218,12 @@ class Match():
                 raise Exception("Invalid drop index from bot_drop or guest_cards empty!")
         
         
-        if self.latest_player == guest:
-            new_card = self.guest_cards[-1] if self.guest_cards else {}
-        else:
-            new_card = self.host_cards[-1] if self.host_cards else {}
+        #if self.latest_player == guest:
+        #    new_card = self.guest_cards[-1] if self.guest_cards else {}
+        #else:
+        #    new_card = self.host_cards[-1] if self.host_cards else {}
         last_drop = self.drop_zone[-1] if self.drop_zone else {}
-        return self.latest_player, self.latest_operation, last_drop, new_card
+        return self.latest_player, self.latest_operation, last_drop, self.new_card
 
 
 def unit_test():

@@ -31,8 +31,8 @@ import { AvatarDisplay,ChatBubble  } from '@my-components/avatar'
 import GameOverOverlay from './game-end-overlay'
 
 //const backend_url = "http://127.0.0.1:8080"
-const backend_url = "http://localhost:8080";
-// const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
+// const backend_url = "http://localhost:8080";
+const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
 
 
 function getRandomCards(cards: Card[]): Card[] {
@@ -61,11 +61,14 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
   const [whosTurn, setWhosTurn] = useState<string>("1")
 
   const [lastPickedCard, setLastPickedCard] = useState<Card | null>(null)
+  const [currentRound, setCurrentRound] = useState<number>(1)
+
   
   const dropZoneRef = useRef<Card[]>([]); // 初始化 ref
   const hasHandlePass = useRef(false)
 
   const [open, setOpen] = useState(false); // 强制一直 open
+
 
   // const [host, setHost] = useState("1"); // 初始host可以是“1”或“0”
 
@@ -152,7 +155,8 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           host: host,
-          matchid: matchID
+          matchid: matchID,
+          round: currentRound
         })
       });
   
@@ -363,6 +367,11 @@ useEffect(() => {
     setDealing(false)
     setDropZoneCards([])
     setOpen(false)
+    console.log(currentRound);
+
+    const nextRound = currentRound + 1
+    setCurrentRound(nextRound)
+    
     if (whosTurn == host) {
       setP2Playing('toDeal')
       setP1Playing(null)
@@ -402,7 +411,8 @@ useEffect(() => {
       },
       body: JSON.stringify({
         host: host,
-        matchid: matchID
+        matchid: matchID,
+        round:currentRound
       })
     })
     .then((response) => response.json()).then((data) => {
@@ -1178,7 +1188,7 @@ useEffect(() => {
       <div className="h-full w-full flex flex-col items-center justify-center select-none">
 
         {/* Player1 avatar*/}
-        <AvatarDisplay image={'/main-image/avatar-robot.jpg'} player={1} name={matchID == 'mynewgame' ? 'Robot' : 'Opponent'} p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
+        <AvatarDisplay image={'/main-image/avatar-robot.jpg'} player={1} name={roomId == 'mynewgame' ? 'Robot' : 'Opponent'} p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
 
         <div className="relative flex items-center justify-center w-full h-[500px] gap-4">
             {/* Player1 */}

@@ -59,6 +59,8 @@ export default function DealCards({ roomId, host,}: { roomId: string; host: stri
   const [matchID, setMatchID] = useState<string>(roomId)
 
   const [whosTurn, setWhosTurn] = useState<string>("1")
+
+  const [lastPickedCard, setLastPickedCard] = useState<Card | null>(null)
   
   const dropZoneRef = useRef<Card[]>([]); // 初始化 ref
   const hasHandlePass = useRef(false)
@@ -222,7 +224,7 @@ useEffect(() => {
     console.log("🔄 Start polling /api/is_passed ...");
 
     let count = 0; // 最大轮询次数限制（避免死循环）
-    const MAX_ATTEMPTS = 20;
+    const MAX_ATTEMPTS = 200;
 
     const interval = setInterval(async () => {
       if (hasHandledPass.current) {
@@ -575,6 +577,7 @@ useEffect(() => {
           // console.log('************************************************: ',dropZoneCards, lastCard);
           
           if (lastCard) {
+            setLastPickedCard(lastCard)
             setSendingNewCard('dropzone');
             setP2Playing('toDrop');
             setTimeout(() => {
@@ -599,6 +602,11 @@ useEffect(() => {
           alert('need to pick a card first');
           break;
         case 'toDrop':
+
+          if (lastPickedCard && item.card.name === lastPickedCard.name) {
+            alert("⚠️ This card was just dropped! Please choose a different card.");
+            return;
+          }
           // dropZoneCards.push(item.card);
           // Qixuan Noted: Bug here
           // 这边直接push进去就行，这样set并不会将card放入dropzonecards
@@ -930,10 +938,27 @@ useEffect(() => {
       
       
       const myDeadwood = myCards.DeadwoodsPoint || 0;
+      let adjustedOpponentDeadwood = opponentCards.DeadwoodsPoint || 0;
       const opponentDeadwood = opponentCards.DeadwoodsPoint || 0;
     
       const isGin = myDeadwood === 0;
       const isBigGin = isGin && myCards.cards.length === 11;
+
+      // ✅ 如果不是 Gin，检查是否可 laying off
+      if (!isGin && opponentCards.Melds && opponentCards.Deadwoods) {
+        const layingOffResult = performLayingOff(opponentCards.Deadwoods, myCards.Melds || []);
+        adjustedOpponentDeadwood = layingOffResult.totalDeadwoodPoints;
+
+        // ✅ 更新 opponentCards.Deadwoods，展示时更准确
+        opponentCards.Deadwoods = layingOffResult.remainingDeadwoods;
+        opponentCards.DeadwoodsPoint = layingOffResult.totalDeadwoodPoints;
+        opponentCards.DeadwoodsDozenalPoint = decimalToDozenal(layingOffResult.totalDeadwoodPoints);
+
+        console.log("📌 Laying off done:", layingOffResult);
+      }
+
+
+
     
       let baseScore = 0;
       let bonus = 0;
@@ -1023,6 +1048,58 @@ useEffect(() => {
       
       
 
+    }
+    
+
+    function performLayingOff(opponentDeadwoods: Card[], knockerMelds: Card[]) {
+      const remainingDeadwoods: Card[] = [];
+      const laidOffCards: Card[] = [];
+    
+      const getCardRank = (card: Card) => card.name.split('-')[1];
+      const getCardSuit = (card: Card) => card.name.split('-')[0];
+      const cardOrder = (card: Card) => card.order;
+    
+      opponentDeadwoods.forEach(card => {
+        let isLaidOff = false;
+        for (let i = 0; i < knockerMelds.length; i += 3) {
+          const meld = knockerMelds.slice(i, i + 3);
+          const isSet = meld.every(c => getCardRank(c) === getCardRank(meld[0]));
+          const isRun = meld.every(c => getCardSuit(c) === getCardSuit(meld[0]));
+    
+          if (isSet) {
+            // Set 搭牌：rank一致且suit不同
+            if (getCardRank(card) === getCardRank(meld[0]) &&
+                !meld.some(c => getCardSuit(c) === getCardSuit(card))) {
+              isLaidOff = true;
+              laidOffCards.push(card);
+              break;
+            }
+          } else if (isRun) {
+            // Run 搭牌：同花且顺子
+            const orders = meld.map(cardOrder).sort((a, b) => a - b);
+            const min = orders[0], max = orders[orders.length - 1];
+            const orderVal = cardOrder(card);
+    
+            if (getCardSuit(card) === getCardSuit(meld[0]) &&
+                (orderVal === min - 1 || orderVal === max + 1)) {
+              isLaidOff = true;
+              laidOffCards.push(card);
+              break;
+            }
+          }
+        }
+        if (!isLaidOff) {
+          remainingDeadwoods.push(card);
+        }
+      });
+    
+      const totalDeadwoodPoints = remainingDeadwoods.reduce((sum, c) => sum + c.point, 0);
+    
+      return {
+        remainingDeadwoods,
+        laidOffCards,
+        totalDeadwoodPoints,
+      };
     }
     
     
@@ -1184,11 +1261,6 @@ useEffect(() => {
                   // 占位用的空盒子（保持布局）
                   <div style={{ width: "0px", height: "40px" }} />
                 ))}
-
-
-
-                
-
 
             </div>
 

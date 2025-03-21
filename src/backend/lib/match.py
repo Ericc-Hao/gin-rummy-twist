@@ -20,6 +20,7 @@ text = 'text'
 host = "1"
 guest = "0"
 
+
 DECK = [
   { order:1, point: 1, name: 'clubs-01', image: '/cards-image/clubs/clubs-01.svg.png', color: 'text-green-700', text: '1' },
   { order:2, point: 2, name: 'clubs-02', image: '/cards-image/clubs/clubs-02.svg.png', color: 'text-green-700', text: '2' },
@@ -93,6 +94,18 @@ DECK = [
 class Match():
     def __init__(self, match_id: str, bot: bool = False):
         self.match_id = match_id
+        self.current_round = -2
+        if bot:
+            self.Bot = Bot()
+        else:
+            self.Bot = None
+
+    
+
+    def initialize_match(self, cur_round = -1):
+        if cur_round <= self.current_round:
+            return
+        self.current_round = cur_round
         self.deck = DECK.copy()
         self.drop_zone = []
         self.host_cards = []
@@ -104,10 +117,6 @@ class Match():
         # Initialize drop zone with one card from deck.
         self.drop_zone.append(self.deck.pop())
         self.initial_cards.append(self.drop_zone[-1])
-        if bot:
-            self.Bot = Bot()
-        else:
-            self.Bot = None
         for _ in range(12):
             self.host_cards.append(self.deck.pop())
             self.guest_cards.append(self.deck.pop())
@@ -120,6 +129,7 @@ class Match():
         for card in self.guest_cards:
             print('guest initial:', card["name"]) if debug else None
         print(len(self.guest_cards), len(self.host_cards), len(self.deck), len(self.drop_zone)) if debug else None
+
 
     def get_matchid(self) -> str:
         return self.match_id

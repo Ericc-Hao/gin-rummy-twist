@@ -96,10 +96,13 @@ def check_room_status():
 @app.route('/api/match_start', methods=['POST'])
 def match_start_request():
     match_id = request.json['matchid']
+    print(request.json)
 
     # ✅ 只有第一次调用时才创建 Match
     if match_id not in ongoing_matches:
         ongoing_matches[match_id] = Match(match_id)
+
+    ongoing_matches[match_id].initialize_match(int(request.json['round']))
 
     match_obj = ongoing_matches[match_id]
     init_cards = match_obj.get_initial_cards()

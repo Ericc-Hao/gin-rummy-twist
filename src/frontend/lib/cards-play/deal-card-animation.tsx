@@ -31,8 +31,8 @@ import { drop } from 'lodash';
 import { boolean } from 'zod';
 
 //const backend_url = "http://127.0.0.1:8080"
-// const backend_url = "http://localhost:8080";
-const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
+const backend_url = "http://localhost:8080";
+//const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
 
 
 function getRandomCards(cards: Card[]): Card[] {
@@ -146,7 +146,8 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           host: host,
-          matchid: matchID
+          matchid: matchID,
+          round: 1
         })
       });
   
@@ -387,7 +388,8 @@ useEffect(() => {
       },
       body: JSON.stringify({
         host: host,
-        matchid: matchID
+        matchid: matchID,
+        round:1
       })
     })
     .then((response) => response.json()).then((data) => {

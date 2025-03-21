@@ -944,18 +944,14 @@ useEffect(() => {
       const isGin = myDeadwood === 0;
       const isBigGin = isGin && myCards.cards.length === 11;
 
-      // ✅ 如果不是 Gin，检查是否可 laying off
-      if (!isGin && opponentCards.Melds && opponentCards.Deadwoods) {
-        const layingOffResult = performLayingOff(opponentCards.Deadwoods, myCards.Melds || []);
-        adjustedOpponentDeadwood = layingOffResult.totalDeadwoodPoints;
-
-        // ✅ 更新 opponentCards.Deadwoods，展示时更准确
-        opponentCards.Deadwoods = layingOffResult.remainingDeadwoods;
-        opponentCards.DeadwoodsPoint = layingOffResult.totalDeadwoodPoints;
-        opponentCards.DeadwoodsDozenalPoint = decimalToDozenal(layingOffResult.totalDeadwoodPoints);
-
-        console.log("📌 Laying off done:", layingOffResult);
+      if (!isGin && myCards.Melds && opponentCards.cards) {
+        const layingOffResult = calculateLayingOffImproved(opponentCards.cards, myCards.Melds);
+        adjustedOpponentDeadwood = layingOffResult.adjustedDeadwoodPoint;
+        opponentCards.Deadwoods = layingOffResult.updatedDeadwoods;
+        opponentCards.DeadwoodsPoint = layingOffResult.updatedDeadwoodsPoint;
+        opponentCards.DeadwoodsDozenalPoint = layingOffResult.updatedDeadwoodsDozenalPoint;
       }
+
 
 
 
@@ -1049,58 +1045,77 @@ useEffect(() => {
       
 
     }
-    
 
-    function performLayingOff(opponentDeadwoods: Card[], knockerMelds: Card[]) {
-      const remainingDeadwoods: Card[] = [];
-      const laidOffCards: Card[] = [];
+
+    function calculateLayingOffImproved(opponentCards: Card[], knockerMelds: Card[]) {
+      const cardsWithLayingOff = [...opponentCards, ...knockerMelds];
+      const recalculated = GinRummyScore(cardsWithLayingOff);
     
-      const getCardRank = (card: Card) => card.name.split('-')[1];
-      const getCardSuit = (card: Card) => card.name.split('-')[0];
-      const cardOrder = (card: Card) => card.order;
+      const knockerMeldPoint = knockerMelds.reduce((sum, c) => sum + c.point, 0);
+      const effectiveLayingOff = (recalculated.MeldsPoint || 0) - knockerMeldPoint;
     
-      opponentDeadwoods.forEach(card => {
-        let isLaidOff = false;
-        for (let i = 0; i < knockerMelds.length; i += 3) {
-          const meld = knockerMelds.slice(i, i + 3);
-          const isSet = meld.every(c => getCardRank(c) === getCardRank(meld[0]));
-          const isRun = meld.every(c => getCardSuit(c) === getCardSuit(meld[0]));
-    
-          if (isSet) {
-            // Set 搭牌：rank一致且suit不同
-            if (getCardRank(card) === getCardRank(meld[0]) &&
-                !meld.some(c => getCardSuit(c) === getCardSuit(card))) {
-              isLaidOff = true;
-              laidOffCards.push(card);
-              break;
-            }
-          } else if (isRun) {
-            // Run 搭牌：同花且顺子
-            const orders = meld.map(cardOrder).sort((a, b) => a - b);
-            const min = orders[0], max = orders[orders.length - 1];
-            const orderVal = cardOrder(card);
-    
-            if (getCardSuit(card) === getCardSuit(meld[0]) &&
-                (orderVal === min - 1 || orderVal === max + 1)) {
-              isLaidOff = true;
-              laidOffCards.push(card);
-              break;
-            }
-          }
-        }
-        if (!isLaidOff) {
-          remainingDeadwoods.push(card);
-        }
-      });
-    
-      const totalDeadwoodPoints = remainingDeadwoods.reduce((sum, c) => sum + c.point, 0);
+      const adjustedDeadwoodPoint = opponentCards.reduce((sum, c) => sum + c.point, 0) - effectiveLayingOff;
     
       return {
-        remainingDeadwoods,
-        laidOffCards,
-        totalDeadwoodPoints,
+        adjustedDeadwoodPoint: Math.max(adjustedDeadwoodPoint, 0),
+        updatedDeadwoods: recalculated.Deadwoods || [],
+        updatedDeadwoodsPoint: recalculated.DeadwoodsPoint || 0,
+        updatedDeadwoodsDozenalPoint: recalculated.DeadwoodsDozenalPoint || '0',
       };
     }
+    
+    
+
+    // function performLayingOff(opponentDeadwoods: Card[], knockerMelds: Card[]) {
+    //   const remainingDeadwoods: Card[] = [];
+    //   const laidOffCards: Card[] = [];
+    
+    //   const getCardRank = (card: Card) => card.name.split('-')[1];
+    //   const getCardSuit = (card: Card) => card.name.split('-')[0];
+    //   const cardOrder = (card: Card) => card.order;
+    
+    //   opponentDeadwoods.forEach(card => {
+    //     let isLaidOff = false;
+    //     for (let i = 0; i < knockerMelds.length; i += 3) {
+    //       const meld = knockerMelds.slice(i, i + 3);
+    //       const isSet = meld.every(c => getCardRank(c) === getCardRank(meld[0]));
+    //       const isRun = meld.every(c => getCardSuit(c) === getCardSuit(meld[0]));
+    
+    //       if (isSet) {
+    //         // Set 搭牌：rank一致且suit不同
+    //         if (getCardRank(card) === getCardRank(meld[0]) &&
+    //             !meld.some(c => getCardSuit(c) === getCardSuit(card))) {
+    //           isLaidOff = true;
+    //           laidOffCards.push(card);
+    //           break;
+    //         }
+    //       } else if (isRun) {
+    //         // Run 搭牌：同花且顺子
+    //         const orders = meld.map(cardOrder).sort((a, b) => a - b);
+    //         const min = orders[0], max = orders[orders.length - 1];
+    //         const orderVal = cardOrder(card);
+    
+    //         if (getCardSuit(card) === getCardSuit(meld[0]) &&
+    //             (orderVal === min - 1 || orderVal === max + 1)) {
+    //           isLaidOff = true;
+    //           laidOffCards.push(card);
+    //           break;
+    //         }
+    //       }
+    //     }
+    //     if (!isLaidOff) {
+    //       remainingDeadwoods.push(card);
+    //     }
+    //   });
+    
+    //   const totalDeadwoodPoints = remainingDeadwoods.reduce((sum, c) => sum + c.point, 0);
+    
+    //   return {
+    //     remainingDeadwoods,
+    //     laidOffCards,
+    //     totalDeadwoodPoints,
+    //   };
+    // }
     
     
     
@@ -1468,13 +1483,13 @@ useEffect(() => {
 
                       {scoreSummary && scoreSummary.rounds.map((round, index) => (
                               <TableRow key={index}>
-                                <TableCell className="text-center">{round.round}</TableCell>
-                                <TableCell className="text-center">{round.p1Score}</TableCell>
-                                <TableCell className="text-center">{round.p1Bonus}</TableCell>
-                                <TableCell className="text-center">{round.p1Total}</TableCell>
-                                <TableCell className="text-center">{round.p2Score}</TableCell>
-                                <TableCell className="text-center">{round.p2Bonus}</TableCell>
-                                <TableCell className="text-center">{round.p2Total}</TableCell>
+                                <TableCell className="text-center">{round.round }</TableCell>
+                                <TableCell className="text-center">{decimalToDozenal(round.p1Score || 0)}</TableCell>
+                                <TableCell className="text-center">{decimalToDozenal(round.p1Bonus || 0)}</TableCell>
+                                <TableCell className="text-center">{decimalToDozenal(round.p1Total || 0)}</TableCell>
+                                <TableCell className="text-center">{decimalToDozenal(round.p2Score || 0)}</TableCell>
+                                <TableCell className="text-center">{decimalToDozenal(round.p2Bonus || 0)}</TableCell>
+                                <TableCell className="text-center">{decimalToDozenal(round.p2Total || 0)}</TableCell>
                                 <TableCell className="text-center">{round.result}</TableCell>
                               </TableRow>
                             ))}
@@ -1482,11 +1497,13 @@ useEffect(() => {
                           {/* TODO: 这里之后要改，存的时候就存dozenal的 */}
                             <TableRow>
                               <TableCell className="font-semibold text-center">Total Score</TableCell>
-                              <TableCell className="text-center">{decimalToDozenal(scoreSummary?.p1TotalScore || 0) }</TableCell>
-                              <TableCell className="text-center">0</TableCell>
+                              {/* <TableCell className="text-center">{decimalToDozenal(scoreSummary?.p1TotalScore || 0) }</TableCell> */}
+                              <TableCell className="text-center"></TableCell>
+                              <TableCell className="text-center"></TableCell>
                               <TableCell className="text-center">{decimalToDozenal(scoreSummary?.p1TotalScore || 0)}</TableCell>
-                              <TableCell className="text-center">{decimalToDozenal(scoreSummary?.p2TotalScore || 0)}</TableCell>
-                              <TableCell className="text-center">0</TableCell>
+                              {/* <TableCell className="text-center">{decimalToDozenal(scoreSummary?.p2TotalScore || 0)}</TableCell> */}
+                              <TableCell className="text-center"></TableCell>
+                              <TableCell className="text-center"></TableCell>
                               <TableCell className="text-center">{decimalToDozenal(scoreSummary?.p2TotalScore || 0)}</TableCell>
                               <TableCell className="text-center"></TableCell>
                             </TableRow>

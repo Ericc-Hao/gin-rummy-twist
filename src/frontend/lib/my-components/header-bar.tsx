@@ -21,7 +21,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
   
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { PauseIcon, InfoCircledIcon, ArchiveIcon } from "@radix-ui/react-icons"
+import { ExitIcon, InfoCircledIcon, ArchiveIcon } from "@radix-ui/react-icons"
 
 import {
     HoverCard,
@@ -77,10 +77,10 @@ export function HeaderBar() {
                 <TooltipProvider>
                     <Tooltip delayDuration={0}>
                         <TooltipTrigger asChild> 
-                            <Button size="icon" variant="ghost" onClick={() => {setOpenPauseDialog(true)}}><PauseIcon className="h-4 w-4" /></Button>
+                            <Button size="icon" variant="ghost" onClick={() => {setOpenPauseDialog(true)}}><ExitIcon className="h-4 w-4" /></Button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" align="center" className="bg-black text-white px-3 py-2 rounded-md shadow-lg" style={{zIndex: 1000 }}>
-                            <p>Pause</p>
+                            <p>Leave</p>
                         </TooltipContent>
                     </Tooltip>
 
@@ -88,7 +88,7 @@ export function HeaderBar() {
                         <DialogContent onInteractOutside={(event) => event.preventDefault()}
                                         className="w-auto h-auto -w-full max-h-full p-6 rounded-md shadow-lg">
                             <DialogHeader>
-                                <DialogTitle>Pause</DialogTitle>
+                                <DialogTitle>Leave the game</DialogTitle>
                                 <DialogDescription className='flex flex-col h-full justify-center'>
                                     {/* <span>Prograss will not be saved automatically</span> */}
                                 </DialogDescription>
@@ -114,7 +114,7 @@ export function HeaderBar() {
                     </Tooltip>
                 </TooltipProvider>
 
-                <TooltipProvider>
+                {/* <TooltipProvider>
                     <Tooltip delayDuration={0}>
                         <TooltipTrigger asChild> 
                             <Button size="icon" variant={game.showSideBar === 'Grades' ? "secondary" : "ghost"} onClick={() => {changeShowSideBar('Grades')}}><ArchiveIcon  className="h-4 w-4" /></Button>
@@ -123,7 +123,7 @@ export function HeaderBar() {
                             <p>Points</p>
                         </TooltipContent>
                     </Tooltip>
-                </TooltipProvider>
+                </TooltipProvider> */}
 
 
 
@@ -154,8 +154,8 @@ export function HeaderBar() {
                             <Button variant="ghost">{user.username}</Button>
                         </HoverCardTrigger>
                         <HoverCardContent side="bottom" align="end" className=" w-auto h-auto flex flex-col gap-2 shadow-lg border-none">
-                                <Button variant="ghost">My Profile</Button>
-                                <Button variant="ghost">My Friends</Button>
+                                {/* <Button variant="ghost">My Profile</Button>
+                                <Button variant="ghost">My Friends</Button> */}
                                 <Button variant="ghost" onClick={handleLogout}>Log out</Button>
                         </HoverCardContent>
                     </HoverCard>

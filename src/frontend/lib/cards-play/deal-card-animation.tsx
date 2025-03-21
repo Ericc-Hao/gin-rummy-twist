@@ -31,8 +31,8 @@ import { drop } from 'lodash';
 import { boolean } from 'zod';
 
 //const backend_url = "http://127.0.0.1:8080"
-// const backend_url = "http://localhost:8080";
-const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
+const backend_url = "http://localhost:8080";
+// const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
 
 
 function getRandomCards(cards: Card[]): Card[] {
@@ -40,7 +40,7 @@ function getRandomCards(cards: Card[]): Card[] {
   
 }
 
-export default function DealCards({ roomId, host }: { roomId: string; host: string }) {
+export default function DealCards({ roomId, host, userName}: { roomId: string; host: string; userName: string}) {
   const [dealing, setDealing] = useState(false);
   const [currentPass, setCurrentPass] = useState<passingStatus>(null)
 
@@ -59,9 +59,13 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
   const [matchID, setMatchID] = useState<string>(roomId)
 
   const [whosTurn, setWhosTurn] = useState<string>("1")
+
+  const [lastPickedCard, setLastPickedCard] = useState<Card | null>(null)
   
   const dropZoneRef = useRef<Card[]>([]); // 初始化 ref
   const hasHandlePass = useRef(false)
+
+  // const [host, setHost] = useState("1"); // 初始host可以是“1”或“0”
 
   // const p1ActionReady = useRef<boolean>(false)
 
@@ -109,7 +113,7 @@ export default function DealCards({ roomId, host }: { roomId: string; host: stri
 
   // 非 host 玩家监听 host 是否点击了 Deal（轮询）
   useEffect(() => {
-    if (host === "0" && !dealing) {
+    if (host !== whosTurn && !dealing) {
 
       const interval = setInterval(async () => {
         try {
@@ -216,11 +220,11 @@ useEffect(() => {
 
 // 核心轮询逻辑：非 host 检测是否 passed
 useEffect(() => {
-  if (host === "0" && dealing && currentPassRef.current === null && !hasHandledPass.current) {
+  if (host !== whosTurn && dealing && currentPassRef.current === null && !hasHandledPass.current) {
     console.log("🔄 Start polling /api/is_passed ...");
 
     let count = 0; // 最大轮询次数限制（避免死循环）
-    const MAX_ATTEMPTS = 20;
+    const MAX_ATTEMPTS = 200;
 
     const interval = setInterval(async () => {
       if (hasHandledPass.current) {
@@ -355,6 +359,14 @@ useEffect(() => {
   
   function resetAll(){
     setDealing(false)
+    setDropZoneCards([])
+    if (whosTurn == host) {
+      setP2Playing('toDeal')
+      setP1Playing(null)
+    } else {
+      setP1Playing('toDeal')
+      setP2Playing(null)
+    }
   }
 
   async function startGame(){ 
@@ -565,6 +577,7 @@ useEffect(() => {
           // console.log('************************************************: ',dropZoneCards, lastCard);
           
           if (lastCard) {
+            setLastPickedCard(lastCard)
             setSendingNewCard('dropzone');
             setP2Playing('toDrop');
             setTimeout(() => {
@@ -589,6 +602,11 @@ useEffect(() => {
           alert('need to pick a card first');
           break;
         case 'toDrop':
+
+          if (lastPickedCard && item.card.name === lastPickedCard.name) {
+            alert("⚠️ This card was just dropped! Please choose a different card.");
+            return;
+          }
           // dropZoneCards.push(item.card);
           // Qixuan Noted: Bug here
           // 这边直接push进去就行，这样set并不会将card放入dropzonecards
@@ -682,6 +700,10 @@ useEffect(() => {
             // const new_card = { order:data["new_card"]["order"], point: data["new_card"]["point"], name: data["new_card"]["name"], image: data["new_card"]["image"], color: data["new_card"]["color"], text: data["new_card"]["text"] }
             const new_card = { order:new_card_obj.order, point:new_card_obj.point, name:new_card_obj.name, image: new_card_obj.image, color: new_card_obj.color, text: new_card_obj.text }
             
+            console.log('8888888888888888888888888888888888888888: ', new_card);
+            
+
+
             if (place && dropped_card_str && new_card_str) {
               alreadyHandled = true;
               clearInterval(interval);
@@ -896,39 +918,192 @@ useEffect(() => {
       }, 2000);
     }
     
+    function handleKnock() {
+      console.log('hoooooooooooooooooooooooooooooost: ', host);
+      
+      const isHost = host === '1'; // 我是不是host
+      // const isMeKnocking = true;  // 点击 Knock 的就是“我自己”
+
+      console.log('ishhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhost: ', isHost);
+      
+
+      const myCards = player2Cards // 自己手牌
+      const opponentCards = player1Cards  // 对手手牌
+
+      console.log(")))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))");
+      console.log('myCards: ',myCards);
+      console.log('opponentCards: ', opponentCards);
+      
+      
+      
+      
+      const myDeadwood = myCards.DeadwoodsPoint || 0;
+      let adjustedOpponentDeadwood = opponentCards.DeadwoodsPoint || 0;
+      const opponentDeadwood = opponentCards.DeadwoodsPoint || 0;
+    
+      const isGin = myDeadwood === 0;
+      const isBigGin = isGin && myCards.cards.length === 11;
+
+      // ✅ 如果不是 Gin，检查是否可 laying off
+      if (!isGin && opponentCards.Melds && opponentCards.Deadwoods) {
+        const layingOffResult = performLayingOff(opponentCards.Deadwoods, myCards.Melds || []);
+        adjustedOpponentDeadwood = layingOffResult.totalDeadwoodPoints;
+
+        // ✅ 更新 opponentCards.Deadwoods，展示时更准确
+        opponentCards.Deadwoods = layingOffResult.remainingDeadwoods;
+        opponentCards.DeadwoodsPoint = layingOffResult.totalDeadwoodPoints;
+        opponentCards.DeadwoodsDozenalPoint = decimalToDozenal(layingOffResult.totalDeadwoodPoints);
+
+        console.log("📌 Laying off done:", layingOffResult);
+      }
 
 
 
-    function handleKnock(){
+    
+      let baseScore = 0;
+      let bonus = 0;
+      let result = "Knock";
+    
+      if (isGin) {
+        baseScore = opponentDeadwood;
+        bonus = isBigGin ? 39 : 30; // Dozenal: Big Gin = 39z, Gin = 30z
+        result = isBigGin ? "Big Gin" : "Gin";
+      } else if (myDeadwood < opponentDeadwood) {
+        baseScore = opponentDeadwood - myDeadwood;
+      } else {
+        // Undercut 判定
+        baseScore = myDeadwood - opponentDeadwood; // 差值
+        bonus = 30;
+        result = "Undercut";
+      }
+    
+      // ✅ 判断谁得分
+      let knockerScore = 0, knockerBonus = 0, opponentScore = 0, opponentBonus = 0;
+      if (result === "Undercut") {
+        opponentScore = baseScore;
+        opponentBonus = bonus;
+      } else {
+        knockerScore = baseScore;
+        knockerBonus = bonus;
+      }
+    
+      // p1 是 host，p2 是 guest
+      let p1Score = 0, p1Bonus = 0, p2Score = 0, p2Bonus = 0;
+
+      if (result === "Undercut") {
+        // 对手得分（这里你是 guest，那对手就是 p1）
+        p1Score = baseScore;
+        p1Bonus = bonus;
+      } else {
+        // 你自己得分
+        p2Score = baseScore;
+        p2Bonus = bonus;
+      }
+    
       const roundData = {
         round: (scoreSummary?.rounds?.length || 0) + 1,
-        p1Score: 0, 
-        p1Bonus: 0,
-        p1Total: 0,  
-        p2Score: player1Cards.DeadwoodsPoint! - player2Cards.DeadwoodsPoint!,
-        p2Bonus: 0,
-        p2Total: player1Cards.DeadwoodsPoint! - player2Cards.DeadwoodsPoint!,
-        result: "Knock"
+        p1Score,
+        p1Bonus,
+        p1Total: p1Score + p1Bonus,
+        p2Score,
+        p2Bonus,
+        p2Total: p2Score + p2Bonus,
+        result,
       };
-
+    
       setScoreSummary(prev => {
         const prevSummary: ScoreSummary = prev || { rounds: [], p1TotalScore: 0, p2TotalScore: 0 };
-    
         const updatedRounds = [...prevSummary.rounds, roundData];
-    
-        const p1TotalScore = updatedRounds.reduce((acc, round) => {
-          return acc + round.p1Total;
-        }, 0);
-        const p2TotalScore = updatedRounds.reduce((acc, round) => {
-          return acc + round.p2Total;
-        }, 0);
+        const p1TotalScore = updatedRounds.reduce((acc, r) => acc + r.p1Total, 0);
+        const p2TotalScore = updatedRounds.reduce((acc, r) => acc + r.p2Total, 0);
         return {
           rounds: updatedRounds,
-          p1TotalScore: p1TotalScore,
-          p2TotalScore: p2TotalScore
+          p1TotalScore,
+          p2TotalScore,
         };
       });
+
+      if (result === "Undercut") {
+        // 对手赢
+        if (host == '0') {
+          console.log("✅ Winner of this round: 1");
+          
+          setWhosTurn('1')
+        } else {
+          console.log("✅ Winner of this round: 0");
+          setWhosTurn('0')
+        }
+      } else {
+        // 自己赢
+        if (host == '0') {
+          console.log("✅ Winner of this round: 0");
+          
+          setWhosTurn('0')
+        } else {
+          console.log("✅ Winner of this round: 1");
+          setWhosTurn('1')
+        }
+
+      }
+      
+      
+
     }
+    
+
+    function performLayingOff(opponentDeadwoods: Card[], knockerMelds: Card[]) {
+      const remainingDeadwoods: Card[] = [];
+      const laidOffCards: Card[] = [];
+    
+      const getCardRank = (card: Card) => card.name.split('-')[1];
+      const getCardSuit = (card: Card) => card.name.split('-')[0];
+      const cardOrder = (card: Card) => card.order;
+    
+      opponentDeadwoods.forEach(card => {
+        let isLaidOff = false;
+        for (let i = 0; i < knockerMelds.length; i += 3) {
+          const meld = knockerMelds.slice(i, i + 3);
+          const isSet = meld.every(c => getCardRank(c) === getCardRank(meld[0]));
+          const isRun = meld.every(c => getCardSuit(c) === getCardSuit(meld[0]));
+    
+          if (isSet) {
+            // Set 搭牌：rank一致且suit不同
+            if (getCardRank(card) === getCardRank(meld[0]) &&
+                !meld.some(c => getCardSuit(c) === getCardSuit(card))) {
+              isLaidOff = true;
+              laidOffCards.push(card);
+              break;
+            }
+          } else if (isRun) {
+            // Run 搭牌：同花且顺子
+            const orders = meld.map(cardOrder).sort((a, b) => a - b);
+            const min = orders[0], max = orders[orders.length - 1];
+            const orderVal = cardOrder(card);
+    
+            if (getCardSuit(card) === getCardSuit(meld[0]) &&
+                (orderVal === min - 1 || orderVal === max + 1)) {
+              isLaidOff = true;
+              laidOffCards.push(card);
+              break;
+            }
+          }
+        }
+        if (!isLaidOff) {
+          remainingDeadwoods.push(card);
+        }
+      });
+    
+      const totalDeadwoodPoints = remainingDeadwoods.reduce((sum, c) => sum + c.point, 0);
+    
+      return {
+        remainingDeadwoods,
+        laidOffCards,
+        totalDeadwoodPoints,
+      };
+    }
+    
+    
+    
     
     function DropZone(){
       const [{ isOver }, drop] = useDrop({
@@ -985,7 +1160,7 @@ useEffect(() => {
       <div className="h-full w-full flex flex-col items-center justify-center select-none">
 
         {/* Player1 avatar*/}
-        <AvatarDisplay image={'/main-image/avatar-robot.jpg'} player={1} name={'Robot'} p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
+        <AvatarDisplay image={'/main-image/avatar-robot.jpg'} player={1} name={matchID == 'mynewgame' ? 'Robot' : 'Opponent'} p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
 
         <div className="relative flex items-center justify-center w-full h-[500px] gap-4">
             {/* Player1 */}
@@ -1067,7 +1242,7 @@ useEffect(() => {
                     )}
                   </motion.div>
                 )}
-      
+      {whosTurn}
                 {!dealing && whosTurn == host ? (
                     <Button
                     className="absolute left-full ml-4 px-4 py-2 w-[100px] bg-blue-500 text-white rounded"
@@ -1086,11 +1261,6 @@ useEffect(() => {
                   // 占位用的空盒子（保持布局）
                   <div style={{ width: "0px", height: "40px" }} />
                 ))}
-
-
-
-                
-
 
             </div>
 
@@ -1178,7 +1348,7 @@ useEffect(() => {
           )}
 
 
-          <AvatarDisplay image={'/main-image/avatar-user.jpg'} player={2} name={'User'}  p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
+          <AvatarDisplay image={'/main-image/avatar-user.jpg'} player={2} name={userName}  p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
 
 
           {/* {!dealing && whosTurn==host && (
@@ -1202,7 +1372,7 @@ useEffect(() => {
                 left: 'calc(50% + 60px)',
               }}
             >
-                <ChatBubble content={'DRAW OR PASS'}  bgColor={'bg-yellow-200'} />
+                <ChatBubble content={'PICK OR PASS'}  bgColor={'bg-yellow-200'} />
               
             </div>
           )}
@@ -1254,8 +1424,8 @@ useEffect(() => {
                         whiteSpace: 'nowrap',
                         left: 'calc(50% + 500px)',
                         borderRadius:'50%',
-                        backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'red' : 'gray',
-                        cursor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'pointer' : 'not-allowed',
+                        backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 120 ? 'red' : 'gray',
+                        cursor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 120 ? 'pointer' : 'not-allowed',
                       }}
                       onClick={handleKnock}
                     >
@@ -1265,15 +1435,19 @@ useEffect(() => {
 
               <DialogContent >
                 <DialogHeader>
-                  <DialogTitle className="flex flex-col items-center justify-center">You Win this round</DialogTitle>
-                  <DialogDescription className="flex flex-col items-center justify-center"> Round end by knocking! </DialogDescription>
+                  <DialogTitle className="flex flex-col items-center justify-center">
+                    {whosTurn == host ? "You Win this round 😊 " : "You Loss this round 😢"}
+                  </DialogTitle>
+                  {/* <DialogDescription className="flex flex-col items-center justify-center"> Round end by knocking! </DialogDescription> */}
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <Table>
                     <TableHeader className="bg-gray-200">
                       <TableRow>
                         <TableCell className="font-bold text-center"></TableCell>
-                        <TableCell colSpan={3} className="font-bold text-center"> Robot</TableCell>
+                        <TableCell colSpan={3} className="font-bold text-center">
+                          {roomId === 'mynewgame' ? 'Robot' : 'Opponent'}
+                        </TableCell>
                         <TableCell colSpan={3} className="font-bold text-center"> You</TableCell>
                         <TableCell  className="font-bold text-center"></TableCell>
                       </TableRow>

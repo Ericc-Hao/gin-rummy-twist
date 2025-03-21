@@ -13,7 +13,7 @@ export function AvatarDisplay({
   }: AvatarDisplayProps) {
     return (
       <div className="relative flex flex-col gap-2 items-center">
-        <Image
+        {/* <Image
           src={image}
           alt={`Player ${player} Avatar`}
           width={100}
@@ -28,8 +28,22 @@ export function AvatarDisplay({
                 ? '0 0 20px rgba(250,225, 0, 1)'
                 : 'none',
           }}
-        />
-        <div className="text-lg font-medium text-gray-500 tracking-wide">{name}</div>
+        /> */}
+        <div
+          className={`w-[100px] h-[100px] rounded-full flex items-center justify-center text-white text-5xl font-bold bg-gray-400`}
+          style={{
+            borderRadius: '50%',
+            boxShadow:
+              (p2Playing !== null && player === 2) ||
+              (p1Playing !== null && player === 1)
+                ? '0 0 20px rgba(250,225, 0, 1)'
+                : 'none',
+          }}
+        >
+          {name?.slice(0, 2).toUpperCase()}
+        </div>
+
+        <div className="text-lg font-medium text-gray-500 tracking-widest">{name}</div>
       </div>
     );
   }

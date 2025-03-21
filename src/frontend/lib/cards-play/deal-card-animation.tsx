@@ -1524,11 +1524,11 @@ useEffect(() => {
       </div>
 
 
-      {scoreSummary && (scoreSummary.p1TotalScore >= 100 || scoreSummary.p2TotalScore >= 100) && (
+      {scoreSummary && (scoreSummary.p1TotalScore >= 120 || scoreSummary.p2TotalScore >= 120) && (
         <GameOverOverlay
           isWin={(() => {
             const isHost = host === whosTurn;
-            return (isHost && scoreSummary.p1TotalScore >= 100) || (!isHost && scoreSummary.p2TotalScore >= 100);
+            return (isHost && scoreSummary.p1TotalScore >= 120) || (!isHost && scoreSummary.p2TotalScore >= 120);
           })()}
           p1TotalScore={scoreSummary.p1TotalScore}
           p2TotalScore={scoreSummary.p2TotalScore}

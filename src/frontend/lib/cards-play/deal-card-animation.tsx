@@ -1072,22 +1072,22 @@ useEffect(() => {
                   className="absolute"
                   style={{zIndex: 6,boxShadow: '0 4px 8px rgba(255, 255, 255, 0.5)'}}
                   >
-                        {/* <Image
+                        <Image
                             src="/cards-image/back.svg.png"
                             alt={`Card ${index + 1}`}
                             width={100}
                             height={150}
                             draggable="false"
                             className="object-contain cursor-not-allowed"
-                        /> */}
-                        <DraggableCard
+                        />
+                        {/* <DraggableCard
                           key={index}
                           index={index??10}
                           card={card}
                           moveCard={(from, to,wholeCardList) => moveCard(from, to,wholeCardList)}
                           p2Playing ={p2Playing}
                           wholeCardList = {player2Cards.cards}
-                      />
+                      /> */}
                     </motion.div>
             ))}
 
@@ -1303,8 +1303,8 @@ useEffect(() => {
                         whiteSpace: 'nowrap',
                         left: 'calc(50% + 500px)',
                         borderRadius:'50%',
-                        backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 120 ? 'red' : 'gray',
-                        cursor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 120 ? 'pointer' : 'not-allowed',
+                        backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'red' : 'gray',
+                        cursor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'pointer' : 'not-allowed',
                       }}
                       onClick={() => handleKnockFromMe()}
                     >

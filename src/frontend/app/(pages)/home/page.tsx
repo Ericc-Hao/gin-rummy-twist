@@ -56,7 +56,7 @@ export default function homePage() {
                                 <DialogDescription>Choose your game mode and start playing!</DialogDescription>
                             </VisuallyHidden>
                             <div className='flex flex-col w-[300px] gap-4 m-4 '>
-                                {StartButton("/game/mynewgame", "Start a Tuition")}
+                                {StartButton("/game/tuition", "Start a Tuition")}
                                 {/* {StartButton("", "Continue a Game")} */}
                                 {/* {StartButton("", "Start a Tutorial")} */}
                                 {StartButton("/pvp", "Play with a Friend")}

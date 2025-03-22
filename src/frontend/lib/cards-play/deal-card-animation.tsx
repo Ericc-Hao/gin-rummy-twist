@@ -67,57 +67,68 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
 
   const [open, setOpen] = useState(false); // 强制一直 open
 
+  const [waitingNextRound, setWaitingNextRound] = useState<boolean>(false)
 
-  // const [host, setHost] = useState("1"); // 初始host可以是“1”或“0”
-
-  // const p1ActionReady = useRef<boolean>(false)
-
-
-  // get random stack of cards (shuffle the card)
   const shuffledCards = getRandomCards(CARDS); 
   const initialCardsNumber = 24
-  // const host = 1
 
-  // console.log("host: ",host);
-  // console.log("roomId: ",roomId);
-  // console.log("whosTurn: ",whosTurn);
-
-  // useEffect(() => {
-  //   setPlayer1Cards({cards:[]});
-  //   setPlayer2Cards({cards:[]});
-  // }, []);
 
   const hasHandledP1Play = useRef(false);
 
+  // useEffect(() => {
+  //   console.log("!!!!!!!!!! whosTurn: ", whosTurn, "host:", host);
+  //   if (whosTurn === "1" && host === "1" && !hasHandledP1Play.current) {
+  //     setP2Playing("toDeal");
+  //     // setP2Playing(null);
+  //     hasHandledP1Play.current = true;
+  //     console.log("✅ handleP1Play triggered once");
+  //     // handleP1Play();
+  //   } 
+    
+  //   if (whosTurn === "1" && host === "0" && !hasHandledP1Play.current) {
+  //     setP1Playing("toDeal");
+  //     // setP2Playing(null);
+  //     hasHandledP1Play.current = true;
+  //     console.log("✅ handleP1Play triggered once");
+  //     // handleP1Play();
+  //   } 
+    
+  // }, [whosTurn, host]);
+
   useEffect(() => {
-    console.log("!!!!!!!!!! whosTurn: ", whosTurn, "host:", host);
-    if (whosTurn === "1" && host === "1" && !hasHandledP1Play.current) {
-      setP2Playing("toDeal");
-      // setP2Playing(null);
+    if (whosTurn === "1" && !hasHandledP1Play.current) {
       hasHandledP1Play.current = true;
-      console.log("✅ handleP1Play triggered once");
-      //handleP1Play();
-    } 
-    
-    if (whosTurn === "1" && host === "0" && !hasHandledP1Play.current) {
-      setP1Playing("toDeal");
-      // setP2Playing(null);
-      hasHandledP1Play.current = true;
-      console.log("✅ handleP1Play triggered once");
-      //handleP1Play();
-    } 
-    
-    // else{
-    //   setP2Playing("toDeal");
-    //   setP1Playing(null);
-    // }
+      host === "1" ? (setP2Playing("toDeal"), handleP1Play()) : setP1Playing("toDeal");
+    }
   }, [whosTurn, host]);
+  
+
+  // useEffect(() => {
+  //   console.log("🎯 [handleP1PlayEffect] whosTurn:", whosTurn, "| host:", host, "| hasHandledP1Play:", hasHandledP1Play.current);
+  //   if (!hasHandledP1Play.current && !dealing) {
+  //     if (whosTurn === host) {
+  //       if (host === "0") {
+  //         setP1Playing("toDeal");
+  //         // setP2Playing(null)
+  //       } else {
+  //         setP2Playing("toDeal");
+  //         // setP1Playing(null)
+  //       }
+  //       handleP1Play()
+  //       console.log("✅ handleP1Play triggered by host");
+  //       hasHandledP1Play.current = true;
+  //     }
+  //   }
+  // }, [whosTurn, host, dealing,currentRound]);
+  
+  
 
 
   // 非 host 玩家监听 host 是否点击了 Deal（轮询）
   useEffect(() => {
+    console.log('hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh: ', host, whosTurn, dealing);
     if (host !== whosTurn && !dealing) {
-
+      
       const interval = setInterval(async () => {
         try {
           const res = await fetch(`${backend_url}/api/is_game_dealing_started`, {
@@ -129,6 +140,12 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
           if (data.result === 0) {
             clearInterval(interval);
             fetchInitialCardsForGuest(); // 进入游戏状态
+            await fetch(`${backend_url}/api/reset_game_dealing_started`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ matchid: matchID }),
+            });
+
           }
         } catch (err) {
           console.error("Polling failed:", err);
@@ -139,11 +156,6 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
     }
   }, [host, dealing]);
 
-
-  useEffect(() => {
-    console.log("✅ player1Cards updated:", player1Cards.cards);
-  }, [player1Cards]);
-  
 
   async function fetchInitialCardsForGuest() {
     console.log("fetchInitialCardsForGuest called")
@@ -173,7 +185,6 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
       };
       
       setDropZoneCards([dropCard]);
-      // console.log("dropZoneCards_fetchInitialCardsForGuest", dropZoneCards)
   
       // 解析 Player1 和 Player2 的卡牌
       for (let i = 1; i <= 23; i += 2) {
@@ -224,6 +235,7 @@ useEffect(() => {
 
 // 核心轮询逻辑：非 host 检测是否 passed
 useEffect(() => {
+ 
   if (host !== whosTurn && dealing && currentPassRef.current === null && !hasHandledPass.current) {
     console.log("🔄 Start polling /api/is_passed ...");
 
@@ -246,7 +258,7 @@ useEffect(() => {
         const res = await fetch(`${backend_url}/api/is_passed`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ matchid: matchID })
+          body: JSON.stringify({ matchid: matchID,round: currentRound })
         });
 
         const data = await res.json();
@@ -285,76 +297,6 @@ useEffect(() => {
 }, [dealing, host, matchID]);
 
 
-
-
-
-  // console.log("Mark 1 called")
-  // useEffect(() => {
-  //   if (host === "0" && dealing && currentPass === null && !hasHandlePass.current) {
-  //     const interval = setInterval(async () => {
-  //       const res = await fetch(`${backend_url}/api/is_passed`, {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         body: JSON.stringify({ matchid: matchID })
-  //       });
-  //       const data = await res.json();
-  //       if (data.result === 0) {
-  //         setP1Playing(null)
-  //         // setP2Playing("toTake");
-  //         clearInterval(interval);
-  //       }
-  //       else if (data.result === 2 && !hasHandlePass.current) {
-  //         hasHandlePass.current = true
-  //         console.log("P1 passed, P2 to play")
-  //         handleP1Play();
-  //         clearInterval(interval)
-  //       }
-  //     }, 2000);
-  //     return () => clearInterval(interval);
-  //   }
-  // }, [dealing]);
-
-  // useEffect(() => {
-  //   if (host === "0" && dealing && currentPass === null) {
-  //     const interval = setInterval(async () => {
-  //       try {
-  //         const res = await fetch(`${backend_url}/api/is_passed`, {
-  //           method: "POST",
-  //           headers: { "Content-Type": "application/json" },
-  //           body: JSON.stringify({ matchid: matchID })
-  //         });
-  
-  //         const data = await res.json();
-  //         // p1 点了pass
-  //         if (data.result === 0) {
-  //           console.log("✅ P1 passed detected. Stopping interval.");
-  //           hasHandlePass.current = true; // ✅ 标记不再重复进入
-  //           setP1Playing(null);
-  //           setP2Playing('toTake')
-  //           // setP2Playing("toTake");
-  //           clearInterval(interval); // ✅ 正确终止轮询
-  //         }
-  //         // p1 从drop zone拿牌了
-  //         else if (data.result === 2 && !hasHandlePass.current) {
-  //           hasHandlePass.current = true
-  //           console.log("P1 passed, P2 to play")
-  //           console.log();
-            
-  //           handleP1Play();
-  //           setP2Playing(null);
-  //           clearInterval(interval)
-  //         }
-  //       } catch (e) {
-  //         console.error("Polling is_passed failed", e);
-  //       }
-  //     }, 2000);
-  
-  //     return () => clearInterval(interval); // ✅ 正确清理
-  //   }
-  // }, [dealing, host,  matchID]);
-  
-  
-
   // 每次 dropZoneCards 更新，同步更新 ref
   useEffect(() => {
     dropZoneRef.current = dropZoneCards;
@@ -366,6 +308,10 @@ useEffect(() => {
     setDropZoneCards([])
     setOpen(false)
     console.log(currentRound);
+    setWaitingNextRound(false); 
+    hasHandledP1Play.current = false
+    currentPassRef.current = null
+    hasHandledPass.current = false
 
     const nextRound = currentRound + 1
     setCurrentRound(nextRound)
@@ -377,22 +323,13 @@ useEffect(() => {
       setP1Playing('toDeal')
       setP2Playing(null)
     }
+
   }
 
   async function startGame(){ 
     const initialCards: Card[] = [];
     const p1Cards: Card[] = [];
     const p2Cards: Card[] = [];
-
-    // if (roomId == 'myNewGame'){
-    //   const randomLetters = Array.from({ length: 5 }, () =>
-    //     String.fromCharCode(65 + Math.floor(Math.random() * 26))
-    //   ).join('');
-    //   // console.log(randomLetters); // 示例输出："KJQWE"
-    //   setMatchID(randomLetters)
-    // } else {
-    //   setMatchID(roomId)
-    // }
 
     let thisGameID = ''
     if (roomId != 'mynewgame'){
@@ -412,7 +349,6 @@ useEffect(() => {
       })
       .then((response) => response.json())
       .then((data) => {
-          // console.log('startGame', data)
         thisGameID = data['match_id']
         setMatchID(thisGameID)
         console.log('ddddddddddddddddddddddddddddddddddddddddd: ', thisGameID);
@@ -420,11 +356,7 @@ useEffect(() => {
 
       })
     }
-
-    console.log('GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG: ',thisGameID);
-    
     setMatchID(thisGameID)
-
 
 
     await fetch(`${backend_url}/api/match_start`, {
@@ -500,14 +432,10 @@ useEffect(() => {
     .then((data) => {
       const newCard = { order:data["order"], point: data["point"], name: data["name"], image: data["image"], color: data["color"], text: data["text"] };
       setSendingNewCard('stack'); 
-      // console.log('get_card_from_stack, newCard', newCard)
       if (is_P2){
         setP2Playing('toDrop');
-        // console.log('get_card_from_stack, P2 to drop')
         const updatedCards = [...player2Cards.cards, newCard]
         setPlayer2Cards(GinRummyScore(updatedCards));
-        // console.log('get_card_from_stack, P2 to drop', updatedCards)
-        // console.log('get_card_from_stack, P2 to drop', player2Cards.cards)
       }
     }
   )
@@ -537,7 +465,6 @@ useEffect(() => {
     function handlePass(){
       setP2Playing(null);
       setP1Playing('toTake')
-      // console.log("222222222222222222: ", roomId);
       
       if (roomId == 'mynewgame'){
         handleP1Play()//Changed to handleRobotAutoPlay() once
@@ -547,7 +474,7 @@ useEffect(() => {
         fetch(`${backend_url}/api/set_passed`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ matchid: matchID })
+          body: JSON.stringify({ matchid: matchID,round: currentRound })
         });
         
       }
@@ -610,7 +537,6 @@ useEffect(() => {
           const lastCard = newDropZoneCards.pop();
           // setDropZoneCards(newDropZoneCards);
 
-          // console.log('************************************************: ',dropZoneCards, lastCard);
           
           if (lastCard) {
             setLastPickedCard(lastCard)
@@ -682,6 +608,8 @@ useEffect(() => {
   
     // P1自动出牌
     async function handleP1Play() {// Changed to handleRobotAutoPlay once
+      console.log('dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd');
+      
       let ready = false;
       while (ready == false){
         // console.log(ready)
@@ -879,9 +807,6 @@ useEffect(() => {
         }, 500);
       }, 800); // 等待拿牌动画走完（和 transition.duration 配合）
     }
-    
-
-
 
     async function getAnotherPlayerAction() {
       const interval = setInterval(async () => {
@@ -957,8 +882,6 @@ useEffect(() => {
     }
     
     async function handleKnockFromOpp() {
-      console.log('OOOOOOOOOOOOOOOOOOOOOOOOOOpppppppppppppppppppppppppppppppppppp');
-    
     
       // ✅ 修正：加上 const res = await fetch(...)
       const res = await fetch(`${backend_url}/api/get_latest_move`, {
@@ -968,6 +891,7 @@ useEffect(() => {
         },
         body: JSON.stringify({
           matchid: matchID,
+          round: currentRound
         }),
       });
     
@@ -996,10 +920,8 @@ useEffect(() => {
 
       
     }
-    
 
     async function handleKnockFromMe() {
-      // console.log('hoooooooooooooooooooooooooooooost: ', host);
 
       await fetch(`${backend_url}/api/match_move`, {
         method: "POST",
@@ -1012,7 +934,6 @@ useEffect(() => {
           move: 'knock'})
       })
 
-      // console.log('hoooooooooooooooooooooooooooooost: ', host);
       const isHost = host === '1'; // 我是不是host
       // const isMeKnocking = true;  // 点击 Knock 的就是“我自己”
 
@@ -1136,7 +1057,8 @@ useEffect(() => {
       const roundSummaryData = {
         matchid: matchID,
         scoreSymmary: newScoreSummary,
-        winner: whosNext
+        winner: whosNext,
+        round: currentRound
       };
       
       await fetch(`${backend_url}/api/submit_move`, {
@@ -1146,7 +1068,6 @@ useEffect(() => {
       });
     
     }
-
 
     function calculateLayingOffImproved(opponentCards: Card[], knockerMelds: Card[]) {
       const cardsWithLayingOff = [...opponentCards, ...knockerMelds];
@@ -1164,7 +1085,6 @@ useEffect(() => {
         updatedDeadwoodsDozenalPoint: recalculated.DeadwoodsDozenalPoint || '0',
       };
     }
-    
     
 
     // function performLayingOff(opponentDeadwoods: Card[], knockerMelds: Card[]) {
@@ -1218,7 +1138,41 @@ useEffect(() => {
     //   };
     // }
     
-    
+    async function handlePlayNextRound(){
+      setWaitingNextRound(true)
+
+      // 接口传set waiting next round
+      await fetch(`${backend_url}/api/set_waiting_next_round`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ matchid: matchID, host, round: currentRound }),
+      });
+      
+
+      console.log("Set waiting next round →", {
+        matchid: matchID,
+        host: host,
+        round: currentRound,
+      });
+
+
+      // 接口接收对方waiting next round也点击
+      const intervalId = setInterval(async () => {
+        const res = await fetch(`${backend_url}/api/is_both_waiting_next_round`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ matchid: matchID, round: currentRound }),
+        });
+        const data = await res.json();
+        if (data.both_ready) {
+          clearInterval(intervalId); // ✅ 停止轮询
+          resetAll();               // ✅ 开始下一轮
+        }
+      }, 1000); // 每1秒轮询一次
+      
+
+
+    }
     
     
     function DropZone(){
@@ -1548,7 +1502,7 @@ useEffect(() => {
                       KNOCK
                   </div>
               </DialogTrigger>
-
+{!waitingNextRound ? (
               <DialogContent >
                 <DialogHeader>
                   <DialogTitle className="flex flex-col items-center justify-center">
@@ -1612,10 +1566,41 @@ useEffect(() => {
                   </Table>
                 </div>
                 <DialogFooter>
-                  <Button type="submit" onClick={resetAll}>Play next round</Button>
+                  <Button type="submit" onClick={handlePlayNextRound}>Play next round</Button>
                
                 </DialogFooter>
-              </DialogContent>
+                </DialogContent>
+          ) : (
+            <DialogContent className="text-center p-6 space-y-4 rounded-2xl shadow-xl">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold text-gray-800 mb-2">
+                  ⏳ Waiting...
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="flex justify-center items-center space-x-2">
+                <div className="w-3 h-3 bg-gray-400 rounded-full animate-bounce" />
+                <div className="w-3 h-3 bg-gray-400 rounded-full animate-bounce delay-150" />
+                <div className="w-3 h-3 bg-gray-400 rounded-full animate-bounce delay-300" />
+              </div>
+
+              <p className="text-muted-foreground text-m">
+                Please wait while your opponent gets ready.
+              </p>
+
+              <DialogFooter>
+                {/* <Button
+                  type="submit"
+                  onClick={resetAll}
+                  className="bg-blue-600 hover:bg-blue-700 transition-all text-white font-medium px-6 py-2 rounded-lg shadow-md"
+                >
+                  Start
+                </Button> */}
+              </DialogFooter>
+            </DialogContent>
+
+
+          )}
             </Dialog>
           )}
         </div>

@@ -96,11 +96,11 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
     const p2Cards: Card[] = [];
 
     let thisGameID = ''
-    if (roomId != 'tuition'){
+    if (roomId != 'tutorial'){
       thisGameID = roomId
     }
 
-    if (roomId == 'tuition'){
+    if (roomId == 'tutorial'){
       await fetch(`${backend_url}/api/match_create`, {
         method: "POST",
         headers: {
@@ -419,7 +419,7 @@ useEffect(() => {
       setP2Playing(null);
       setP1Playing('toTake')
       
-      if (roomId == 'tuition'){
+      if (roomId == 'tutorial'){
         //bug：hanldePass， robot从stack拿牌
         handleP1Play()//Changed to handleRobotAutoPlay() once
       } else {
@@ -559,7 +559,7 @@ useEffect(() => {
           setP1Playing("toTake")
           setP2Playing(null)
 
-          if (roomId == 'tuition'){
+          if (roomId == 'tutorial'){
             handleP1Play()
           } else {
             // TODO: 
@@ -1052,7 +1052,7 @@ useEffect(() => {
       <div className="h-full w-full flex flex-col items-center justify-center select-none">
 
         {/* Player1 avatar*/}
-        <AvatarDisplay image={'/main-image/avatar-robot.jpg'} player={1} name={roomId == 'tuition' ? 'Robot' : 'Opponent'} p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
+        <AvatarDisplay image={'/main-image/avatar-robot.jpg'} player={1} name={roomId == 'tutorial' ? 'Robot' : 'Opponent'} p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
 
         <div className="relative flex items-center justify-center w-full h-[500px] gap-4">
             {/* Player1 */}
@@ -1325,7 +1325,7 @@ useEffect(() => {
                       <TableRow>
                         <TableCell className="font-bold text-center"></TableCell>
                         <TableCell colSpan={3} className="font-bold text-center">
-                          {roomId === 'tuition' ? 'Robot' : 'Opponent'}
+                          {roomId === 'tutorial' ? 'Robot' : 'Opponent'}
                         </TableCell>
                         <TableCell colSpan={3} className="font-bold text-center"> You</TableCell>
                         <TableCell  className="font-bold text-center"></TableCell>

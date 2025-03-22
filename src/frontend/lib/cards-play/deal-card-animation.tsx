@@ -11,8 +11,6 @@ import { CARDS } from '../data/cards.data';
 import { Card,PlayerSummary } from '../models/card-animation.model';
 import GinRummyScore from './calc-score';
 
-import Link from 'next/link';
-
 import {
   Dialog,
   DialogContent,
@@ -738,7 +736,7 @@ useEffect(() => {
             // const new_card = { order:data["new_card"]["order"], point: data["new_card"]["point"], name: data["new_card"]["name"], image: data["new_card"]["image"], color: data["new_card"]["color"], text: data["new_card"]["text"] }
             const new_card = { order:new_card_obj.order, point:new_card_obj.point, name:new_card_obj.name, image: new_card_obj.image, color: new_card_obj.color, text: new_card_obj.text }
             
-            console.log('8888888888888888888888888888888888888888: ', new_card);
+            console.log('8888888888888888888888888888888888888888: ', place);
             
 
 
@@ -958,12 +956,47 @@ useEffect(() => {
       }, 2000);
     }
     
-    function handleKnockFromOpp() {
-     
-console.log('OOOOOOOOOOOOOOOOOOOOOOOOOOpppppppppppppppppppppppppppppppppppp');
+    async function handleKnockFromOpp() {
+      console.log('OOOOOOOOOOOOOOOOOOOOOOOOOOpppppppppppppppppppppppppppppppppppp');
+    
+    
+      // ✅ 修正：加上 const res = await fetch(...)
+      const res = await fetch(`${backend_url}/api/get_latest_move`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          matchid: matchID,
+        }),
+      });
+    
+      const data = await res.json();
+      console.log("Latest move data:", data);
 
+      const myRounds = data.scoreSymmary.rounds.map((round:any) => ({
+        ...round,
+        p1Score: round.p2Score,
+        p1Bonus: round.p2Bonus,
+        p1Total: round.p2Total,
+        p2Score: round.p1Score,
+        p2Bonus: round.p1Bonus,
+        p2Total: round.p1Total,
+      }));
+      
+      const myScoreSummary = {
+        p1TotalScore: data.scoreSymmary.p2TotalScore,
+        p2TotalScore: data.scoreSymmary.p1TotalScore,
+        rounds : myRounds
+      }
+
+      setScoreSummary(myScoreSummary);
+      setWhosTurn(data.winner);
+      setOpen(true);
+
+      
     }
-
+    
 
     async function handleKnockFromMe() {
       // console.log('hoooooooooooooooooooooooooooooost: ', host);
@@ -978,7 +1011,8 @@ console.log('OOOOOOOOOOOOOOOOOOOOOOOOOOpppppppppppppppppppppppppppppppppppp');
           matchid: matchID,
           move: 'knock'})
       })
-      
+
+      // console.log('hoooooooooooooooooooooooooooooost: ', host);
       const isHost = host === '1'; // 我是不是host
       // const isMeKnocking = true;  // 点击 Knock 的就是“我自己”
 
@@ -1006,10 +1040,6 @@ console.log('OOOOOOOOOOOOOOOOOOOOOOOOOOpppppppppppppppppppppppppppppppppppp');
         opponentCards.DeadwoodsPoint = layingOffResult.updatedDeadwoodsPoint;
         opponentCards.DeadwoodsDozenalPoint = layingOffResult.updatedDeadwoodsDozenalPoint;
       }
-
-
-
-
     
       let baseScore = 0;
       let bonus = 0;
@@ -1062,43 +1092,59 @@ console.log('OOOOOOOOOOOOOOOOOOOOOOOOOOpppppppppppppppppppppppppppppppppppp');
         result,
       };
     
-      setScoreSummary(prev => {
-        const prevSummary: ScoreSummary = prev || { rounds: [], p1TotalScore: 0, p2TotalScore: 0 };
-        const updatedRounds = [...prevSummary.rounds, roundData];
-        const p1TotalScore = updatedRounds.reduce((acc, r) => acc + r.p1Total, 0);
-        const p2TotalScore = updatedRounds.reduce((acc, r) => acc + r.p2Total, 0);
-        return {
-          rounds: updatedRounds,
-          p1TotalScore,
-          p2TotalScore,
-        };
-      });
+      const prevSummary: ScoreSummary = scoreSummary || { rounds: [], p1TotalScore: 0, p2TotalScore: 0 };
+      const updatedRounds = [...prevSummary.rounds, roundData];
+      const p1TotalScore = updatedRounds.reduce((acc, r) => acc + r.p1Total, 0);
+      const p2TotalScore = updatedRounds.reduce((acc, r) => acc + r.p2Total, 0);
+      
+      const newScoreSummary: ScoreSummary = {
+        rounds: updatedRounds,
+        p1TotalScore,
+        p2TotalScore,
+      };
+      
+      // ✅ 更新状态
+      setScoreSummary(newScoreSummary);
 
+      let whosNext = ''
       if (result === "Undercut") {
         // 对手赢
         if (host == '0') {
           console.log("✅ Winner of this round: 1");
-          
+          whosNext = '1'
           setWhosTurn('1')
         } else {
           console.log("✅ Winner of this round: 0");
+          whosNext = '0'
           setWhosTurn('0')
         }
       } else {
         // 自己赢
         if (host == '0') {
           console.log("✅ Winner of this round: 0");
-          
+          whosNext ='0'
           setWhosTurn('0')
         } else {
           console.log("✅ Winner of this round: 1");
+          whosNext = '1'
           setWhosTurn('1')
         }
-
       }
-      
-      
 
+      setWhosTurn(whosNext)
+
+      const roundSummaryData = {
+        matchid: matchID,
+        scoreSymmary: newScoreSummary,
+        winner: whosNext
+      };
+      
+      await fetch(`${backend_url}/api/submit_move`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(roundSummaryData),
+      });
+    
     }
 
 

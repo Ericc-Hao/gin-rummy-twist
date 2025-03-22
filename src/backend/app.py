@@ -210,6 +210,13 @@ def move_request():
             'result': 0, 
             "message": "OK"
         })
+    
+    if request.json['move'] == "knock":
+        target_match.knock_card(request.json['host'])
+        return jsonify({
+            'result': 0,
+            'message': "Knock received"
+        })
 
     if request.json['move'] == "opponent_status":
         sleep(1)
@@ -251,7 +258,7 @@ def move_request():
             "dropped_card": json.dumps(last_card),
             "new_card": json.dumps(last_picked_card)
         })
-
+    
 
 game_started = {}
 
@@ -313,6 +320,41 @@ def is_passed():
         return jsonify({'result': 0, 'message': 'Host passed'})
     else:
         return jsonify({'result': 1, 'message': 'Not passed yet'})
+
+
+latest_moves = {}  # match_id -> latest move content
+
+@app.route('/api/submit_move', methods=['POST'])
+def submit_move():
+    data = request.get_json()
+    match_id = data.get('matchid')
+    score_summary = data.get('scoreSymmary')
+    winner = data.get('winner')
+
+    if not match_id:
+        return jsonify({'result': 1, 'message': 'Missing match ID'})
+
+    latest_moves[match_id] = {
+        'scoreSymmary': score_summary,
+        'winner': winner,
+    }
+
+    return jsonify({'result': 0, 'message': 'Move submitted'})
+
+
+@app.route('/api/get_latest_move', methods=['POST'])
+def get_latest_move_post():
+    data = request.get_json()
+    match_id = data.get('matchid')
+    if not match_id:
+        return jsonify({'result': 1, 'message': 'Missing match ID'})
+
+    move_data = latest_moves.get(match_id, None)
+    if not move_data:
+        return jsonify({'result': 2, 'message': 'No move found'})
+
+    return jsonify({'result': 0, 'message': 'Move retrieved', **move_data})
+
 
 
 

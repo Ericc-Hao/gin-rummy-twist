@@ -199,6 +199,16 @@ class Match():
         else:
             # Return an empty dict or raise an error as appropriate.
             return {}
+        
+    def knock_card(self, is_host: str):
+        if is_host == "1":
+            self.latest_player = host
+            self.latest_operation = "knock"
+            print("host performs knock") if debug else None
+        else:
+            self.latest_player = guest
+            self.latest_operation = "knock"
+            print("guest performs knock") if debug else None
 
     def get_latest_operation(self) -> tuple:
         if self.Bot is not None:

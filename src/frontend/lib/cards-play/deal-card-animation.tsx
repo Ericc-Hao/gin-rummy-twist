@@ -30,7 +30,7 @@ import { decimalToDozenal } from './count-dozenal';
 import { AvatarDisplay,ChatBubble  } from '@my-components/avatar'
 import GameOverOverlay from './game-end-overlay'
 
-//const backend_url = "http://127.0.0.1:8080"
+// const backend_url = "http://127.0.0.1:8080"
 // const backend_url = "http://localhost:8080";
 const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
 
@@ -79,16 +79,6 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
   const shuffledCards = getRandomCards(CARDS); 
   const initialCardsNumber = 24
   // const host = 1
-
-  if (roomId == 'myNewGame'){
-    const randomLetters = Array.from({ length: 5 }, () =>
-      String.fromCharCode(65 + Math.floor(Math.random() * 26))
-    ).join('');
-    // console.log(randomLetters); // 示例输出："KJQWE"
-    setMatchID(randomLetters)
-  } else {
-    setMatchID(roomId)
-  }
 
   // console.log("host: ",host);
   // console.log("roomId: ",roomId);
@@ -396,22 +386,32 @@ useEffect(() => {
     const p1Cards: Card[] = [];
     const p2Cards: Card[] = [];
 
-    if (roomId == 'mynewgame'){
-    await fetch(`${backend_url}/api/match_create`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        bot: 'True'
-      })
-    })
-    .then((response) => response.json())
-    .then((data) => {
-        // console.log('startGame', data)
-      setMatchID(data['match_id'])
-    })
+    if (roomId == 'myNewGame'){
+      const randomLetters = Array.from({ length: 5 }, () =>
+        String.fromCharCode(65 + Math.floor(Math.random() * 26))
+      ).join('');
+      // console.log(randomLetters); // 示例输出："KJQWE"
+      setMatchID(randomLetters)
+    } else {
+      setMatchID(roomId)
     }
+
+    // if (roomId == 'mynewgame'){
+    //   await fetch(`${backend_url}/api/match_create`, {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json",
+    //     },
+    //     body: JSON.stringify({
+    //       bot: 'True'
+    //     })
+    //   })
+    //   .then((response) => response.json())
+    //   .then((data) => {
+    //       // console.log('startGame', data)
+    //     setMatchID(data['match_id'])
+    //   })
+    // }
 
 
     await fetch(`${backend_url}/api/match_start`, {

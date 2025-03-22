@@ -56,7 +56,7 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
 
   const [scoreSummary, setScoreSummary] = useState<ScoreSummary>()
 
-  const [matchID, setMatchID] = useState<string>(roomId)
+  const [matchID, setMatchID] = useState<string>("")
 
   const [whosTurn, setWhosTurn] = useState<string>("1")
 
@@ -79,6 +79,16 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
   const shuffledCards = getRandomCards(CARDS); 
   const initialCardsNumber = 24
   // const host = 1
+
+  if (roomId == 'myNewGame'){
+    const randomLetters = Array.from({ length: 5 }, () =>
+      String.fromCharCode(65 + Math.floor(Math.random() * 26))
+    ).join('');
+    // console.log(randomLetters); // 示例输出："KJQWE"
+    setMatchID(randomLetters)
+  } else {
+    setMatchID(roomId)
+  }
 
   // console.log("host: ",host);
   // console.log("roomId: ",roomId);

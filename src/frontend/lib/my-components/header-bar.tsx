@@ -96,7 +96,7 @@ export function HeaderBar() {
                             <div className='flex flex-col w-[300px] gap-4 m-4 '>
                                     {/* {StartButton('/home', "Save and Leave")} */}
                                     {StartButton('/home', "Leave (without save)")}
-                                    {/* {StartButton('/game/tuition', "Restart")} */}
+                                    {/* {StartButton('/game/tutorial', "Restart")} */}
                                     <Button variant="ghost" onClick={() => setOpenPauseDialog(false)}>Cancel</Button>
                                 </div>
                         </DialogContent>

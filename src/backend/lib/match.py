@@ -93,19 +93,24 @@ DECK = [
 
 class Match():
     def __init__(self, match_id: str, bot: bool = False):
+        print("Match created!") if debug else None
         self.match_id = match_id
         self.current_round = -2
+        
         if bot:
             self.Bot = Bot()
         else:
             self.Bot = None
+        self.initialize_match()
 
     
 
     def initialize_match(self, cur_round = -1):
+        print("initialize match,", cur_round, self.current_round) if debug else None
         if cur_round <= self.current_round:
             return
         self.current_round = cur_round
+        print("initialize match, done", cur_round, self.current_round) if debug else None
         self.deck = DECK.copy()
         self.drop_zone = []
         self.host_cards = []
@@ -129,6 +134,7 @@ class Match():
         for card in self.guest_cards:
             print('guest initial:', card["name"]) if debug else None
         print(len(self.guest_cards), len(self.host_cards), len(self.deck), len(self.drop_zone)) if debug else None
+        print(self.guest_cards, self.host_cards) if debug else None
         self.new_card = self.host_cards[-1]
 
 
@@ -151,6 +157,7 @@ class Match():
     
     def choose_drop_zone(self, is_host: str) -> dict:
         self.latest_operation = 'dropzone'
+        print("host:", self.host_cards) if debug else None
         self.new_card = self.drop_zone.pop()
         if is_host == "1":
             print("host get drop zone, ", self.new_card["name"]) if debug else None
@@ -164,6 +171,7 @@ class Match():
         dropped = None
         if is_host == "1":
             for i in range(len(self.host_cards)):
+                print("??????????????",self.host_cards[i]["name"], card_name) if debug else None
                 if self.host_cards[i]["name"] == card_name:
                     dropped = self.host_cards.pop(i)
                     self.drop_zone.append(dropped)
@@ -191,11 +199,23 @@ class Match():
         else:
             # Return an empty dict or raise an error as appropriate.
             return {}
+        
+    def knock_card(self, is_host: str):
+        if is_host == "1":
+            self.latest_player = host
+            self.latest_operation = "knock"
+            print("host performs knock") if debug else None
+        else:
+            self.latest_player = guest
+            self.latest_operation = "knock"
+            print("guest performs knock") if debug else None
 
     def get_latest_operation(self) -> tuple:
         if self.Bot is not None:
             # Ensure the drop_zone is not empty before accessing its last element.
+            print(guest, self.guest_cards) if debug else None
             if not self.drop_zone:
+                print("drop_zone is empty!????????????????????????") if debug else None
                 if self.deck:
                     # If drop_zone is empty but the deck still has cards, add one to drop_zone.
                     self.drop_zone.append(self.deck.pop())

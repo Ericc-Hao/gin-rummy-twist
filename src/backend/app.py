@@ -63,15 +63,18 @@ def join_request():
 @app.route('/api/match_create', methods=['POST'])
 def match_create_request():
     match_id = "test"
-    if match_id in rooms:
-        match_id = ''.join(random.choices("abcdefghijklmnopqrstuvwxyz", k=4))
-        print(match_id)
-    rooms[match_id] = False
     need_bot = False
+    k_val = 4
     print(request.json, "isBot?", request.json['bot'])
     if request.json['bot'] == "True":
         need_bot = True
+        k_val = 5
         print("Bot needed")
+    if match_id in rooms:
+        match_id = ''.join(random.choices("abcdefghijklmnopqrstuvwxyz", k=k_val))
+        print(match_id)
+    rooms[match_id] = False
+    
     ongoing_matches[match_id] = Match(match_id, bot=need_bot)
 
     return jsonify({
@@ -99,8 +102,8 @@ def match_start_request():
     print(request.json)
 
     # ✅ 只有第一次调用时才创建 Match
-    if match_id not in ongoing_matches:
-        ongoing_matches[match_id] = Match(match_id)
+    #if match_id not in ongoing_matches:
+        #ongoing_matches[match_id] = Match(match_id)
 
     ongoing_matches[match_id].initialize_match(int(request.json['round']))
 
@@ -207,6 +210,13 @@ def move_request():
             'result': 0, 
             "message": "OK"
         })
+    
+    if request.json['move'] == "knock":
+        target_match.knock_card(request.json['host'])
+        return jsonify({
+            'result': 0,
+            'message': "Knock received"
+        })
 
     if request.json['move'] == "opponent_status":
         sleep(1)
@@ -248,7 +258,7 @@ def move_request():
             "dropped_card": json.dumps(last_card),
             "new_card": json.dumps(last_picked_card)
         })
-
+    
 
 game_started = {}
 
@@ -291,27 +301,128 @@ def is_game_dealing_started():
         return jsonify({'result': 1, 'message': 'Not started yet'})
 
 
-pass_status = {}  # 用于记录 match_id -> 是否 host 已点击 pass
+pass_status = {}  # match_id -> { round -> bool }
+
 
 @app.route('/api/set_passed', methods=['POST'])
 def set_passed():
     match_id = request.json.get('matchid')
-    pass_status[match_id] = True
+    round_num = str(request.json.get('round'))  # ✅ 新增 round 参数
+
+    if match_id not in pass_status:
+        pass_status[match_id] = {}
+    
+    pass_status[match_id][round_num] = True  # ✅ 按 round 存储
     return jsonify({'result': 0, 'message': 'Pass set'})
+
 
 @app.route('/api/is_passed', methods=['POST'])
 def is_passed():
     match_id = request.json.get('matchid')
-    if ongoing_matches.get(request.json['matchid']).latest_player == '1':
+    round_num = str(request.json.get('round'))  # ✅ 新增 round 参数
+
+    # 如果 host 已经摸牌/打牌了，就直接返回 result=2
+    if ongoing_matches.get(match_id).latest_player == '1':
         return jsonify({'result': 2, 'message': 'Host Made a move'})
-    if pass_status.get(match_id, False):
-        # 检测到 pass 之后就清掉
-        pass_status[match_id] = False
+
+    # ✅ 判断当前 round 是否存在 pass 状态
+    if pass_status.get(match_id, {}).get(round_num, False):
+        pass_status[match_id][round_num] = False  # 清掉状态
         return jsonify({'result': 0, 'message': 'Host passed'})
     else:
         return jsonify({'result': 1, 'message': 'Not passed yet'})
 
 
+
+# 改成支持按 round 存储
+latest_moves = {}  # match_id -> { round -> move content }
+
+@app.route('/api/submit_move', methods=['POST'])
+def submit_move():
+    data = request.get_json()
+    match_id = data.get('matchid')
+    round_num = data.get('round')
+    score_summary = data.get('scoreSymmary')
+    winner = data.get('winner')
+
+    if not match_id or round_num is None:
+        return jsonify({'result': 1, 'message': 'Missing match ID or round'})
+
+    if match_id not in latest_moves:
+        latest_moves[match_id] = {}
+
+    latest_moves[match_id][round_num] = {
+        'scoreSymmary': score_summary,
+        'winner': winner,
+    }
+
+    return jsonify({'result': 0, 'message': 'Move submitted'})
+
+
+@app.route('/api/get_latest_move', methods=['POST'])
+def get_latest_move_post():
+    data = request.get_json()
+    match_id = data.get('matchid')
+    round_num = data.get('round')
+
+    if not match_id or round_num is None:
+        return jsonify({'result': 1, 'message': 'Missing match ID or round'})
+
+    move_data = latest_moves.get(match_id, {}).get(round_num)
+    if not move_data:
+        return jsonify({'result': 2, 'message': 'No move found for this round'})
+
+    return jsonify({'result': 0, 'message': 'Move retrieved', **move_data})
+
+
+
+waiting_next_round = {}  # match_id -> {'p1': False, 'p2': False, 'round': int}
+
+@app.route('/api/set_waiting_next_round', methods=['POST'])
+def set_waiting_next_round():
+    data = request.get_json()
+    match_id = data.get('matchid')
+    host = data.get('host')  # '0' or '1'
+    round_num = str(data.get('round'))  # round 也要作为 key 层
+
+    if match_id not in waiting_next_round:
+        waiting_next_round[match_id] = {}
+    if round_num not in waiting_next_round[match_id]:
+        waiting_next_round[match_id][round_num] = {'p1': False, 'p2': False}
+
+    if host == '0':
+        waiting_next_round[match_id][round_num]['p1'] = True
+    elif host == '1':
+        waiting_next_round[match_id][round_num]['p2'] = True
+
+    print(f">> [set_waiting_next_round] {waiting_next_round}")
+    return jsonify({'result': 0, 'message': 'Waiting flag set'})
+
+
+
+@app.route('/api/is_both_waiting_next_round', methods=['POST'])
+def is_both_waiting_next_round():
+    data = request.get_json()
+    match_id = data.get('matchid')
+    round_num = str(data.get('round'))
+
+    waiting = waiting_next_round.get(match_id, {}).get(round_num, {'p1': False, 'p2': False})
+    both_ready = waiting['p1'] and waiting['p2']
+
+    print(f">> [is_both_waiting_next_round] {waiting_next_round}")
+    return jsonify({
+        'result': 0,
+        'both_ready': both_ready
+    })
+
+
+
+@app.route('/api/reset_game_dealing_started', methods=['POST'])
+def reset_game_dealing_started():
+    match_id = request.json.get('matchid')
+    if match_id in game_dealing_started:
+        game_dealing_started[match_id] = False
+    return jsonify({'result': 0, 'message': 'Game dealing status reset'})
 
 
 if __name__ == '__main__':

@@ -31,8 +31,8 @@ import { AvatarDisplay,ChatBubble  } from '@my-components/avatar'
 import GameOverOverlay from './game-end-overlay'
 
 // const backend_url = "http://127.0.0.1:8080"
-// const backend_url = "http://localhost:8080";
-const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
+const backend_url = "http://localhost:8080";
+// const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
 
 
 function getRandomCards(cards: Card[]): Card[] {
@@ -56,7 +56,7 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
 
   const [scoreSummary, setScoreSummary] = useState<ScoreSummary>()
 
-  const [matchID, setMatchID] = useState<string>("")
+  const [matchID, setMatchID] = useState<string>(roomId)
 
   const [whosTurn, setWhosTurn] = useState<string>("1")
 
@@ -386,32 +386,47 @@ useEffect(() => {
     const p1Cards: Card[] = [];
     const p2Cards: Card[] = [];
 
-    if (roomId == 'myNewGame'){
-      const randomLetters = Array.from({ length: 5 }, () =>
-        String.fromCharCode(65 + Math.floor(Math.random() * 26))
-      ).join('');
-      // console.log(randomLetters); // 示例输出："KJQWE"
-      setMatchID(randomLetters)
-    } else {
-      setMatchID(roomId)
+    // if (roomId == 'myNewGame'){
+    //   const randomLetters = Array.from({ length: 5 }, () =>
+    //     String.fromCharCode(65 + Math.floor(Math.random() * 26))
+    //   ).join('');
+    //   // console.log(randomLetters); // 示例输出："KJQWE"
+    //   setMatchID(randomLetters)
+    // } else {
+    //   setMatchID(roomId)
+    // }
+
+    let thisGameID = ''
+    if (roomId != 'mynewgame'){
+      thisGameID = roomId
     }
 
-    // if (roomId == 'mynewgame'){
-    //   await fetch(`${backend_url}/api/match_create`, {
-    //     method: "POST",
-    //     headers: {
-    //       "Content-Type": "application/json",
-    //     },
-    //     body: JSON.stringify({
-    //       bot: 'True'
-    //     })
-    //   })
-    //   .then((response) => response.json())
-    //   .then((data) => {
-    //       // console.log('startGame', data)
-    //     setMatchID(data['match_id'])
-    //   })
-    // }
+
+    if (roomId == 'mynewgame'){
+      await fetch(`${backend_url}/api/match_create`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          bot: 'True'
+        })
+      })
+      .then((response) => response.json())
+      .then((data) => {
+          // console.log('startGame', data)
+        thisGameID = data['match_id']
+        setMatchID(thisGameID)
+        console.log('ddddddddddddddddddddddddddddddddddddddddd: ', thisGameID);
+        
+
+      })
+    }
+
+    console.log('GGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGGG: ',thisGameID);
+    
+    setMatchID(thisGameID)
+
 
 
     await fetch(`${backend_url}/api/match_start`, {
@@ -421,7 +436,7 @@ useEffect(() => {
       },
       body: JSON.stringify({
         host: host,
-        matchid: matchID,
+        matchid: thisGameID,
         round:currentRound
       })
     })
@@ -732,8 +747,10 @@ useEffect(() => {
               clearInterval(interval);
             }
 
-
-            if (place == 'dropzone') {
+            if (place == 'knock') {
+              handleKnockFromOpp()
+            }
+            else if (place == 'dropzone') {
               console.log("dropZoneCards (ref)", dropZoneRef.current);
               // if (dropZoneRef.current.length > 0) {
                 const newDropZone = [...dropZoneRef.current];
@@ -941,8 +958,26 @@ useEffect(() => {
       }, 2000);
     }
     
-    function handleKnock() {
-      console.log('hoooooooooooooooooooooooooooooost: ', host);
+    function handleKnockFromOpp() {
+     
+console.log('OOOOOOOOOOOOOOOOOOOOOOOOOOpppppppppppppppppppppppppppppppppppp');
+
+    }
+
+
+    async function handleKnockFromMe() {
+      // console.log('hoooooooooooooooooooooooooooooost: ', host);
+
+      await fetch(`${backend_url}/api/match_move`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          host: host,
+          matchid: matchID,
+          move: 'knock'})
+      })
       
       const isHost = host === '1'; // 我是不是host
       // const isMeKnocking = true;  // 点击 Knock 的就是“我自己”
@@ -956,9 +991,6 @@ useEffect(() => {
       console.log(")))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))");
       console.log('myCards: ',myCards);
       console.log('opponentCards: ', opponentCards);
-      
-      
-      
       
       const myDeadwood = myCards.DeadwoodsPoint || 0;
       let adjustedOpponentDeadwood = opponentCards.DeadwoodsPoint || 0;
@@ -1465,7 +1497,7 @@ useEffect(() => {
                         backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 120 ? 'red' : 'gray',
                         cursor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 120 ? 'pointer' : 'not-allowed',
                       }}
-                      onClick={handleKnock}
+                      onClick={() => handleKnockFromMe()}
                     >
                       KNOCK
                   </div>

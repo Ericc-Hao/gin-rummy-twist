@@ -63,15 +63,18 @@ def join_request():
 @app.route('/api/match_create', methods=['POST'])
 def match_create_request():
     match_id = "test"
-    if match_id in rooms:
-        match_id = ''.join(random.choices("abcdefghijklmnopqrstuvwxyz", k=4))
-        print(match_id)
-    rooms[match_id] = False
     need_bot = False
+    k_val = 4
     print(request.json, "isBot?", request.json['bot'])
     if request.json['bot'] == "True":
         need_bot = True
+        k_val = 5
         print("Bot needed")
+    if match_id in rooms:
+        match_id = ''.join(random.choices("abcdefghijklmnopqrstuvwxyz", k=k_val))
+        print(match_id)
+    rooms[match_id] = False
+    
     ongoing_matches[match_id] = Match(match_id, bot=need_bot)
 
     return jsonify({
@@ -99,8 +102,8 @@ def match_start_request():
     print(request.json)
 
     # ✅ 只有第一次调用时才创建 Match
-    if match_id not in ongoing_matches:
-        ongoing_matches[match_id] = Match(match_id)
+    #if match_id not in ongoing_matches:
+        #ongoing_matches[match_id] = Match(match_id)
 
     ongoing_matches[match_id].initialize_match(int(request.json['round']))
 

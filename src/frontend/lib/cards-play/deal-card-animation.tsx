@@ -62,10 +62,10 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
   const [currentRound, setCurrentRound] = useState<number>(1)
 
   
-  const dropZoneRef = useRef<Card[]>([]); // 初始化 ref
+  const dropZoneRef = useRef<Card[]>([]);
   const hasHandlePass = useRef(false)
 
-  const [open, setOpen] = useState(false); // 强制一直 open
+  const [open, setOpen] = useState(false); 
 
   const [waitingNextRound, setWaitingNextRound] = useState<boolean>(false)
 
@@ -75,13 +75,12 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
 
   const hasHandledP1Play = useRef(false);
 
-  // 放在组件顶部
   const hasHandledPass = useRef(false);
   const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currentPassRef = useRef(currentPass);
 
 
-  // 设置一开哪一方谁deal
+  // set which player deal
   useEffect(() => {
     if (whosTurn === "1" && !hasHandledP1Play.current) {
       hasHandledP1Play.current = true;
@@ -174,7 +173,7 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
     setRemainingCards(shuffledCards.slice(initialCardsNumber));
   }
 
-  // 非本轮host玩家监听 本轮host 是否点击了 Deal（轮询）
+  // non-host check if host click deal
   useEffect(() => {
     if (host !== whosTurn && !dealing) {
       
@@ -188,7 +187,7 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
           const data = await res.json();
           if (data.result === 0) {
             clearInterval(interval);
-            fetchInitialCardsForGuest(); // 进入游戏状态
+            fetchInitialCardsForGuest();
             await fetch(`${backend_url}/api/reset_game_dealing_started`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -197,15 +196,15 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
 
           }
         } catch (err) {
-          console.error("Polling failed:", err);
+          // console.error("Polling failed:", err);
         }
       }, 2000);
 
-      return () => clearInterval(interval); // 清理 interval
+      return () => clearInterval(interval); 
     }
   }, [host, dealing]);
 
-  // 非本轮host玩家一开始deal之后的牌
+  // non-host player get cards from dealing
   async function fetchInitialCardsForGuest() {
     try {
       const response = await fetch(`${backend_url}/api/match_start`, {
@@ -233,8 +232,6 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
       };
       
       setDropZoneCards([dropCard]);
-  
-      // 解析 Player1 和 Player2 的卡牌
       for (let i = 1; i <= 23; i += 2) {
         p2Cards.push({
           order: data[`order${i}`],
@@ -256,36 +253,30 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
           text: data[`text${i}`]
         });
       }
-  
-      // 更新状态
-      // setTimeout(() => {
-      
-        setPlayer1Cards(GinRummyScore(p1Cards));
-        setPlayer2Cards(GinRummyScore(p2Cards));
-        setDealing(true);
-        setP1Playing("passOrPick");
-      // }, 400);
+
+      setPlayer1Cards(GinRummyScore(p1Cards));
+      setPlayer2Cards(GinRummyScore(p2Cards));
+      setDealing(true);
+      setP1Playing("passOrPick");
   
     } catch (err) {
-      console.error("fetchInitialCardsForGuest failed:", err);
+      // console.error("fetchInitialCardsForGuest failed:", err);
     }
   }
 
 
-
-// 每次 currentPass 更新时，更新 ref 值
 useEffect(() => {
   currentPassRef.current = currentPass;
 }, [currentPass]);
 
-// 核心轮询逻辑：非 host 检测是否 passed
+
+// non-host check if host clicked pass
 useEffect(() => {
  
   if (host !== whosTurn && dealing && currentPassRef.current === null && !hasHandledPass.current) {
 
-
-    let count = 0; // 最大轮询次数限制（避免死循环）
-    const MAX_ATTEMPTS = 200;
+    let count = 0;
+    const MAX_ATTEMPTS = 2000;
 
     const interval = setInterval(async () => {
       if (hasHandledPass.current) {
@@ -294,7 +285,7 @@ useEffect(() => {
       }
 
       if (count++ >= MAX_ATTEMPTS) {
-        console.warn("⚠️ Polling timeout: No pass detected after max attempts.");
+        // console.warn("⚠️ Polling timeout: No pass detected after max attempts.");
         clearInterval(interval);
         return;
       }
@@ -309,35 +300,27 @@ useEffect(() => {
         const data = await res.json();
 
         if (data.result === 0) {
-          // ✅ Host 点击了 PASS
           hasHandledPass.current = true;
           setP1Playing(null);
           setP2Playing("toTake");
           clearInterval(interval);
         } else if (data.result === 2) {
-          // ✅ Host 从 DropZone 拿牌了（没点击 PASS）
           hasHandledPass.current = true;
-          handleP1Play(); // 触发 host 自动出牌逻辑
+          handleP1Play(); 
           setP2Playing(null);
           clearInterval(interval);
-        } else {
-          // result = 1：尚未点击 pass，也未拿牌，继续轮询
-        }
-
+        } 
       } catch (err) {
-        console.error("❌ Polling is_passed failed:", err);
+        // console.error("❌ Polling is_passed failed:", err);
       }
     }, 2000);
 
-    // 清理 interval
     return () => {
       clearInterval(interval);
     };
   }
 }, [dealing, host, matchID]);
 
-
-  // 每次 dropZoneCards 更新，同步更新 ref
   useEffect(() => {
     dropZoneRef.current = dropZoneCards;
   }, [dropZoneCards]);
@@ -368,9 +351,6 @@ useEffect(() => {
 
 
   async function get_card_from_stack(is_P2: boolean){
-    //fetch a new card
-    console.log('get_card_from_stack');
-    
     await fetch(`${backend_url}/api/match_move`, {
       method: "POST",
       headers: {
@@ -396,9 +376,6 @@ useEffect(() => {
 
   useEffect(() => {
     if (dealing) {
-      // The following functionality is transferred to the backend
-      // deal card to each player
-      
       setTimeout(() => {
         setCurrentPass(2)
       }, 7400);
@@ -421,10 +398,8 @@ useEffect(() => {
       
       if (roomId == 'tutorial'){
         //bug：hanldePass， robot从stack拿牌
-        handleP1Play()//Changed to handleRobotAutoPlay() once
+        handleP1Play()
       } else {
-        // TODO: 
-        // getAnotherPlayerAction()
         fetch(`${backend_url}/api/set_passed`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -432,12 +407,8 @@ useEffect(() => {
         });
 
         if (host === whosTurn) {
-          console.log("🎯 Host passed, now waiting for Guest's move");
           handleP1Play(); 
-        
       }
-
-
     }
       
       setCurrentPass(null)
@@ -483,8 +454,6 @@ useEffect(() => {
           setCurrentPass(null)
         }
         if (dropZoneCards && dropZoneCards.length > 0) {
-          console.log('handleDropZone');
-          
           await fetch(`${backend_url}/api/match_move`, {
             method: "POST",
             headers: {
@@ -513,7 +482,6 @@ useEffect(() => {
             }, 100);
           } 
         } else {
-          // TODO: toast component(sooner)
           alert('No card in Drop Zone!');
         }
       }
@@ -531,20 +499,11 @@ useEffect(() => {
             alert("⚠️ This card was just dropped! Please choose a different card.");
             return;
           }
-          // dropZoneCards.push(item.card);
-          // Qixuan Noted: Bug here
-          // 这边直接push进去就行，这样set并不会将card放入dropzonecards
-          // 你如果print出来就会发现实际上没加入dropzonecards
-          // 如果P1从弃牌堆拿牌就会露馅
-          // const updatedDropZoneCards = [...dropZoneCards, item.card];
-          // setDropZoneCards(dropZoneCards);
           setDropZoneCards([...dropZoneCards, item.card]);
 
           const updatedCards = [...player2Cards.cards];
           updatedCards.splice(item.index, 1);
           setPlayer2Cards(GinRummyScore(updatedCards));
-          console.log('handledrop');
-          
           await fetch(`${backend_url}/api/match_move`, {
             method: "POST",
             headers: {
@@ -559,22 +518,14 @@ useEffect(() => {
           setP1Playing("toTake")
           setP2Playing(null)
 
-          if (roomId == 'tutorial'){
-            handleP1Play()
-          } else {
-            // TODO: 
-            //getAnotherPlayerAction()
-            handleP1Play()
-          }
+          handleP1Play()
       }
     };
   
     // P1自动出牌
-    async function handleP1Play() {// Changed to handleRobotAutoPlay once
+    async function handleP1Play() {
       let ready = false;
       while (ready == false){
-        console.log('handleP1Play1');
-        
         await fetch(`${backend_url}/api/match_move`, {
           method: "POST",
           headers: {
@@ -596,10 +547,8 @@ useEffect(() => {
         if (alreadyHandled){
           clearInterval(interval);
         }
-         
         
         try {
-          console.log('handleP1Play2');
           const res = await fetch(`${backend_url}/api/match_move`, {
             method: "POST",
             headers: {
@@ -618,13 +567,9 @@ useEffect(() => {
             const dropped_card_obj = JSON.parse(dropped_card_str);
             const dropped_card = { order:dropped_card_obj.order, point:dropped_card_obj.point, name:dropped_card_obj.name, image: dropped_card_obj.image, color: dropped_card_obj.color, text: dropped_card_obj.text }
             // card player get
-
             const new_card_str = data['new_card']
             const new_card_obj = JSON.parse(new_card_str);
-            // const new_card = { order:data["new_card"]["order"], point: data["new_card"]["point"], name: data["new_card"]["name"], image: data["new_card"]["image"], color: data["new_card"]["color"], text: data["new_card"]["text"] }
             const new_card = { order:new_card_obj.order, point:new_card_obj.point, name:new_card_obj.name, image: new_card_obj.image, color: new_card_obj.color, text: new_card_obj.text }
-
-            console.log('???????????????????????: ', place, dropped_card.name, new_card.name);
 
             if (!place || !dropped_card.name || !new_card.name) {
               return
@@ -634,8 +579,6 @@ useEffect(() => {
               alreadyHandled = true
               clearInterval(interval)
             }
-
-            
 
             if (place == 'knock') {
               handleKnockFromOpp()
@@ -647,36 +590,19 @@ useEffect(() => {
                 // const lastCard = new_card;
                 
                 if (lastCard) {
-                  setDropZoneCards(newDropZone); // ✅ 提前更新 DropZone 状态
+                  setDropZoneCards(newDropZone); 
                   setSendingNewCard('dropzone');
                   setP1Playing('toDrop');
-              
-                  // 👇 处理动画
                   handleP1PickAndDrop(dropped_card, lastCard);
               }
-              
-              // } else {
-              //   alert('ERROR: No card in Drop Zone!');
-              // }
+
             }
             
             else if (place == 'stack'){
                 if (remainingCards.length > 0) {
-                  //const [newCard, ...rest] = remainingCards;
-                  // setNextCard(newCard);
-                  //setRemainingCards(rest);
                   setSendingNewCard('stack');
                   setP1Playing('toDrop');
-
-                  //handleP1Pick()
-                  // const new_card = { order:data["order_pick"], point: data["point_pick"], name: data["name_pick"], image: data["image_pick"], color: data["color_pick"], text: data["text_pick"] }
-                  
-                  
-                  //const updatedCards = [...player1Cards.cards, new_card]
-                  //setPlayer1Cards(GinRummyScore(updatedCards));
-                  
                   handleP1PickAndDrop(dropped_card, new_card)
-                
                 }
             }
 
@@ -689,39 +615,34 @@ useEffect(() => {
 
     function handleP1PickAndDrop(dropCard: Card, newCard: Card) {
     
-      // ✅ 1. 先显示拿牌动画（添加 newCard）
       const newHand = [...player1Cards.cards, newCard];
       setPlayer1Cards(GinRummyScore(newHand));
-      setP1Playing('toDrop'); // 表明动画阶段是“刚拿完牌，准备出牌”
+      setP1Playing('toDrop'); 
     
-      // ✅ 2. 等拿牌动画结束后再开始出牌
       setTimeout(() => {
         const dropIndex = newHand.findIndex((card) => card.name === dropCard.name);
         if (dropIndex === -1) {
-          console.warn("⚠️ Drop card not found after adding newCard:", dropCard.name);
+          // console.warn("⚠️ Drop card not found after adding newCard:", dropCard.name);
           return;
         }
     
         const droppedCard = newHand[dropIndex];
         newHand.splice(dropIndex, 1);
     
-        // ✅ 更新手牌和动画状态
         setPlayer1Cards(GinRummyScore(newHand));
         setP1DroppingCard({ ...droppedCard, index: dropIndex });
     
-        // ✅ 3. 出牌动画后再更新 DropZone
         setTimeout(() => {
           setDropZoneCards((prev) => [...prev, droppedCard]);
           setP1Playing(null);
           setP1DroppingCard(null);
           setP2Playing('toTake');
         }, 500);
-      }, 800); // 等待拿牌动画走完（和 transition.duration 配合）
+      }, 800); 
     }
     
     async function handleKnockFromOpp() {
     
-      // ✅ 修正：加上 const res = await fetch(...)
       const res = await fetch(`${backend_url}/api/get_latest_move`, {
         method: "POST",
         headers: {
@@ -755,13 +676,9 @@ useEffect(() => {
       setWhosTurn(data.winner);
       setOpen(true);
 
-      
     }
 
     async function handleKnockFromMe() {
-
-      console.log('handleKnockFromMe');
-      
       await fetch(`${backend_url}/api/match_move`, {
         method: "POST",
         headers: {
@@ -773,12 +690,9 @@ useEffect(() => {
           move: 'knock'})
       })
 
-      const isHost = host === '1'; // 我是不是host
-      // const isMeKnocking = true;  // 点击 Knock 的就是“我自己”
-      
-
-      const myCards = player2Cards // 自己手牌
-      const opponentCards = player1Cards  // 对手手牌
+      const isHost = host === '1'; 
+      const myCards = player2Cards 
+      const opponentCards = player1Cards 
       
       const myDeadwood = myCards.DeadwoodsPoint || 0;
       let adjustedOpponentDeadwood = opponentCards.DeadwoodsPoint || 0;
@@ -801,18 +715,17 @@ useEffect(() => {
     
       if (isGin) {
         baseScore = opponentDeadwood;
-        bonus = isBigGin ? 39 : 30; // Dozenal: Big Gin = 39z, Gin = 30z
+        bonus = isBigGin ? 45 : 36; // Dozenal: Big Gin = 39z = 45d, Gin = 30z = 36d
         result = isBigGin ? "Big Gin" : "Gin";
       } else if (myDeadwood < opponentDeadwood) {
         baseScore = opponentDeadwood - myDeadwood;
       } else {
         // Undercut 判定
         baseScore = myDeadwood - opponentDeadwood; // 差值
-        bonus = 30;
+        bonus = 36;
         result = "Undercut";
       }
-    
-      // ✅ 判断谁得分
+
       let knockerScore = 0, knockerBonus = 0, opponentScore = 0, opponentBonus = 0;
       if (result === "Undercut") {
         opponentScore = baseScore;
@@ -821,16 +734,12 @@ useEffect(() => {
         knockerScore = baseScore;
         knockerBonus = bonus;
       }
-    
-      // p1 是 host，p2 是 guest
+  
       let p1Score = 0, p1Bonus = 0, p2Score = 0, p2Bonus = 0;
-
       if (result === "Undercut") {
-        // 对手得分（这里你是 guest，那对手就是 p1）
         p1Score = baseScore;
         p1Bonus = bonus;
       } else {
-        // 你自己得分
         p2Score = baseScore;
         p2Bonus = bonus;
       }
@@ -857,12 +766,9 @@ useEffect(() => {
         p2TotalScore,
       };
       
-      // ✅ 更新状态
       setScoreSummary(newScoreSummary);
-
       let whosNext = ''
       if (result === "Undercut") {
-        // 对手赢
         if (host == '0') {
           whosNext = '1'
           setWhosTurn('1')
@@ -871,7 +777,6 @@ useEffect(() => {
           setWhosTurn('0')
         }
       } else {
-        // 自己赢
         if (host == '0') {
           whosNext ='0'
           setWhosTurn('0')
@@ -880,7 +785,6 @@ useEffect(() => {
           setWhosTurn('1')
         }
       }
-
       setWhosTurn(whosNext)
 
       const roundSummaryData = {
@@ -915,70 +819,15 @@ useEffect(() => {
       };
     }
     
-
-    // function performLayingOff(opponentDeadwoods: Card[], knockerMelds: Card[]) {
-    //   const remainingDeadwoods: Card[] = [];
-    //   const laidOffCards: Card[] = [];
-    
-    //   const getCardRank = (card: Card) => card.name.split('-')[1];
-    //   const getCardSuit = (card: Card) => card.name.split('-')[0];
-    //   const cardOrder = (card: Card) => card.order;
-    
-    //   opponentDeadwoods.forEach(card => {
-    //     let isLaidOff = false;
-    //     for (let i = 0; i < knockerMelds.length; i += 3) {
-    //       const meld = knockerMelds.slice(i, i + 3);
-    //       const isSet = meld.every(c => getCardRank(c) === getCardRank(meld[0]));
-    //       const isRun = meld.every(c => getCardSuit(c) === getCardSuit(meld[0]));
-    
-    //       if (isSet) {
-    //         // Set 搭牌：rank一致且suit不同
-    //         if (getCardRank(card) === getCardRank(meld[0]) &&
-    //             !meld.some(c => getCardSuit(c) === getCardSuit(card))) {
-    //           isLaidOff = true;
-    //           laidOffCards.push(card);
-    //           break;
-    //         }
-    //       } else if (isRun) {
-    //         // Run 搭牌：同花且顺子
-    //         const orders = meld.map(cardOrder).sort((a, b) => a - b);
-    //         const min = orders[0], max = orders[orders.length - 1];
-    //         const orderVal = cardOrder(card);
-    
-    //         if (getCardSuit(card) === getCardSuit(meld[0]) &&
-    //             (orderVal === min - 1 || orderVal === max + 1)) {
-    //           isLaidOff = true;
-    //           laidOffCards.push(card);
-    //           break;
-    //         }
-    //       }
-    //     }
-    //     if (!isLaidOff) {
-    //       remainingDeadwoods.push(card);
-    //     }
-    //   });
-    
-    //   const totalDeadwoodPoints = remainingDeadwoods.reduce((sum, c) => sum + c.point, 0);
-    
-    //   return {
-    //     remainingDeadwoods,
-    //     laidOffCards,
-    //     totalDeadwoodPoints,
-    //   };
-    // }
     
     async function handlePlayNextRound(){
       setWaitingNextRound(true)
-
-      // 接口传set waiting next round
       await fetch(`${backend_url}/api/set_waiting_next_round`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ matchid: matchID, host, round: currentRound }),
       });
 
-
-      // 接口接收对方waiting next round也点击
       const intervalId = setInterval(async () => {
         const res = await fetch(`${backend_url}/api/is_both_waiting_next_round`, {
           method: 'POST',
@@ -987,15 +836,12 @@ useEffect(() => {
         });
         const data = await res.json();
         if (data.both_ready) {
-          clearInterval(intervalId); // ✅ 停止轮询
-          resetAll();               // ✅ 开始下一轮
+          clearInterval(intervalId);
+          resetAll();               
         }
-      }, 1000); // 每1秒轮询一次
-      
-
+      }, 1000);
 
     }
-    
     
     function DropZone(){
       const [{ isOver }, drop] = useDrop({
@@ -1080,14 +926,6 @@ useEffect(() => {
                             draggable="false"
                             className="object-contain cursor-not-allowed"
                         />
-                        {/* <DraggableCard
-                          key={index}
-                          index={index??10}
-                          card={card}
-                          moveCard={(from, to,wholeCardList) => moveCard(from, to,wholeCardList)}
-                          p2Playing ={p2Playing}
-                          wholeCardList = {player2Cards.cards}
-                      /> */}
                     </motion.div>
             ))}
 
@@ -1134,7 +972,7 @@ useEffect(() => {
                     )}
                   </motion.div>
                 )}
-      {/* {whosTurn} */}
+
                 {!dealing && whosTurn == host ? (
                     <Button
                     className="absolute left-full ml-4 px-4 py-2 w-[100px] bg-blue-500 text-white rounded"
@@ -1150,7 +988,6 @@ useEffect(() => {
                     Pass
                     </Button>
                 ) : (
-                  // 占位用的空盒子（保持布局）
                   <div style={{ width: "0px", height: "40px" }} />
                 ))}
 
@@ -1311,13 +1148,12 @@ useEffect(() => {
                       KNOCK
                   </div>
               </DialogTrigger>
-{!waitingNextRound ? (
+            {!waitingNextRound ? (
               <DialogContent >
                 <DialogHeader>
                   <DialogTitle className="flex flex-col items-center justify-center">
                     {whosTurn == host ? "You Win this round 😊 " : "You Loss this round 😢"}
                   </DialogTitle>
-                  {/* <DialogDescription className="flex flex-col items-center justify-center"> Round end by knocking! </DialogDescription> */}
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <Table>
@@ -1357,8 +1193,6 @@ useEffect(() => {
                                 <TableCell className="text-center">{round.result}</TableCell>
                               </TableRow>
                             ))}
-                            {/* 总分行 */}
-                          {/* TODO: 这里之后要改，存的时候就存dozenal的 */}
                             <TableRow>
                               <TableCell className="font-semibold text-center">Total Score</TableCell>
                               {/* <TableCell className="text-center">{decimalToDozenal(scoreSummary?.p1TotalScore || 0) }</TableCell> */}
@@ -1396,19 +1230,9 @@ useEffect(() => {
               <p className="text-muted-foreground text-m">
                 Please wait while your opponent gets ready.
               </p>
-
               <DialogFooter>
-                {/* <Button
-                  type="submit"
-                  onClick={resetAll}
-                  className="bg-blue-600 hover:bg-blue-700 transition-all text-white font-medium px-6 py-2 rounded-lg shadow-md"
-                >
-                  Start
-                </Button> */}
               </DialogFooter>
             </DialogContent>
-
-
           )}
             </Dialog>
           )}

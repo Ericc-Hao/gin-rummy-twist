@@ -166,10 +166,22 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
     setPlayer2Cards(GinRummyScore(p2Cards));
     setDealing(true);
 
-    setP2Playing("passOrPick");
-    setTimeout(() => {
-      setCurrentPass(2); // ？
-    }, 7400);
+    // 自己点击了deal，对方pick or pass
+    if (roomId == 'tutorial') {
+      setP2Playing("passOrPick");
+      setP1Playing(null)
+      setTimeout(() => {
+        setCurrentPass(2); 
+      }, 7400);
+    } else {
+      setP1Playing("passOrPick");
+      setP2Playing(null)
+      setTimeout(() => {
+        setCurrentPass(1); 
+      }, 7400);
+  
+    }
+
     setRemainingCards(shuffledCards.slice(initialCardsNumber));
   }
 
@@ -257,7 +269,8 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
       setPlayer1Cards(GinRummyScore(p1Cards));
       setPlayer2Cards(GinRummyScore(p2Cards));
       setDealing(true);
-      setP1Playing("passOrPick");
+      setP2Playing("passOrPick");
+      setP1Playing(null)
   
     } catch (err) {
       // console.error("fetchInitialCardsForGuest failed:", err);
@@ -273,7 +286,7 @@ useEffect(() => {
 // non-host check if host clicked pass
 useEffect(() => {
  
-  if (host !== whosTurn && dealing && currentPassRef.current === null && !hasHandledPass.current) {
+  if (host == whosTurn && dealing && currentPassRef.current === null && !hasHandledPass.current) {
 
     let count = 0;
     const MAX_ATTEMPTS = 2000;
@@ -302,7 +315,7 @@ useEffect(() => {
         if (data.result === 0) {
           hasHandledPass.current = true;
           setP1Playing(null);
-          setP2Playing("toTake");
+          setP2Playing("pickTop");
           clearInterval(interval);
         } else if (data.result === 2) {
           hasHandledPass.current = true;
@@ -406,7 +419,7 @@ useEffect(() => {
           body: JSON.stringify({ matchid: matchID,round: currentRound })
         });
 
-        if (host === whosTurn) {
+        if (host !== whosTurn) {
           handleP1Play(); 
       }
     }
@@ -973,14 +986,37 @@ useEffect(() => {
                   </motion.div>
                 )}
 
-                {!dealing && whosTurn == host ? (
+                {/* {!dealing && whosTurn == host ? (
                     <Button
                     className="absolute left-full ml-4 px-4 py-2 w-[100px] bg-blue-500 text-white rounded"
                     onClick={startGame}
                     >
                     Deal
                     </Button>
-                ) : (dealing && whosTurn == host && currentPass ? (
+                ) :  (
+                  <div style={{ width: "0px", height: "40px" }} />
+                )}
+
+                {dealing && whosTurn != host && currentPass && room ? (
+                    <Button
+                    className="absolute left-full ml-4 px-4 py-2 w-[100px] bg-blue-500 text-white rounded"
+                    onClick={handlePass}
+                    >
+                    Pass
+                    </Button>
+                ) : (
+                  <div style={{ width: "0px", height: "40px" }} />
+                )} 
+                  */}
+
+                 {!dealing && whosTurn == host ? (
+                    <Button
+                    className="absolute left-full ml-4 px-4 py-2 w-[100px] bg-blue-500 text-white rounded"
+                    onClick={startGame}
+                    >
+                    Deal
+                    </Button>
+                ) : ( (dealing && whosTurn == host && currentPass && roomId == 'tutorial') ||  (dealing && whosTurn != host && currentPass) ? (
                     <Button
                     className="absolute left-full ml-4 px-4 py-2 w-[100px] bg-blue-500 text-white rounded"
                     onClick={handlePass}
@@ -990,6 +1026,14 @@ useEffect(() => {
                 ) : (
                   <div style={{ width: "0px", height: "40px" }} />
                 ))}
+
+                {dealing && whosTurn === host && currentPass && roomId === 'tutorial' && (
+                  <div className="absolute left-full ml-4 mt-12 text-sm text-red-500">
+                    <div className="whitespace-nowrap font-semibold"> Tutorial only</div>
+                    <div className="whitespace-nowrap">In a real game, only the non-dealer decides to pass or pick the first card.</div>
+                  </div>
+                )}
+
 
             </div>
 
@@ -1089,6 +1133,19 @@ useEffect(() => {
               }}
             >
                 <ChatBubble content={'PICK OR PASS'}  bgColor={'bg-yellow-200'} />
+              
+            </div>
+          )}
+           {p2Playing == 'pickTop' && (
+            <div
+              className="absolute ml-4 p-4"
+              style={{
+                top: '50%',
+                transform: 'translateY(-50%)',
+                left: 'calc(50% + 60px)',
+              }}
+            >
+                <ChatBubble content={'PICK TOP'}  bgColor={'bg-yellow-200'} />
               
             </div>
           )}

@@ -61,6 +61,6 @@ export interface PlayerSummary{
     Runs?:Card[]
   }
 
-export type playingStatus ='toTake'|'toDrop' | 'toDeal' | 'passOrPick' | null
+export type playingStatus = 'pickTop' |'toTake' |'toDrop' | 'toDeal' | 'passOrPick' | null
 export type passingStatus = 1|2|null
 export type sendingNewCardPlace = 'stack'|'dropzone' | null

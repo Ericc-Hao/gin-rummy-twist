@@ -127,8 +127,8 @@
 //   export default calculateGinRummyScore;
 
 
-import { Card, PlayerSummary } from '../models/card-animation.model';
-import { decimalToDozenal } from './count-dozenal';
+import { Card, PlayerSummary } from '../../models/card-animation.model';
+import { decimalToDozenal } from '../count-dozenal';
 
 type CalcScoreCard = {
   order: number,
@@ -150,25 +150,55 @@ const calculateGinRummyScore = (CalcScoreCards: CalcScoreCard[]): PlayerSummary 
     ranks[rank].push(card);
   });
 
+  // const findRuns = (): CalcScoreCard[][] => {
+  //   const runs: CalcScoreCard[][] = [];
+  //   for (const suit in suits) {
+  //     const cards = suits[suit].sort((a, b) => a.order - b.order);
+  //     for (let i = 0; i < cards.length; i++) {
+  //       const run = [cards[i]];
+  //       for (let j = i + 1; j < cards.length; j++) {
+  //         if (cards[j].order === run[run.length - 1].order + 1) {
+  //           run.push(cards[j]);
+  //           if (run.length >= 3) runs.push([...run]);
+  //         } else if (cards[j].order !== run[run.length - 1].order) {
+  //           break;
+  //         }
+  //       }
+  //     }
+  //   }
+  //   return runs;
+  // };
+
   const findRuns = (): CalcScoreCard[][] => {
     const runs: CalcScoreCard[][] = [];
+  
     for (const suit in suits) {
-      const cards = suits[suit].sort((a, b) => a.order - b.order);
+      const cards = suits[suit]
+        .slice() // 避免原地排序
+        .sort((a, b) => a.order - b.order);
+  
       for (let i = 0; i < cards.length; i++) {
-        const run = [cards[i]];
+        const run: CalcScoreCard[] = [cards[i]];
         for (let j = i + 1; j < cards.length; j++) {
-          if (cards[j].order === run[run.length - 1].order + 1) {
-            run.push(cards[j]);
-            if (run.length >= 3) runs.push([...run]);
-          } else if (cards[j].order !== run[run.length - 1].order) {
-            break;
+          const prevCard = run[run.length - 1];
+          const currentCard = cards[j];
+  
+          // 只允许严格递增且连续的 order
+          if (currentCard.order === prevCard.order + 1) {
+            run.push(currentCard);
+            if (run.length >= 3) {
+              runs.push([...run]);
+            }
+          } else if (currentCard.order > prevCard.order + 1) {
+            break; // 跳号了，停止这条 run 构建
           }
         }
       }
     }
+  
     return runs;
   };
-
+  
   const findSets = (): CalcScoreCard[][] => {
     const sets: CalcScoreCard[][] = [];
     for (const rank in ranks) {

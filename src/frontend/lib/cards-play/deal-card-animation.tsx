@@ -9,7 +9,12 @@ import { Button } from "@/components/ui/button"
 
 import { CARDS } from '../data/cards.data';
 import { Card,PlayerSummary } from '../models/card-animation.model';
-import GinRummyScore from './calc-score';
+import GinRummyScore from './logics/calc-score';
+
+import { calculateLayingOff } from './logics/laying-off';
+import { calculateRoundScore } from './logics/calc-knock';
+
+
 
 import {
   Dialog,
@@ -68,6 +73,9 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
   const [open, setOpen] = useState(false); 
 
   const [waitingNextRound, setWaitingNextRound] = useState<boolean>(false)
+
+  const [isKnocked, setIsKnocked] = useState<boolean>(false)
+  const [showDeadwoods, setShowDeadwoods] = useState<boolean>(false)
 
   const shuffledCards = getRandomCards(CARDS); 
   const initialCardsNumber = 24
@@ -165,6 +173,12 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
     setPlayer1Cards(GinRummyScore(p1Cards));
     setPlayer2Cards(GinRummyScore(p2Cards));
     setDealing(true);
+    setTimeout(() => {
+      setCurrentPass(2);
+      setShowDeadwoods(true);
+
+    }, 7400);
+    
 
     // 自己点击了deal，对方pick or pass
     if (roomId == 'tutorial') {
@@ -269,6 +283,9 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
       setPlayer1Cards(GinRummyScore(p1Cards));
       setPlayer2Cards(GinRummyScore(p2Cards));
       setDealing(true);
+      setTimeout(() => {
+        setShowDeadwoods(true)
+      }, 7400);
       setP2Playing("passOrPick");
       setP1Playing(null)
   
@@ -283,7 +300,7 @@ useEffect(() => {
 }, [currentPass]);
 
 
-// non-host check if host clicked pass
+// host check if non-host clicked pass
 useEffect(() => {
  
   if (host == whosTurn && dealing && currentPassRef.current === null && !hasHandledPass.current) {
@@ -316,6 +333,7 @@ useEffect(() => {
           hasHandledPass.current = true;
           setP1Playing(null);
           setP2Playing("pickTop");
+          setCurrentPass(2)
           clearInterval(interval);
         } else if (data.result === 2) {
           hasHandledPass.current = true;
@@ -334,20 +352,24 @@ useEffect(() => {
   }
 }, [dealing, host, matchID]);
 
-  useEffect(() => {
-    dropZoneRef.current = dropZoneCards;
-  }, [dropZoneCards]);
+useEffect(() => {
+  dropZoneRef.current = dropZoneCards;
+}, [dropZoneCards]);
 
   
   function resetAll(){
     setDealing(false)
     setDropZoneCards([])
+    dropZoneRef.current = [];
     setOpen(false)
     setWaitingNextRound(false); 
     hasHandledP1Play.current = false
     currentPassRef.current = null
     hasHandledPass.current = false
     setCurrentPass(null)
+    setIsKnocked(false)
+    setShowDeadwoods(false);
+    
 
     const nextRound = currentRound + 1
     setCurrentRound(nextRound)
@@ -390,8 +412,16 @@ useEffect(() => {
   useEffect(() => {
     if (dealing) {
       setTimeout(() => {
-        setCurrentPass(2)
-      }, 7400);
+        if (host === whosTurn) {
+          setCurrentPass(1);
+          console.log('%%%%%%%%%%%%%%%%%%%%%%%: 11111111111111111111111111');
+          
+        } else {
+          setCurrentPass(2); 
+          console.log('%%%%%%%%%%%%%%%%%%%%%%%: 222222222222222222222222');
+
+        }
+      }, 7400);    
      
       // update the remaining card
       setRemainingCards(shuffledCards.slice(initialCardsNumber));
@@ -402,7 +432,7 @@ useEffect(() => {
       // setDropZoneCards([])
       setSendingNewCard(null)
      }
-    }, [dealing]);
+}, [dealing]);
 
     // 点击Pass按钮，P1拿最开始的牌
     function handlePass(){
@@ -509,10 +539,11 @@ useEffect(() => {
         case 'toDrop':
 
           if (lastPickedCard && item.card.name === lastPickedCard.name) {
-            alert("⚠️ This card was just dropped! Please choose a different card.");
+            alert("⚠️ This card was just picked! Please choose a different card.");
             return;
           }
           setDropZoneCards([...dropZoneCards, item.card]);
+          setLastPickedCard(null)
 
           const updatedCards = [...player2Cards.cards];
           updatedCards.splice(item.index, 1);
@@ -655,6 +686,8 @@ useEffect(() => {
     }
     
     async function handleKnockFromOpp() {
+
+      setIsKnocked(true)
     
       const res = await fetch(`${backend_url}/api/get_latest_move`, {
         method: "POST",
@@ -692,6 +725,9 @@ useEffect(() => {
     }
 
     async function handleKnockFromMe() {
+
+      setIsKnocked(true)
+
       await fetch(`${backend_url}/api/match_move`, {
         method: "POST",
         headers: {
@@ -703,82 +739,91 @@ useEffect(() => {
           move: 'knock'})
       })
 
-      const isHost = host === '1'; 
-      const myCards = player2Cards 
-      const opponentCards = player1Cards 
+      // const isHost = host === '1'; 
+      // const myCards = player2Cards 
+      // const opponentCards = player1Cards 
       
-      const myDeadwood = myCards.DeadwoodsPoint || 0;
-      let adjustedOpponentDeadwood = opponentCards.DeadwoodsPoint || 0;
-      const opponentDeadwood = opponentCards.DeadwoodsPoint || 0;
+      // const myDeadwood = myCards.DeadwoodsPoint || 0;
+      // let adjustedOpponentDeadwood = opponentCards.DeadwoodsPoint || 0;
+      // const opponentDeadwood = opponentCards.DeadwoodsPoint || 0;
     
-      const isGin = myDeadwood === 0;
-      const isBigGin = isGin && myCards.cards.length === 11;
+      // const myHandLength = myCards?.cards?.length || 0;
+      // const isGin = myDeadwood === 0;
+      // const isBigGin = isGin && myHandLength === 11;
 
-      if (!isGin && myCards.Melds && opponentCards.cards) {
-        const layingOffResult = calculateLayingOffImproved(opponentCards.cards, myCards.Melds);
-        adjustedOpponentDeadwood = layingOffResult.adjustedDeadwoodPoint;
-        opponentCards.Deadwoods = layingOffResult.updatedDeadwoods;
-        opponentCards.DeadwoodsPoint = layingOffResult.updatedDeadwoodsPoint;
-        opponentCards.DeadwoodsDozenalPoint = layingOffResult.updatedDeadwoodsDozenalPoint;
-      }
-    
-      let baseScore = 0;
-      let bonus = 0;
-      let result = "Knock";
-    
-      if (isGin) {
-        baseScore = opponentDeadwood;
-        bonus = isBigGin ? 45 : 36; // Dozenal: Big Gin = 39z = 45d, Gin = 30z = 36d
-        result = isBigGin ? "Big Gin" : "Gin";
-      } else if (myDeadwood < opponentDeadwood) {
-        baseScore = opponentDeadwood - myDeadwood;
-      } else {
-        // Undercut 判定
-        baseScore = myDeadwood - opponentDeadwood; // 差值
-        bonus = 36;
-        result = "Undercut";
-      }
 
-      let knockerScore = 0, knockerBonus = 0, opponentScore = 0, opponentBonus = 0;
-      if (result === "Undercut") {
-        opponentScore = baseScore;
-        opponentBonus = bonus;
-      } else {
-        knockerScore = baseScore;
-        knockerBonus = bonus;
-      }
+      // if (!isGin && myCards.Melds && opponentCards.cards) {
+      //   const layingOffResult = calculateLayingOff(opponentCards.cards, myCards.Melds);
+      //   adjustedOpponentDeadwood = layingOffResult.adjustedDeadwoodPoint;
+      //   opponentCards.Deadwoods = layingOffResult.updatedDeadwoods;
+      //   opponentCards.DeadwoodsPoint = layingOffResult.updatedDeadwoodsPoint;
+      //   opponentCards.DeadwoodsDozenalPoint = layingOffResult.updatedDeadwoodsDozenalPoint;
+      // }
+    
+      // let baseScore = 0;
+      // let bonus = 0;
+      // let result = "Knock";
+    
+      // if (isGin) {
+      //   baseScore = opponentDeadwood;
+      //   bonus = isBigGin ? 45 : 36; // Dozenal: Big Gin = 39z = 45d, Gin = 30z = 36d
+      //   result = isBigGin ? "Big Gin" : "Gin";
+      // } else if (myDeadwood < opponentDeadwood) {
+      //   baseScore = opponentDeadwood - myDeadwood;
+      // } else {
+      //   // Undercut 判定
+      //   baseScore = myDeadwood - opponentDeadwood; // 差值
+      //   bonus = 36;
+      //   result = "Undercut";
+      // }
+
+      // let knockerScore = 0, knockerBonus = 0, opponentScore = 0, opponentBonus = 0;
+      // if (result === "Undercut") {
+      //   opponentScore = baseScore;
+      //   opponentBonus = bonus;
+      // } else {
+      //   knockerScore = baseScore;
+      //   knockerBonus = bonus;
+      // }
   
-      let p1Score = 0, p1Bonus = 0, p2Score = 0, p2Bonus = 0;
-      if (result === "Undercut") {
-        p1Score = baseScore;
-        p1Bonus = bonus;
-      } else {
-        p2Score = baseScore;
-        p2Bonus = bonus;
-      }
+      // let p1Score = 0, p1Bonus = 0, p2Score = 0, p2Bonus = 0;
+      // if (result === "Undercut") {
+      //   p1Score = baseScore;
+      //   p1Bonus = bonus;
+      // } else {
+      //   p2Score = baseScore;
+      //   p2Bonus = bonus;
+      // }
     
-      const roundData = {
-        round: (scoreSummary?.rounds?.length || 0) + 1,
-        p1Score,
-        p1Bonus,
-        p1Total: p1Score + p1Bonus,
-        p2Score,
-        p2Bonus,
-        p2Total: p2Score + p2Bonus,
-        result,
-      };
+      // const roundData = {
+      //   round: (scoreSummary?.rounds?.length || 0) + 1,
+      //   p1Score,
+      //   p1Bonus,
+      //   p1Total: p1Score + p1Bonus,
+      //   p2Score,
+      //   p2Bonus,
+      //   p2Total: p2Score + p2Bonus,
+      //   result,
+      // };
     
-      const prevSummary: ScoreSummary = scoreSummary || { rounds: [], p1TotalScore: 0, p2TotalScore: 0 };
-      const updatedRounds = [...prevSummary.rounds, roundData];
-      const p1TotalScore = updatedRounds.reduce((acc, r) => acc + r.p1Total, 0);
-      const p2TotalScore = updatedRounds.reduce((acc, r) => acc + r.p2Total, 0);
+      // const prevSummary: ScoreSummary = scoreSummary || { rounds: [], p1TotalScore: 0, p2TotalScore: 0 };
+      // const updatedRounds = [...prevSummary.rounds, roundData];
+      // const p1TotalScore = updatedRounds.reduce((acc, r) => acc + r.p1Total, 0);
+      // const p2TotalScore = updatedRounds.reduce((acc, r) => acc + r.p2Total, 0);
       
-      const newScoreSummary: ScoreSummary = {
-        rounds: updatedRounds,
-        p1TotalScore,
-        p2TotalScore,
-      };
+      // const newScoreSummary: ScoreSummary = {
+      //   rounds: updatedRounds,
+      //   p1TotalScore,
+      //   p2TotalScore,
+      // };
       
+      const { newScoreSummary, result, isBigGin } = calculateRoundScore({
+        host,
+        player1Cards,
+        player2Cards,
+        scoreSummary:scoreSummary ?? null,
+      });
+
       setScoreSummary(newScoreSummary);
       let whosNext = ''
       if (result === "Undercut") {
@@ -871,6 +916,9 @@ useEffect(() => {
           drop(ref.current);
         }
       }, [drop]);
+
+      console.log("***********************************************************: ", p2Playing, currentPass);
+      
     
       return (
         <div
@@ -931,14 +979,31 @@ useEffect(() => {
                   className="absolute"
                   style={{zIndex: 6,boxShadow: '0 4px 8px rgba(255, 255, 255, 0.5)'}}
                   >
-                        <Image
+                        {/* <Image
                             src="/cards-image/back.svg.png"
                             alt={`Card ${index + 1}`}
                             width={100}
                             height={150}
                             draggable="false"
                             className="object-contain cursor-not-allowed"
-                        />
+                        /> */}
+                        {/* <Image
+                            src={card.image}
+                            alt={`Card ${index + 1}`}
+                            width={100}
+                            height={150}
+                            draggable="false"
+                            className="object-contain cursor-not-allowed"
+                        /> */}
+                        <Image
+  src={isKnocked ? card.image : "/cards-image/back.svg.png"}
+  alt={`Card ${index + 1}`}
+  width={100}
+  height={150}
+  draggable="false"
+  className="object-contain cursor-not-allowed"
+/>
+
                     </motion.div>
             ))}
 
@@ -1070,7 +1135,7 @@ useEffect(() => {
         {/* Player2 avatar*/}
         <div className="relative flex items-center justify-center w-full">
 
-        {dealing &&(
+        {dealing && showDeadwoods && (
           <div  className="absolute flex flex-col items-center justify-center gap-2"
                 style={{
                   top: '50%',
@@ -1197,8 +1262,8 @@ useEffect(() => {
                         whiteSpace: 'nowrap',
                         left: 'calc(50% + 500px)',
                         borderRadius:'50%',
-                        backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'red' : 'gray',
-                        cursor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'pointer' : 'not-allowed',
+                        backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 120 ? 'red' : 'gray',
+                        cursor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 120 ? 'pointer' : 'not-allowed',
                       }}
                       onClick={() => handleKnockFromMe()}
                     >
@@ -1272,6 +1337,11 @@ useEffect(() => {
                 </DialogContent>
           ) : (
             <DialogContent className="text-center p-6 space-y-4 rounded-2xl shadow-xl">
+              <style jsx>{`
+                .close-button, [data-dialog-close] {
+                  display: none !important;
+                }
+              `}</style>
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold text-gray-800 mb-2">
                   ⏳ Waiting...

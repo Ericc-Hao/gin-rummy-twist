@@ -1,4 +1,4 @@
-import { calculateLayingOff } from '../cards-play/laying-off';
+import { calculateLayingOff } from '../cards-play/logics/laying-off';
 import { CARDS } from '../data/cards.data';
 
 const getCard = (name: string) => {

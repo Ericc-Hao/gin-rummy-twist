@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button"
 
 import { CARDS } from '../data/cards.data';
 import { Card,PlayerSummary } from '../models/card-animation.model';
-import GinRummyScore from './calc-score';
+import GinRummyScore from './logics/calc-score';
 
-import { calculateLayingOff } from './laying-off';
+import { calculateLayingOff } from './logics/laying-off';
+import { calculateRoundScore } from './logics/calc-knock';
 
 
 
@@ -738,84 +739,91 @@ useEffect(() => {
           move: 'knock'})
       })
 
-      const isHost = host === '1'; 
-      const myCards = player2Cards 
-      const opponentCards = player1Cards 
+      // const isHost = host === '1'; 
+      // const myCards = player2Cards 
+      // const opponentCards = player1Cards 
       
-      const myDeadwood = myCards.DeadwoodsPoint || 0;
-      let adjustedOpponentDeadwood = opponentCards.DeadwoodsPoint || 0;
-      const opponentDeadwood = opponentCards.DeadwoodsPoint || 0;
+      // const myDeadwood = myCards.DeadwoodsPoint || 0;
+      // let adjustedOpponentDeadwood = opponentCards.DeadwoodsPoint || 0;
+      // const opponentDeadwood = opponentCards.DeadwoodsPoint || 0;
     
-      const myHandLength = myCards?.cards?.length || 0;
-      const isGin = myDeadwood === 0;
-      const isBigGin = isGin && myHandLength === 11;
+      // const myHandLength = myCards?.cards?.length || 0;
+      // const isGin = myDeadwood === 0;
+      // const isBigGin = isGin && myHandLength === 11;
 
 
-      if (!isGin && myCards.Melds && opponentCards.cards) {
-        const layingOffResult = calculateLayingOff(opponentCards.cards, myCards.Melds);
-        adjustedOpponentDeadwood = layingOffResult.adjustedDeadwoodPoint;
-        opponentCards.Deadwoods = layingOffResult.updatedDeadwoods;
-        opponentCards.DeadwoodsPoint = layingOffResult.updatedDeadwoodsPoint;
-        opponentCards.DeadwoodsDozenalPoint = layingOffResult.updatedDeadwoodsDozenalPoint;
-      }
+      // if (!isGin && myCards.Melds && opponentCards.cards) {
+      //   const layingOffResult = calculateLayingOff(opponentCards.cards, myCards.Melds);
+      //   adjustedOpponentDeadwood = layingOffResult.adjustedDeadwoodPoint;
+      //   opponentCards.Deadwoods = layingOffResult.updatedDeadwoods;
+      //   opponentCards.DeadwoodsPoint = layingOffResult.updatedDeadwoodsPoint;
+      //   opponentCards.DeadwoodsDozenalPoint = layingOffResult.updatedDeadwoodsDozenalPoint;
+      // }
     
-      let baseScore = 0;
-      let bonus = 0;
-      let result = "Knock";
+      // let baseScore = 0;
+      // let bonus = 0;
+      // let result = "Knock";
     
-      if (isGin) {
-        baseScore = opponentDeadwood;
-        bonus = isBigGin ? 45 : 36; // Dozenal: Big Gin = 39z = 45d, Gin = 30z = 36d
-        result = isBigGin ? "Big Gin" : "Gin";
-      } else if (myDeadwood < opponentDeadwood) {
-        baseScore = opponentDeadwood - myDeadwood;
-      } else {
-        // Undercut 判定
-        baseScore = myDeadwood - opponentDeadwood; // 差值
-        bonus = 36;
-        result = "Undercut";
-      }
+      // if (isGin) {
+      //   baseScore = opponentDeadwood;
+      //   bonus = isBigGin ? 45 : 36; // Dozenal: Big Gin = 39z = 45d, Gin = 30z = 36d
+      //   result = isBigGin ? "Big Gin" : "Gin";
+      // } else if (myDeadwood < opponentDeadwood) {
+      //   baseScore = opponentDeadwood - myDeadwood;
+      // } else {
+      //   // Undercut 判定
+      //   baseScore = myDeadwood - opponentDeadwood; // 差值
+      //   bonus = 36;
+      //   result = "Undercut";
+      // }
 
-      let knockerScore = 0, knockerBonus = 0, opponentScore = 0, opponentBonus = 0;
-      if (result === "Undercut") {
-        opponentScore = baseScore;
-        opponentBonus = bonus;
-      } else {
-        knockerScore = baseScore;
-        knockerBonus = bonus;
-      }
+      // let knockerScore = 0, knockerBonus = 0, opponentScore = 0, opponentBonus = 0;
+      // if (result === "Undercut") {
+      //   opponentScore = baseScore;
+      //   opponentBonus = bonus;
+      // } else {
+      //   knockerScore = baseScore;
+      //   knockerBonus = bonus;
+      // }
   
-      let p1Score = 0, p1Bonus = 0, p2Score = 0, p2Bonus = 0;
-      if (result === "Undercut") {
-        p1Score = baseScore;
-        p1Bonus = bonus;
-      } else {
-        p2Score = baseScore;
-        p2Bonus = bonus;
-      }
+      // let p1Score = 0, p1Bonus = 0, p2Score = 0, p2Bonus = 0;
+      // if (result === "Undercut") {
+      //   p1Score = baseScore;
+      //   p1Bonus = bonus;
+      // } else {
+      //   p2Score = baseScore;
+      //   p2Bonus = bonus;
+      // }
     
-      const roundData = {
-        round: (scoreSummary?.rounds?.length || 0) + 1,
-        p1Score,
-        p1Bonus,
-        p1Total: p1Score + p1Bonus,
-        p2Score,
-        p2Bonus,
-        p2Total: p2Score + p2Bonus,
-        result,
-      };
+      // const roundData = {
+      //   round: (scoreSummary?.rounds?.length || 0) + 1,
+      //   p1Score,
+      //   p1Bonus,
+      //   p1Total: p1Score + p1Bonus,
+      //   p2Score,
+      //   p2Bonus,
+      //   p2Total: p2Score + p2Bonus,
+      //   result,
+      // };
     
-      const prevSummary: ScoreSummary = scoreSummary || { rounds: [], p1TotalScore: 0, p2TotalScore: 0 };
-      const updatedRounds = [...prevSummary.rounds, roundData];
-      const p1TotalScore = updatedRounds.reduce((acc, r) => acc + r.p1Total, 0);
-      const p2TotalScore = updatedRounds.reduce((acc, r) => acc + r.p2Total, 0);
+      // const prevSummary: ScoreSummary = scoreSummary || { rounds: [], p1TotalScore: 0, p2TotalScore: 0 };
+      // const updatedRounds = [...prevSummary.rounds, roundData];
+      // const p1TotalScore = updatedRounds.reduce((acc, r) => acc + r.p1Total, 0);
+      // const p2TotalScore = updatedRounds.reduce((acc, r) => acc + r.p2Total, 0);
       
-      const newScoreSummary: ScoreSummary = {
-        rounds: updatedRounds,
-        p1TotalScore,
-        p2TotalScore,
-      };
+      // const newScoreSummary: ScoreSummary = {
+      //   rounds: updatedRounds,
+      //   p1TotalScore,
+      //   p2TotalScore,
+      // };
       
+      const { newScoreSummary, result, isBigGin } = calculateRoundScore({
+        host,
+        player1Cards,
+        player2Cards,
+        scoreSummary:scoreSummary ?? null,
+      });
+
       setScoreSummary(newScoreSummary);
       let whosNext = ''
       if (result === "Undercut") {

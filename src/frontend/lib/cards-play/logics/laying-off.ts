@@ -1,6 +1,6 @@
 // laying-off.ts
-import { Card } from '../models/card-animation.model';
-import { decimalToDozenal } from './count-dozenal';
+import { Card } from '../../models/card-animation.model';
+import { decimalToDozenal } from '../count-dozenal';
 
 export function calculateLayingOff(opponentCards: Card[], knockerMelds: Card[]) {
   const updatedDeadwoods: Card[] = [];

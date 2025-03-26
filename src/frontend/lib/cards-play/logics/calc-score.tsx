@@ -127,8 +127,8 @@
 //   export default calculateGinRummyScore;
 
 
-import { Card, PlayerSummary } from '../models/card-animation.model';
-import { decimalToDozenal } from './count-dozenal';
+import { Card, PlayerSummary } from '../../models/card-animation.model';
+import { decimalToDozenal } from '../count-dozenal';
 
 type CalcScoreCard = {
   order: number,

@@ -206,6 +206,7 @@ def move_request():
     
     if request.json['move'] == "drop": 
         target_match.drop_card(request.json['host'], request.json['dropped_card_name'])
+
         return jsonify({
             'result': 0, 
             "message": "OK"
@@ -322,7 +323,7 @@ def is_passed():
     round_num = str(request.json.get('round'))  # ✅ 新增 round 参数
 
     # 如果 host 已经摸牌/打牌了，就直接返回 result=2
-    if ongoing_matches.get(match_id).latest_player == '1':
+    if ongoing_matches.get(match_id).latest_player == '0':
         return jsonify({'result': 2, 'message': 'Host Made a move'})
 
     # ✅ 判断当前 round 是否存在 pass 状态

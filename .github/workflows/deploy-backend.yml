@@ -39,8 +39,8 @@ jobs:
             --region us-east1 \
             --allow-unauthenticated \
             --port 8000 \
-            --memory 10Gi \
-            --cpu 4
+            --memory 32Gi \
+            --cpu 6
 
   comment:
     runs-on: ubuntu-latest

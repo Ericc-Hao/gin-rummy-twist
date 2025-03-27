@@ -1271,7 +1271,7 @@ useEffect(() => {
                   </div>
               </DialogTrigger>
             {!waitingNextRound ? (
-              <DialogContent >
+              <DialogContent className="[&>button]:hidden">
                 <DialogHeader>
                   <DialogTitle className="flex flex-col items-center justify-center">
                     {whosTurn == host ? "You Win this round 😊 " : "You Loss this round 😢"}
@@ -1336,7 +1336,7 @@ useEffect(() => {
                 </DialogFooter>
                 </DialogContent>
           ) : (
-            <DialogContent className="text-center p-6 space-y-4 rounded-2xl shadow-xl">
+            <DialogContent className="text-center p-6 space-y-4 rounded-2xl shadow-xl [&>button]:hidden">
               <style jsx>{`
                 .close-button, [data-dialog-close] {
                   display: none !important;

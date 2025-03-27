@@ -11,8 +11,11 @@ const getCard = (name: string) => {
 describe('calculateRoundScore', () => {
   it('should detect Big Gin and assign 45 bonus points', () => {
     const bigGinHand = [
-       'hearts-01','hearts-02', 'hearts-03', 'hearts-04', 'hearts-05', 'hearts-06',
-      'hearts-07', 'hearts-08', 'hearts-09', 'hearts-0A', 'hearts-0B'
+      'spades-03','spades-04', 'spades-05', 'spades-06', 
+      'diamonds-J', 'clubs-J','spades-J',
+      'hearts-C', 'clubs-C','spades-C',
+      'hearts-Q', 'clubs-Q','spades-Q',
+
     ].map(getCard);
 
     const player2Cards: PlayerSummary = {

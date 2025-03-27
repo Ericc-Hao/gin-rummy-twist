@@ -1327,7 +1327,7 @@ useEffect(() => {
               <DialogContent className="[&>button]:hidden">
                 <DialogHeader>
                   <DialogTitle className="flex flex-col items-center justify-center">
-                    {whosTurn == host ? "You Win this round 😊 " : "You Loss this round 😢"}
+                    {whosTurn == host ? "You win this round 😊 " : "You lose this round 😢"}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">

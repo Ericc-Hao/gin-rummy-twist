@@ -14,8 +14,6 @@ import GinRummyScore from './logics/calc-score';
 import { calculateLayingOff } from './logics/laying-off';
 import { calculateRoundScore } from './logics/calc-knock';
 
-
-
 import {
   Dialog,
   DialogContent,
@@ -29,7 +27,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 import { ScoreSummary,playingStatus,passingStatus,sendingNewCardPlace } from '../models/card-animation.model';
 import { DraggableCard} from './drag-card'
-import { decimalToDozenal } from './count-dozenal';
+import { decimalToDozenal } from './logics/count-dozenal';
 import { AvatarDisplay,ChatBubble  } from '@my-components/avatar'
 import GameOverOverlay from './game-end-overlay'
 
@@ -184,15 +182,15 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
     if (roomId == 'tutorial') {
       setP2Playing("passOrPick");
       setP1Playing(null)
-      setTimeout(() => {
-        setCurrentPass(2); 
-      }, 7400);
+      // setTimeout(() => {
+      //   setCurrentPass(2); 
+      // }, 7400);
     } else {
       setP1Playing("passOrPick");
       setP2Playing(null)
-      setTimeout(() => {
-        setCurrentPass(1); 
-      }, 7400);
+      // setTimeout(() => {
+      //   setCurrentPass(1); 
+      // }, 7400);
   
     }
 
@@ -324,7 +322,7 @@ useEffect(() => {
         const res = await fetch(`${backend_url}/api/is_passed`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ matchid: matchID,round: currentRound })
+          body: JSON.stringify({ matchid: matchID,round: currentRound, player: host })
         });
 
         const data = await res.json();
@@ -339,7 +337,17 @@ useEffect(() => {
           hasHandledPass.current = true;
           handleP1Play(); 
           setP2Playing(null);
+          setCurrentPass(null)
           clearInterval(interval);
+        } else if (data.result === 3) {
+          hasHandledPass.current = true;
+          setP2Playing("passOrPick");
+          setP1Playing(null);
+          clearInterval(interval);
+          setCurrentPass(2)
+          // hasHandledPass.current = true;
+          // handleP1Play(); 
+          // clearInterval(interval);
         } 
       } catch (err) {
         // console.error("❌ Polling is_passed failed:", err);
@@ -414,12 +422,8 @@ useEffect(() => {
       setTimeout(() => {
         if (host === whosTurn) {
           setCurrentPass(1);
-          console.log('%%%%%%%%%%%%%%%%%%%%%%%: 11111111111111111111111111');
-          
         } else {
           setCurrentPass(2); 
-          console.log('%%%%%%%%%%%%%%%%%%%%%%%: 222222222222222222222222');
-
         }
       }, 7400);    
      
@@ -434,7 +438,7 @@ useEffect(() => {
      }
 }, [dealing]);
 
-    // 点击Pass按钮，P1拿最开始的牌
+    // 点击Pass按钮，P1拿最开始的牌 只有点击的时候会触发，两边都会点击
     function handlePass(){
       setP2Playing(null);
       setP1Playing('toTake')
@@ -446,12 +450,62 @@ useEffect(() => {
         fetch(`${backend_url}/api/set_passed`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ matchid: matchID,round: currentRound })
+          body: JSON.stringify({ matchid: matchID,round: currentRound, player: host  })
         });
 
-        if (host !== whosTurn) {
-          handleP1Play(); 
-      }
+       
+          let count = 0;
+          const MAX_ATTEMPTS = 2000;
+      
+          const interval = setInterval(async () => {
+            if (count++ >= MAX_ATTEMPTS) {
+              clearInterval(interval);
+              return;
+            }
+      
+            try {
+              const res = await fetch(`${backend_url}/api/is_passed`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ matchid: matchID, round: currentRound, player: host })
+              });
+      
+              const data = await res.json();
+      
+              if (data.result === 0) {
+                // 双方都 pass，自己出牌
+                setP1Playing(null);
+                setP2Playing("toTake");
+                setCurrentPass(null);
+                clearInterval(interval);
+              } else if (data.result === 2) {
+                // 对方已经出牌，触发 handleP1Play
+                setP2Playing(null);
+                setP1Playing("toTake");
+                setCurrentPass(1);
+                handleP1Play();
+                clearInterval(interval);
+              } else if (data.result === 3) {
+                // 对方只点了 pass，不处理，继续轮询
+                // handleP1Play()
+              }
+              // else if (data.result === 4) {
+              //   // 对方已经出牌（没有pass），立即触发 handleP1Play
+              //   setP2Playing(null);
+              //   setP1Playing("toTake");
+              //   setCurrentPass(1);
+              //   handleP1Play();
+              //   clearInterval(interval);
+              // }
+            } catch (err) {
+              console.error("Polling is_passed failed:", err);
+            }
+          }, 2000);
+        //   if (host !== whosTurn) {
+        //     handleP1Play()
+        // }
+      
+
     }
       
       setCurrentPass(null)
@@ -557,6 +611,8 @@ useEffect(() => {
               host: host,
               matchid: matchID,
               move: 'drop',
+              player: host,
+              round: currentRound,
               dropped_card_name: item.card.name})
           })
           setP1Playing("toTake")
@@ -917,9 +973,6 @@ useEffect(() => {
         }
       }, [drop]);
 
-      console.log("***********************************************************: ", p2Playing, currentPass);
-      
-    
       return (
         <div
           ref={ref}
@@ -1081,7 +1134,7 @@ useEffect(() => {
                     >
                     Deal
                     </Button>
-                ) : ( (dealing && whosTurn == host && currentPass && roomId == 'tutorial') ||  (dealing && whosTurn != host && currentPass) ? (
+                ) : ( (dealing && whosTurn == host && currentPass && roomId == 'tutorial') ||  ((dealing && p2Playing == 'passOrPick')) ? (
                     <Button
                     className="absolute left-full ml-4 px-4 py-2 w-[100px] bg-blue-500 text-white rounded"
                     onClick={handlePass}
@@ -1262,8 +1315,8 @@ useEffect(() => {
                         whiteSpace: 'nowrap',
                         left: 'calc(50% + 500px)',
                         borderRadius:'50%',
-                        backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 120 ? 'red' : 'gray',
-                        cursor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 120 ? 'pointer' : 'not-allowed',
+                        backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'red' : 'gray',
+                        cursor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'pointer' : 'not-allowed',
                       }}
                       onClick={() => handleKnockFromMe()}
                     >

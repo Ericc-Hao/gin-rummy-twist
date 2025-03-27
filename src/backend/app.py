@@ -205,7 +205,18 @@ def move_request():
 
     
     if request.json['move'] == "drop": 
+        match_id = request.json['matchid']
+        round_num = str(request.json.get('round'))  # ✅ 获取 round
+        player = str(request.json.get('host'))      # ✅ 当前 player
+
         target_match.drop_card(request.json['host'], request.json['dropped_card_name'])
+
+        if match_id not in pass_status:
+            pass_status[match_id] = {}
+        if round_num not in pass_status[match_id]:
+            pass_status[match_id][round_num] = {}
+
+        pass_status[match_id][round_num][player] = 2  # ✅ 按 player 设置 pass
 
         return jsonify({
             'result': 0, 
@@ -302,36 +313,88 @@ def is_game_dealing_started():
         return jsonify({'result': 1, 'message': 'Not started yet'})
 
 
-pass_status = {}  # match_id -> { round -> bool }
+# pass_status = {}  # match_id -> { round -> bool }
 
+
+# @app.route('/api/set_passed', methods=['POST'])
+# def set_passed():
+#     match_id = request.json.get('matchid')
+#     round_num = str(request.json.get('round'))  # ✅ 新增 round 参数
+
+#     if match_id not in pass_status:
+#         pass_status[match_id] = {}
+    
+#     pass_status[match_id][round_num] = True  # ✅ 按 round 存储
+#     return jsonify({'result': 0, 'message': 'Pass set'})
+
+
+# @app.route('/api/is_passed', methods=['POST'])
+# def is_passed():
+#     match_id = request.json.get('matchid')
+#     round_num = str(request.json.get('round'))  # ✅ 新增 round 参数
+
+#     # 如果 host 已经摸牌/打牌了，就直接返回 result=2
+#     if ongoing_matches.get(match_id).latest_player == '0':
+#         return jsonify({'result': 2, 'message': 'Host Made a move'})
+
+#     # ✅ 判断当前 round 是否存在 pass 状态
+#     if pass_status.get(match_id, {}).get(round_num, False):
+#         pass_status[match_id][round_num] = False  # 清掉状态
+#         return jsonify({'result': 0, 'message': 'Host passed'})
+#     else:
+#         return jsonify({'result': 1, 'message': 'Not passed yet'})
+
+pass_status = {}  # match_id -> { round -> { '0': False, '1': False } }
+# 0: fasle
+# 1：true
+# 2：move
 
 @app.route('/api/set_passed', methods=['POST'])
 def set_passed():
     match_id = request.json.get('matchid')
-    round_num = str(request.json.get('round'))  # ✅ 新增 round 参数
+    round_num = str(request.json.get('round'))
+    player = request.json.get('player')  # '0' 或 '1'
 
     if match_id not in pass_status:
         pass_status[match_id] = {}
+    if round_num not in pass_status[match_id]:
+        pass_status[match_id][round_num] = {'0': 0, '1': 0}
     
-    pass_status[match_id][round_num] = True  # ✅ 按 round 存储
-    return jsonify({'result': 0, 'message': 'Pass set'})
-
+    pass_status[match_id][round_num][player] = 1
+    return jsonify({'result': 0, 'message': f'Player {player} passed'})
 
 @app.route('/api/is_passed', methods=['POST'])
 def is_passed():
     match_id = request.json.get('matchid')
-    round_num = str(request.json.get('round'))  # ✅ 新增 round 参数
+    round_num = str(request.json.get('round'))
+    player = request.json.get('player')  # '0' or '1'
 
-    # 如果 host 已经摸牌/打牌了，就直接返回 result=2
-    if ongoing_matches.get(match_id).latest_player == '0':
-        return jsonify({'result': 2, 'message': 'Host Made a move'})
+    # match = ongoing_matches.get(match_id)
+    # if match and match.latest_player == '0':
+    # # if match and match.latest_player != player:
 
-    # ✅ 判断当前 round 是否存在 pass 状态
-    if pass_status.get(match_id, {}).get(round_num, False):
-        pass_status[match_id][round_num] = False  # 清掉状态
-        return jsonify({'result': 0, 'message': 'Host passed'})
+    #     return jsonify({'result': 2, 'message': 'Already moved'})
+    
+    pass_info = pass_status.get(match_id, {}).get(round_num, {'0': 0, '1': 0})
+    p0 = pass_info.get('0', 0)
+    p1 = pass_info.get('1', 0)
+
+    if p0 and p1:
+        pass_status[match_id][round_num] = {'0': 0, '1': 0}
+        if p0 == 1 and p1 == 1:
+            return jsonify({'result': 0, 'message': 'Both players passed'})
+        else :
+            return jsonify({'result': 2, 'message': 'Already moved'})
+    elif p0 or p1:
+        if p0 == 2 or p1 == 2:
+            return jsonify({'result': 2, 'message': 'Already moved'})
+        else:
+            return jsonify({'result': 3, 'message': 'One player passed'})
     else:
         return jsonify({'result': 1, 'message': 'Not passed yet'})
+
+
+
 
 
 

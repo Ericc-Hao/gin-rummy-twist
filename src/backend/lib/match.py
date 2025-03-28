@@ -141,6 +141,9 @@ class Match():
     def get_matchid(self) -> str:
         return self.match_id
     
+    def get_remaining_cards(self) -> int:
+        return len(self.deck)
+    
     def get_initial_cards(self) -> list:
         return self.initial_cards
 

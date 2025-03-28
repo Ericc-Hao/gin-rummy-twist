@@ -1025,10 +1025,16 @@ useEffect(() => {
                       x: -100 * (index - 6), 
                       y: -150, 
                       opacity: 1,}}
-                  transition={{ 
-                      delay: sendingNewCard? 0: index * 0.6,  
-                      duration:0.8, 
-                      type: 'spring',}}
+                      transition={{
+                        delay:
+                          sendingNewCard
+                            ? 0
+                            : whosTurn === host
+                            ? index * 0.6 + 0.3 // ✅ host先发自己，对手延迟
+                            : index * 0.6,      // ✅ 非host，先发对手
+                        duration: 0.8,
+                        type: 'spring',
+                      }}
                   className="absolute"
                   style={{zIndex: 6,boxShadow: '0 4px 8px rgba(255, 255, 255, 0.5)'}}
                   >
@@ -1049,13 +1055,13 @@ useEffect(() => {
                             className="object-contain cursor-not-allowed"
                         /> */}
                         <Image
-  src={isKnocked ? card.image : "/cards-image/back.svg.png"}
-  alt={`Card ${index + 1}`}
-  width={100}
-  height={150}
-  draggable="false"
-  className="object-contain cursor-not-allowed"
-/>
+                          src={isKnocked ? card.image : "/cards-image/back.svg.png"}
+                          alt={`Card ${index + 1}`}
+                          width={100}
+                          height={150}
+                          draggable="false"
+                          className="object-contain cursor-not-allowed"
+                        />
 
                     </motion.div>
             ))}
@@ -1165,10 +1171,16 @@ useEffect(() => {
                         x: 100 * (index - 6), 
                         y: 150, 
                         opacity: 1,}}
-                    transition={{ 
-                        delay: sendingNewCard? 0:index * 0.6 + 0.3,  
-                        duration:0.8, 
-                        type: 'spring',}}
+                        transition={{
+                          delay:
+                            sendingNewCard
+                              ? 0
+                              : whosTurn === host
+                              ? index * 0.6 // ✅ host先发自己
+                              : index * 0.6 + 0.3, // ✅ 非host，自己延迟
+                          duration: 0.8,
+                          type: 'spring',
+                        }}
                     className="absolute"
                     style={{zIndex: 50,
                             boxShadow: '0 4px 8px rgba(0, 0, 0, 0.3)'}}

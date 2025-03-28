@@ -250,6 +250,7 @@ def move_request():
         # last_card : dropped card
         # last_picked_card : picked card
         last_player, last_op, last_card, last_picked_card = target_match.get_latest_operation()
+        remaining_cards = target_match.get_remaining_cards()
         print("operation", last_player, last_op, last_card, last_picked_card)
 
         print("last_drop_type", type(last_card), last_card)
@@ -268,7 +269,8 @@ def move_request():
             "message": "OK",
             "operation": last_op,
             "dropped_card": json.dumps(last_card),
-            "new_card": json.dumps(last_picked_card)
+            "new_card": json.dumps(last_picked_card),
+            "remaining_cards": remaining_cards
         })
     
 

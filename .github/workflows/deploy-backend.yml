@@ -39,7 +39,7 @@ jobs:
             --region us-east1 \
             --allow-unauthenticated \
             --port 8000 \
-            --memory 32Gi \
+            --memory 24Gi \
             --cpu 6
 
   comment:

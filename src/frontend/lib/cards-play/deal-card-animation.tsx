@@ -1316,9 +1316,9 @@ useEffect(() => {
                         left: 'calc(50% + 500px)',
                         borderRadius:'50%',
                         backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'red' : 'gray',
-                        cursor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'pointer' : 'not-allowed',
+                        pointerEvents: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'auto' : 'none',
                       }}
-                      onClick={() => handleKnockFromMe()}
+                      onClick={() => {handleKnockFromMe();}}
                     >
                       KNOCK
                   </div>

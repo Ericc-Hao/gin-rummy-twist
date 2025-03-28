@@ -22,7 +22,7 @@ export function calculateRoundScore({
 
   const myHandLength = myCards?.cards?.length || 0;
   const isGin = myDeadwood === 0;
-  const isBigGin = isGin && myHandLength === 11;
+  const isBigGin = isGin && myHandLength === 13;
 
   if (!isGin && myCards.Melds && opponentCards.cards) {
     const layingOffResult = calculateLayingOff(opponentCards.cards, myCards.Melds);

@@ -110,13 +110,25 @@ export default function GamePage() {
 
                 {/* Right Play Table*/}
                 <div
-                    className="bg-gray-100 h-full flex flex-col items-center justify-center transition-all duration-500 ease-in-out"
-                    style={{flex: game.showSideBar ? 1 : 2, }}
+                    className="h-full flex flex-col items-center justify-center transition-all duration-500 ease-in-out relative"
+                    style={{ flex: game.showSideBar ? 1 : 2 }}
                 >
-                    <DealCards roomId={roomId} host={host} userName={userName}/>
-                </div>
-            </div>
-        </div>
-    );
+                    {/* 背景层 */}
+                    <div
+                        className="absolute inset-0 z-0"
+                        style={{
+                            backgroundImage: `url('/main-image/background-nothing.jpg')`, // 替换成你的图片路径
+                            backgroundSize: '100% 100%', // 完全填充，可变形
+                            backgroundRepeat: 'no-repeat',
+                            backgroundPosition: 'center',
+                            opacity: 0.3, // 仅背景图透明
+                        }}
+                    ></div>
 
-}
+                                    <DealCards roomId={roomId} host={host} userName={userName}/>
+                                </div>
+                            </div>
+                        </div>
+                    );
+
+                }

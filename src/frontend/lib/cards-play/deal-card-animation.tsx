@@ -65,6 +65,8 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
   const [currentRound, setCurrentRound] = useState<number>(1)
 
   
+  const [passResult, setPassResult] = useState(null)
+   
   const dropZoneRef = useRef<Card[]>([]);
   const hasHandlePass = useRef(false)
 
@@ -377,6 +379,7 @@ useEffect(() => {
     setCurrentPass(null)
     setIsKnocked(false)
     setShowDeadwoods(false);
+    setPassResult(null)
     
 
     const nextRound = currentRound + 1
@@ -471,6 +474,8 @@ useEffect(() => {
               });
       
               const data = await res.json();
+
+              setPassResult(data.result)
       
               if (data.result === 0) {
                 // 双方都 pass，自己出牌
@@ -523,6 +528,7 @@ useEffect(() => {
 
     // P2从stack拿 下一张牌
     async function handleNext(){
+      setPassResult(null)
       switch (p2Playing) {
         case 'toDrop':
           alert('You need to drop a card');
@@ -546,6 +552,7 @@ useEffect(() => {
     // P2从dropzone拿 下一张牌
     // dropzone拿牌规则：LIFO，新牌添加在最后，pop取出，显示是从后往前显示
     async function handleDropZone(){
+      setPassResult(null)
       if (p2Playing == 'toTake' || currentPass == 2){
         if (currentPass == 2) {
           setCurrentPass(null)
@@ -973,10 +980,17 @@ useEffect(() => {
         }
       }, [drop]);
 
+      const canPickFromDropZone = (p2Playing === 'toTake' && passResult !== 0) || currentPass === 2;
+
+
       return (
         <div
           ref={ref}
-          onClick={handleDropZone}
+          // onClick={handleDropZone}
+          onClick={() => {
+            if (!canPickFromDropZone) return;
+            handleDropZone();
+          }}
           className={`w-[100px] h-[136.72px] ${
             isOver ? 'bg-blue-200' : 'bg-white'
           } flex items-center justify-center relative`}
@@ -995,7 +1009,8 @@ useEffect(() => {
                   top: `0px`,
                   left: `0px`,
                   zIndex: idx,
-                  cursor: p2Playing === 'toTake' || currentPass == 2 ? 'pointer' : 'not-allowed', 
+                  cursor: (p2Playing === 'toTake' && passResult != 0) || currentPass == 2 ? 'pointer' : 'not-allowed', 
+                  // pointerEvents: (p2Playing === 'toTake' && passResult != 0) || currentPass == 2 ? 'auto' : 'none', 
                 }}
               />
             ) : (
@@ -1327,8 +1342,8 @@ useEffect(() => {
                         whiteSpace: 'nowrap',
                         left: 'calc(50% + 500px)',
                         borderRadius:'50%',
-                        backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'red' : 'gray',
-                        pointerEvents: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'auto' : 'none',
+                        backgroundColor: player2Cards.DeadwoodsPoint !== undefined && player2Cards.DeadwoodsPoint <= 12 ? 'red' : 'gray',
+                        pointerEvents: player2Cards.DeadwoodsPoint !== undefined && player2Cards.DeadwoodsPoint <= 12 ? 'auto' : 'none',
                       }}
                       onClick={() => {handleKnockFromMe();}}
                     >

@@ -1033,7 +1033,7 @@ useEffect(() => {
       <div className="h-full w-full flex flex-col items-center justify-center select-none">
 
         {/* Player1 avatar*/}
-        <AvatarDisplay image={'/main-image/avatar-robot.jpg'} player={1} name={roomId == 'tutorial' ? 'Robot' : 'Opponent'} p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
+        <AvatarDisplay image={'/main-image/avatar-robot.jpg'} player={1} name={roomId == 'tutorial' ? 'Robot' : host == '1' ? 'Player 2' : 'Player 1'} p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
 
         <div className="relative flex items-center justify-center w-full h-[500px] gap-4">
             {/* Player1 */}
@@ -1051,8 +1051,8 @@ useEffect(() => {
                           sendingNewCard
                             ? 0
                             : whosTurn === host
-                            ? index * 0.6 + 0.3 // ✅ host先发自己，对手延迟
-                            : index * 0.6,      // ✅ 非host，先发对手
+                            ? index * 0.6 // ✅ host先发对手，对手延迟
+                            : index * 0.6 + 0.3,      // ✅ 非host，先发自己
                         duration: 0.8,
                         type: 'spring',
                       }}
@@ -1197,8 +1197,8 @@ useEffect(() => {
                             sendingNewCard
                               ? 0
                               : whosTurn === host
-                              ? index * 0.6 // ✅ host先发自己
-                              : index * 0.6 + 0.3, // ✅ 非host，自己延迟
+                              ? index * 0.6 + 0.3 // ✅ host先发对手
+                              : index * 0.6, // ✅ 非host先发自己
                           duration: 0.8,
                           type: 'spring',
                         }}
@@ -1272,7 +1272,7 @@ useEffect(() => {
           )}
 
 
-          <AvatarDisplay image={'/main-image/avatar-user.jpg'} player={2} name={userName}  p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
+          <AvatarDisplay image={'/main-image/avatar-user.jpg'} player={2} name={roomId == 'tutorial' ? userName : host == '1' ? 'Player 1' : 'Player 2'}  p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
 
           {p2Playing == 'passOrPick' && (
             <div

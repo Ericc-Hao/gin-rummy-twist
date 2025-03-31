@@ -40,7 +40,7 @@ export function AvatarDisplay({
                 : 'none',
           }}
         >
-          {name?.slice(0, 1).toUpperCase()}
+          {name == 'Player 1' ? 'P1' : name == 'Player 2' ? 'P2' : name?.slice(0, 1).toUpperCase()}
         </div>
 
         <div className="text-lg font-medium text-gray-500 tracking-widest">{name}</div>

@@ -65,6 +65,8 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
   const [currentRound, setCurrentRound] = useState<number>(1)
 
   
+  const [passResult, setPassResult] = useState(null)
+   
   const dropZoneRef = useRef<Card[]>([]);
   const hasHandlePass = useRef(false)
 
@@ -180,17 +182,21 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
 
     // 自己点击了deal，对方pick or pass
     if (roomId == 'tutorial') {
-      setP2Playing("passOrPick");
-      setP1Playing(null)
-      // setTimeout(() => {
-      //   setCurrentPass(2); 
-      // }, 7400);
+      // setP2Playing("passOrPick");
+      // setP1Playing(null)
+      setTimeout(() => {
+        setCurrentPass(2); 
+        setP2Playing("passOrPick");
+        setP1Playing(null)
+      }, 7400);
     } else {
-      setP1Playing("passOrPick");
-      setP2Playing(null)
-      // setTimeout(() => {
-      //   setCurrentPass(1); 
-      // }, 7400);
+      // setP1Playing("passOrPick");
+      // setP2Playing(null)
+      setTimeout(() => {
+        setCurrentPass(1); 
+        setP1Playing("passOrPick");
+        setP2Playing(null)
+      }, 7400);
   
     }
 
@@ -283,9 +289,11 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
       setDealing(true);
       setTimeout(() => {
         setShowDeadwoods(true)
+        setP2Playing("passOrPick");
+        setP1Playing(null)
       }, 7400);
-      setP2Playing("passOrPick");
-      setP1Playing(null)
+      // setP2Playing("passOrPick");
+      // setP1Playing(null)
   
     } catch (err) {
       // console.error("fetchInitialCardsForGuest failed:", err);
@@ -377,6 +385,7 @@ useEffect(() => {
     setCurrentPass(null)
     setIsKnocked(false)
     setShowDeadwoods(false);
+    setPassResult(null)
     
 
     const nextRound = currentRound + 1
@@ -471,6 +480,8 @@ useEffect(() => {
               });
       
               const data = await res.json();
+
+              setPassResult(data.result)
       
               if (data.result === 0) {
                 // 双方都 pass，自己出牌
@@ -523,6 +534,7 @@ useEffect(() => {
 
     // P2从stack拿 下一张牌
     async function handleNext(){
+      setPassResult(null)
       switch (p2Playing) {
         case 'toDrop':
           alert('You need to drop a card');
@@ -546,6 +558,7 @@ useEffect(() => {
     // P2从dropzone拿 下一张牌
     // dropzone拿牌规则：LIFO，新牌添加在最后，pop取出，显示是从后往前显示
     async function handleDropZone(){
+      setPassResult(null)
       if (p2Playing == 'toTake' || currentPass == 2){
         if (currentPass == 2) {
           setCurrentPass(null)
@@ -973,10 +986,17 @@ useEffect(() => {
         }
       }, [drop]);
 
+      const canPickFromDropZone = (p2Playing === 'toTake' && passResult !== 0) || currentPass === 2;
+
+
       return (
         <div
           ref={ref}
-          onClick={handleDropZone}
+          // onClick={handleDropZone}
+          onClick={() => {
+            if (!canPickFromDropZone) return;
+            handleDropZone();
+          }}
           className={`w-[100px] h-[136.72px] ${
             isOver ? 'bg-blue-200' : 'bg-white'
           } flex items-center justify-center relative`}
@@ -995,7 +1015,8 @@ useEffect(() => {
                   top: `0px`,
                   left: `0px`,
                   zIndex: idx,
-                  cursor: p2Playing === 'toTake' || currentPass == 2 ? 'pointer' : 'not-allowed', 
+                  cursor: (p2Playing === 'toTake' && passResult != 0) || currentPass == 2 ? 'pointer' : 'not-allowed', 
+                  // pointerEvents: (p2Playing === 'toTake' && passResult != 0) || currentPass == 2 ? 'auto' : 'none', 
                 }}
               />
             ) : (
@@ -1012,7 +1033,7 @@ useEffect(() => {
       <div className="h-full w-full flex flex-col items-center justify-center select-none">
 
         {/* Player1 avatar*/}
-        <AvatarDisplay image={'/main-image/avatar-robot.jpg'} player={1} name={roomId == 'tutorial' ? 'Robot' : 'Opponent'} p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
+        <AvatarDisplay image={'/main-image/avatar-robot.jpg'} player={1} name={roomId == 'tutorial' ? 'Robot' : host == '1' ? 'Player 2' : 'Player 1'} p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
 
         <div className="relative flex items-center justify-center w-full h-[500px] gap-4">
             {/* Player1 */}
@@ -1030,8 +1051,8 @@ useEffect(() => {
                           sendingNewCard
                             ? 0
                             : whosTurn === host
-                            ? index * 0.6 + 0.3 // ✅ host先发自己，对手延迟
-                            : index * 0.6,      // ✅ 非host，先发对手
+                            ? index * 0.6 // ✅ host先发对手，对手延迟
+                            : index * 0.6 + 0.3,      // ✅ 非host，先发自己
                         duration: 0.8,
                         type: 'spring',
                       }}
@@ -1176,8 +1197,8 @@ useEffect(() => {
                             sendingNewCard
                               ? 0
                               : whosTurn === host
-                              ? index * 0.6 // ✅ host先发自己
-                              : index * 0.6 + 0.3, // ✅ 非host，自己延迟
+                              ? index * 0.6 + 0.3 // ✅ host先发对手
+                              : index * 0.6, // ✅ 非host先发自己
                           duration: 0.8,
                           type: 'spring',
                         }}
@@ -1251,7 +1272,7 @@ useEffect(() => {
           )}
 
 
-          <AvatarDisplay image={'/main-image/avatar-user.jpg'} player={2} name={userName}  p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
+          <AvatarDisplay image={'/main-image/avatar-user.jpg'} player={2} name={roomId == 'tutorial' ? userName : host == '1' ? 'Player 1' : 'Player 2'}  p2Playing={p2Playing} p1Playing={p1Playing} currentPass={currentPass}/>
 
           {p2Playing == 'passOrPick' && (
             <div
@@ -1327,8 +1348,8 @@ useEffect(() => {
                         whiteSpace: 'nowrap',
                         left: 'calc(50% + 500px)',
                         borderRadius:'50%',
-                        backgroundColor: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'red' : 'gray',
-                        pointerEvents: player2Cards.DeadwoodsPoint && player2Cards.DeadwoodsPoint <= 12 ? 'auto' : 'none',
+                        backgroundColor: player2Cards.DeadwoodsPoint !== undefined && player2Cards.DeadwoodsPoint <= 12 ? 'red' : 'gray',
+                        pointerEvents: player2Cards.DeadwoodsPoint !== undefined && player2Cards.DeadwoodsPoint <= 12 ? 'auto' : 'none',
                       }}
                       onClick={() => {handleKnockFromMe();}}
                     >

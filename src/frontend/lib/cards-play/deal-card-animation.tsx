@@ -182,17 +182,21 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
 
     // 自己点击了deal，对方pick or pass
     if (roomId == 'tutorial') {
-      setP2Playing("passOrPick");
-      setP1Playing(null)
-      // setTimeout(() => {
-      //   setCurrentPass(2); 
-      // }, 7400);
+      // setP2Playing("passOrPick");
+      // setP1Playing(null)
+      setTimeout(() => {
+        setCurrentPass(2); 
+        setP2Playing("passOrPick");
+        setP1Playing(null)
+      }, 7400);
     } else {
-      setP1Playing("passOrPick");
-      setP2Playing(null)
-      // setTimeout(() => {
-      //   setCurrentPass(1); 
-      // }, 7400);
+      // setP1Playing("passOrPick");
+      // setP2Playing(null)
+      setTimeout(() => {
+        setCurrentPass(1); 
+        setP1Playing("passOrPick");
+        setP2Playing(null)
+      }, 7400);
   
     }
 
@@ -285,9 +289,11 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
       setDealing(true);
       setTimeout(() => {
         setShowDeadwoods(true)
+        setP2Playing("passOrPick");
+        setP1Playing(null)
       }, 7400);
-      setP2Playing("passOrPick");
-      setP1Playing(null)
+      // setP2Playing("passOrPick");
+      // setP1Playing(null)
   
     } catch (err) {
       // console.error("fetchInitialCardsForGuest failed:", err);

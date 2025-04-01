@@ -232,7 +232,7 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
 
       return () => clearInterval(interval); 
     }
-  }, [host, dealing]);
+  }, [host, dealing, whosTurn]);
 
   // non-host player get cards from dealing
   async function fetchInitialCardsForGuest() {
@@ -300,73 +300,72 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
     }
   }
 
+  useEffect(() => {
+    currentPassRef.current = currentPass;
+  }, [currentPass]);
 
-useEffect(() => {
-  currentPassRef.current = currentPass;
-}, [currentPass]);
 
+  // host check if non-host clicked pass (except tutorial)
+  useEffect(() => {
+  
+    if (host == whosTurn && dealing && currentPassRef.current === null && !hasHandledPass.current && roomId !== 'tutorial') {
 
-// host check if non-host clicked pass
-useEffect(() => {
- 
-  if (host == whosTurn && dealing && currentPassRef.current === null && !hasHandledPass.current) {
+      let count = 0;
+      const MAX_ATTEMPTS = 2000;
 
-    let count = 0;
-    const MAX_ATTEMPTS = 2000;
+      const interval = setInterval(async () => {
+        if (hasHandledPass.current) {
+          clearInterval(interval);
+          return;
+        }
 
-    const interval = setInterval(async () => {
-      if (hasHandledPass.current) {
+        if (count++ >= MAX_ATTEMPTS) {
+          // console.warn("⚠️ Polling timeout: No pass detected after max attempts.");
+          clearInterval(interval);
+          return;
+        }
+
+        try {
+          const res = await fetch(`${backend_url}/api/is_passed`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ matchid: matchID,round: currentRound, player: host })
+          });
+
+          const data = await res.json();
+
+          if (data.result === 0) {
+            hasHandledPass.current = true;
+            setP1Playing(null);
+            setP2Playing("pickTop");
+            setCurrentPass(2)
+            clearInterval(interval);
+          } else if (data.result === 2) {
+            hasHandledPass.current = true;
+            handleP1Play(); 
+            setP2Playing(null);
+            setCurrentPass(null)
+            clearInterval(interval);
+          } else if (data.result === 3) {
+            hasHandledPass.current = true;
+            setP2Playing("passOrPick");
+            setP1Playing(null);
+            clearInterval(interval);
+            setCurrentPass(2)
+            // hasHandledPass.current = true;
+            // handleP1Play(); 
+            // clearInterval(interval);
+          } 
+        } catch (err) {
+          // console.error("❌ Polling is_passed failed:", err);
+        }
+      }, 2000);
+
+      return () => {
         clearInterval(interval);
-        return;
-      }
-
-      if (count++ >= MAX_ATTEMPTS) {
-        // console.warn("⚠️ Polling timeout: No pass detected after max attempts.");
-        clearInterval(interval);
-        return;
-      }
-
-      try {
-        const res = await fetch(`${backend_url}/api/is_passed`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ matchid: matchID,round: currentRound, player: host })
-        });
-
-        const data = await res.json();
-
-        if (data.result === 0) {
-          hasHandledPass.current = true;
-          setP1Playing(null);
-          setP2Playing("pickTop");
-          setCurrentPass(2)
-          clearInterval(interval);
-        } else if (data.result === 2) {
-          hasHandledPass.current = true;
-          handleP1Play(); 
-          setP2Playing(null);
-          setCurrentPass(null)
-          clearInterval(interval);
-        } else if (data.result === 3) {
-          hasHandledPass.current = true;
-          setP2Playing("passOrPick");
-          setP1Playing(null);
-          clearInterval(interval);
-          setCurrentPass(2)
-          // hasHandledPass.current = true;
-          // handleP1Play(); 
-          // clearInterval(interval);
-        } 
-      } catch (err) {
-        // console.error("❌ Polling is_passed failed:", err);
-      }
-    }, 2000);
-
-    return () => {
-      clearInterval(interval);
-    };
-  }
-}, [dealing, host, matchID]);
+      };
+    }
+  }, [dealing, host, matchID,whosTurn]);
 
 useEffect(() => {
   dropZoneRef.current = dropZoneCards;
@@ -537,7 +536,7 @@ useEffect(() => {
       setPassResult(null)
       switch (p2Playing) {
         case 'toDrop':
-          alert('You need to drop a card');
+          alert('You need to discard.');
           break;
         case 'toTake':
           if (remainingCards.length > 0) {
@@ -807,84 +806,6 @@ useEffect(() => {
           matchid: matchID,
           move: 'knock'})
       })
-
-      // const isHost = host === '1'; 
-      // const myCards = player2Cards 
-      // const opponentCards = player1Cards 
-      
-      // const myDeadwood = myCards.DeadwoodsPoint || 0;
-      // let adjustedOpponentDeadwood = opponentCards.DeadwoodsPoint || 0;
-      // const opponentDeadwood = opponentCards.DeadwoodsPoint || 0;
-    
-      // const myHandLength = myCards?.cards?.length || 0;
-      // const isGin = myDeadwood === 0;
-      // const isBigGin = isGin && myHandLength === 11;
-
-
-      // if (!isGin && myCards.Melds && opponentCards.cards) {
-      //   const layingOffResult = calculateLayingOff(opponentCards.cards, myCards.Melds);
-      //   adjustedOpponentDeadwood = layingOffResult.adjustedDeadwoodPoint;
-      //   opponentCards.Deadwoods = layingOffResult.updatedDeadwoods;
-      //   opponentCards.DeadwoodsPoint = layingOffResult.updatedDeadwoodsPoint;
-      //   opponentCards.DeadwoodsDozenalPoint = layingOffResult.updatedDeadwoodsDozenalPoint;
-      // }
-    
-      // let baseScore = 0;
-      // let bonus = 0;
-      // let result = "Knock";
-    
-      // if (isGin) {
-      //   baseScore = opponentDeadwood;
-      //   bonus = isBigGin ? 45 : 36; // Dozenal: Big Gin = 39z = 45d, Gin = 30z = 36d
-      //   result = isBigGin ? "Big Gin" : "Gin";
-      // } else if (myDeadwood < opponentDeadwood) {
-      //   baseScore = opponentDeadwood - myDeadwood;
-      // } else {
-      //   // Undercut 判定
-      //   baseScore = myDeadwood - opponentDeadwood; // 差值
-      //   bonus = 36;
-      //   result = "Undercut";
-      // }
-
-      // let knockerScore = 0, knockerBonus = 0, opponentScore = 0, opponentBonus = 0;
-      // if (result === "Undercut") {
-      //   opponentScore = baseScore;
-      //   opponentBonus = bonus;
-      // } else {
-      //   knockerScore = baseScore;
-      //   knockerBonus = bonus;
-      // }
-  
-      // let p1Score = 0, p1Bonus = 0, p2Score = 0, p2Bonus = 0;
-      // if (result === "Undercut") {
-      //   p1Score = baseScore;
-      //   p1Bonus = bonus;
-      // } else {
-      //   p2Score = baseScore;
-      //   p2Bonus = bonus;
-      // }
-    
-      // const roundData = {
-      //   round: (scoreSummary?.rounds?.length || 0) + 1,
-      //   p1Score,
-      //   p1Bonus,
-      //   p1Total: p1Score + p1Bonus,
-      //   p2Score,
-      //   p2Bonus,
-      //   p2Total: p2Score + p2Bonus,
-      //   result,
-      // };
-    
-      // const prevSummary: ScoreSummary = scoreSummary || { rounds: [], p1TotalScore: 0, p2TotalScore: 0 };
-      // const updatedRounds = [...prevSummary.rounds, roundData];
-      // const p1TotalScore = updatedRounds.reduce((acc, r) => acc + r.p1Total, 0);
-      // const p2TotalScore = updatedRounds.reduce((acc, r) => acc + r.p2Total, 0);
-      
-      // const newScoreSummary: ScoreSummary = {
-      //   rounds: updatedRounds,
-      //   p1TotalScore,
-      //   p2TotalScore,
-      // };
       
       const { newScoreSummary, result, isBigGin } = calculateRoundScore({
         host,
@@ -894,79 +815,91 @@ useEffect(() => {
       });
 
       setScoreSummary(newScoreSummary);
-      let whosNext = ''
-      if (result === "Undercut") {
-        if (host == '0') {
-          whosNext = '1'
-          setWhosTurn('1')
+
+      if (roomId !== 'tutorial') {
+        let whosNext = ''
+        if (result === "Undercut") {
+          if (host == '0') {
+            whosNext = '1'
+            setWhosTurn('1')
+          } else {
+            whosNext = '0'
+            setWhosTurn('0')
+          }
         } else {
-          whosNext = '0'
-          setWhosTurn('0')
+          if (host == '0') {
+            whosNext ='0'
+            setWhosTurn('0')
+          } else {
+            whosNext = '1'
+            setWhosTurn('1')
+          }
         }
-      } else {
-        if (host == '0') {
-          whosNext ='0'
-          setWhosTurn('0')
-        } else {
-          whosNext = '1'
-          setWhosTurn('1')
-        }
+        setWhosTurn(whosNext)
+
+        const roundSummaryData = {
+          matchid: matchID,
+          scoreSymmary: newScoreSummary,
+          winner: whosNext,
+          round: currentRound
+        };
+        
+        await fetch(`${backend_url}/api/submit_move`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(roundSummaryData),
+        });
+
+
       }
-      setWhosTurn(whosNext)
-
-      const roundSummaryData = {
-        matchid: matchID,
-        scoreSymmary: newScoreSummary,
-        winner: whosNext,
-        round: currentRound
-      };
       
-      await fetch(`${backend_url}/api/submit_move`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(roundSummaryData),
-      });
+
+
     
     }
 
-    function calculateLayingOffImproved(opponentCards: Card[], knockerMelds: Card[]) {
-      const cardsWithLayingOff = [...opponentCards, ...knockerMelds];
-      const recalculated = GinRummyScore(cardsWithLayingOff);
+    // function calculateLayingOffImproved(opponentCards: Card[], knockerMelds: Card[]) {
+    //   const cardsWithLayingOff = [...opponentCards, ...knockerMelds];
+    //   const recalculated = GinRummyScore(cardsWithLayingOff);
     
-      const knockerMeldPoint = knockerMelds.reduce((sum, c) => sum + c.point, 0);
-      const effectiveLayingOff = (recalculated.MeldsPoint || 0) - knockerMeldPoint;
+    //   const knockerMeldPoint = knockerMelds.reduce((sum, c) => sum + c.point, 0);
+    //   const effectiveLayingOff = (recalculated.MeldsPoint || 0) - knockerMeldPoint;
     
-      const adjustedDeadwoodPoint = opponentCards.reduce((sum, c) => sum + c.point, 0) - effectiveLayingOff;
+    //   const adjustedDeadwoodPoint = opponentCards.reduce((sum, c) => sum + c.point, 0) - effectiveLayingOff;
     
-      return {
-        adjustedDeadwoodPoint: Math.max(adjustedDeadwoodPoint, 0),
-        updatedDeadwoods: recalculated.Deadwoods || [],
-        updatedDeadwoodsPoint: recalculated.DeadwoodsPoint || 0,
-        updatedDeadwoodsDozenalPoint: recalculated.DeadwoodsDozenalPoint || '0',
-      };
-    }
+    //   return {
+    //     adjustedDeadwoodPoint: Math.max(adjustedDeadwoodPoint, 0),
+    //     updatedDeadwoods: recalculated.Deadwoods || [],
+    //     updatedDeadwoodsPoint: recalculated.DeadwoodsPoint || 0,
+    //     updatedDeadwoodsDozenalPoint: recalculated.DeadwoodsDozenalPoint || '0',
+    //   };
+    // }
     
     
     async function handlePlayNextRound(){
-      setWaitingNextRound(true)
-      await fetch(`${backend_url}/api/set_waiting_next_round`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ matchid: matchID, host, round: currentRound }),
-      });
-
-      const intervalId = setInterval(async () => {
-        const res = await fetch(`${backend_url}/api/is_both_waiting_next_round`, {
+      if (roomId == 'tutorial') {
+        resetAll()
+      } else {
+        setWaitingNextRound(true)
+        await fetch(`${backend_url}/api/set_waiting_next_round`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ matchid: matchID, round: currentRound }),
+          body: JSON.stringify({ matchid: matchID, host, round: currentRound }),
         });
-        const data = await res.json();
-        if (data.both_ready) {
-          clearInterval(intervalId);
-          resetAll();               
-        }
-      }, 1000);
+
+        const intervalId = setInterval(async () => {
+          const res = await fetch(`${backend_url}/api/is_both_waiting_next_round`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ matchid: matchID, round: currentRound }),
+          });
+          const data = await res.json();
+          if (data.both_ready) {
+            clearInterval(intervalId);
+            resetAll();               
+          }
+        }, 1000);
+      }
 
     }
     
@@ -1175,7 +1108,7 @@ useEffect(() => {
                 {dealing && whosTurn === host && currentPass && roomId === 'tutorial' && (
                   <div className="absolute left-full ml-4 mt-12 text-sm text-red-500">
                     <div className="whitespace-nowrap font-semibold"> Tutorial only</div>
-                    <div className="whitespace-nowrap">In a real game, only the non-dealer decides to pass or pick the first card.</div>
+                    <div className="whitespace-nowrap">In a real game, the non-dealer is the first to decide to pass or pick the first card.</div>
                   </div>
                 )}
 
@@ -1348,8 +1281,8 @@ useEffect(() => {
                         whiteSpace: 'nowrap',
                         left: 'calc(50% + 500px)',
                         borderRadius:'50%',
-                        backgroundColor: player2Cards.DeadwoodsPoint !== undefined && player2Cards.DeadwoodsPoint <= 12 ? 'red' : 'gray',
-                        pointerEvents: player2Cards.DeadwoodsPoint !== undefined && player2Cards.DeadwoodsPoint <= 12 ? 'auto' : 'none',
+                        backgroundColor: player2Cards.DeadwoodsPoint !== undefined && player2Cards.DeadwoodsPoint <= 120 ? 'red' : 'gray',
+                        pointerEvents: player2Cards.DeadwoodsPoint !== undefined && player2Cards.DeadwoodsPoint <= 120 ? 'auto' : 'none',
                       }}
                       onClick={() => {handleKnockFromMe();}}
                     >

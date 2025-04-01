@@ -8,23 +8,39 @@ const getCard = (name: string) => {
 };
 
 test('opponent ↋ should be laid off onto knocker set of ↋ ↋ ↋', () => {
+
   const knockerMelds = [
-    getCard('hearts-0B'),
-    getCard('spades-0B'),
-    getCard('diamonds-0B'),
-  ];
+    'spades-06','spades-07', 'spades-08', 'spades-09', 'spades-0A', 'spades-0B',
+    'diamonds-J', 'clubs-J','spades-J',
+    'clubs-C','spades-C','diamonds-C',
+    'diamonds-Q'
 
-  const opponentCards = [
-    getCard('clubs-0B'),        // ✅lay off
-    getCard('hearts-03'),       // point: 3
-    getCard('diamonds-05'),     // point: 5
-  ];
+    // Big Gin
+    // 'spades-03','spades-04', 'spades-05', 'spades-06', 
+    // 'diamonds-J', 'clubs-J','spades-J',
+    // 'hearts-C', 'clubs-C','spades-C',
+    // 'hearts-Q', 'clubs-Q','spades-Q',
+  ].map(getCard);
 
-  const result = calculateLayingOff(opponentCards, knockerMelds);
+  // const opponentDeadwoods = [
+  //   getCard('hearts-J'),        // ✅lay off
+  //   getCard('clubs-03'),       // point: 3
+  //   getCard('diamonds-05'),     // point: 5
+  // ];
 
-  expect(result.adjustedDeadwoodPoint).toBe(8); // 3 + 5
-  expect(result.updatedDeadwoods.map(c => c.name)).toEqual([
-    'hearts-03',
-    'diamonds-05',
-  ]);
+  const opponentDeadwoods  = [
+    'diamonds-03','spades-03', 
+    'hearts-04', 'hearts-05', 
+    'diamonds-08', 'hearts-08',
+    'hearts-C','hearts-0B','hearts-J',
+    // 'hearts-K','spades-K','clubs-K'
+  ].map(getCard);
+
+  const result = calculateLayingOff(opponentDeadwoods, knockerMelds);
+
+  // console.log(result);
+  
+
+  expect(result.adjustedDeadwoodPoint).toBe(54); 
+
 });

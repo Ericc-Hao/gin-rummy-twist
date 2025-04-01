@@ -25,11 +25,14 @@ export function calculateRoundScore({
   const isBigGin = isGin && myHandLength === 13;
 
   if (!isGin && myCards.Melds && opponentCards.cards) {
-    const layingOffResult = calculateLayingOff(opponentCards.cards, myCards.Melds);
+    // const layingOffResult = calculateLayingOff(opponentCards.cards, myCards.Melds);
+    const layingOffResult = calculateLayingOff(opponentCards.Deadwoods ?? [], myCards.Melds);
+
     adjustedOpponentDeadwood = layingOffResult.adjustedDeadwoodPoint;
     opponentCards.Deadwoods = layingOffResult.updatedDeadwoods;
     opponentCards.DeadwoodsPoint = layingOffResult.updatedDeadwoodsPoint;
     opponentCards.DeadwoodsDozenalPoint = layingOffResult.updatedDeadwoodsDozenalPoint;
+
   }
 
   let baseScore = 0;
@@ -40,10 +43,10 @@ export function calculateRoundScore({
     baseScore = opponentDeadwood;
     bonus = isBigGin ? 45 : 36;
     result = isBigGin ? 'Big Gin' : 'Gin';
-  } else if (myDeadwood < opponentDeadwood) {
-    baseScore = opponentDeadwood - myDeadwood;
+  } else if (myDeadwood < adjustedOpponentDeadwood) {
+    baseScore = adjustedOpponentDeadwood - myDeadwood;
   } else {
-    baseScore = myDeadwood - opponentDeadwood;
+    baseScore = myDeadwood - adjustedOpponentDeadwood;
     bonus = 36;
     result = 'Undercut';
   }

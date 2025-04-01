@@ -1,87 +1,95 @@
-// laying-off.ts
 import { Card } from '../../models/card-animation.model';
-import { decimalToDozenal } from './count-dozenal';
+import {decimalToDozenal} from './count-dozenal'
 
-export function calculateLayingOff(opponentCards: Card[], knockerMelds: Card[]) {
-  const updatedDeadwoods: Card[] = [];
+interface LayingOffResult {
+  adjustedDeadwoodPoint: number;
+  updatedDeadwoods: Card[];
+  updatedDeadwoodsPoint: number;
+  updatedDeadwoodsDozenalPoint: string;
+}
 
-  for (const card of opponentCards) {
-    let canLayOff = false;
+function getSuitAndRank(card: Card): { suit: string; rank: string } {
+  const [suit, rank] = card.name.split('-');
+  return { suit, rank };
+}
 
-    for (const meld of splitMelds(knockerMelds)) {
-      if (canBeLaidOff(card, meld)) {
-        canLayOff = true;
-        break;
-      }
-    }
+export function calculateLayingOff(deadwoods: Card[], melds: Card[]): LayingOffResult {
+  if (!deadwoods || !melds) {
+    return {
+      adjustedDeadwoodPoint: 0,
+      updatedDeadwoods: [],
+      updatedDeadwoodsPoint: 0,
+      updatedDeadwoodsDozenalPoint: '0',
+    };
+  }
 
-    if (!canLayOff) {
-      updatedDeadwoods.push(card);
+  // Build sets and runs
+  const setsByRank: { [rank: string]: Set<string> } = {};
+  const runsBySuit: { [suit: string]: Set<number> } = {};
+
+  for (const card of melds) {
+    const { suit, rank } = getSuitAndRank(card);
+
+    // Set
+    if (!setsByRank[rank]) setsByRank[rank] = new Set();
+    setsByRank[rank].add(suit);
+
+    // Run
+    const rankNum = parseInt(rank, 16);
+    if (!isNaN(rankNum)) {
+      if (!runsBySuit[suit]) runsBySuit[suit] = new Set();
+      runsBySuit[suit].add(rankNum);
     }
   }
 
-  const adjustedDeadwoodPoint = updatedDeadwoods.reduce((sum, c) => sum + c.point, 0);
+  const remainingDeadwoods: Card[] = [];
+  const layOffCandidates: Card[] = [];
+
+  for (const card of deadwoods) {
+    const { suit, rank } = getSuitAndRank(card);
+    const point = card.point;
+
+    // Check if card can be laid off to set
+    const set = setsByRank[rank];
+    const canLayOffToSet = set && set.size >= 3 && !set.has(suit);
+
+    // Check if card can be laid off to run
+    const rankNum = parseInt(rank, 16);
+    const suitRanks = runsBySuit[suit];
+    let canLayOffToRun = false;
+
+    if (suitRanks && !isNaN(rankNum)) {
+      const sorted = Array.from(suitRanks).sort((a, b) => a - b);
+      const min = sorted[0];
+      const max = sorted[sorted.length - 1];
+      canLayOffToRun = rankNum === min - 1 || rankNum === max + 1;
+    }
+
+    if (canLayOffToSet || canLayOffToRun) {
+      layOffCandidates.push(card);
+    } else {
+      remainingDeadwoods.push(card);
+    }
+  }
+
+  // ⚠️ 只选择最大 point 的 lay off 候选牌
+  if (layOffCandidates.length > 0) {
+    const bestLayoff = layOffCandidates.reduce((max, curr) => curr.point > max.point ? curr : max, layOffCandidates[0]);
+    // 保留其他未被 lay off 的牌
+    for (const card of layOffCandidates) {
+      if (card !== bestLayoff) remainingDeadwoods.push(card);
+    }
+  } else {
+    // 如果没人能 lay off，全都保留
+    remainingDeadwoods.push(...layOffCandidates);
+  }
+
+  const totalPoint = remainingDeadwoods.reduce((sum, card) => sum + card.point, 0);
 
   return {
-    adjustedDeadwoodPoint,
-    updatedDeadwoods,
-    updatedDeadwoodsPoint: adjustedDeadwoodPoint,
-    updatedDeadwoodsDozenalPoint: decimalToDozenal(adjustedDeadwoodPoint),
+    adjustedDeadwoodPoint: totalPoint,
+    updatedDeadwoods: remainingDeadwoods,
+    updatedDeadwoodsPoint: totalPoint,
+    updatedDeadwoodsDozenalPoint: decimalToDozenal(totalPoint),
   };
-}
-
-function splitMelds(cards: Card[]): Card[][] {
-  const groups: Card[][] = [];
-  const used = new Set<number>();
-
-  for (let i = 0; i < cards.length; i++) {
-    if (used.has(i)) continue;
-
-    const group = [cards[i]];
-    used.add(i);
-
-    for (let j = i + 1; j < cards.length; j++) {
-      if (!used.has(j) && canBeGrouped(group[group.length - 1], cards[j])) {
-        group.push(cards[j]);
-        used.add(j);
-      }
-    }
-
-    groups.push(group);
-  }
-
-  return groups;
-}
-
-function canBeGrouped(card1: Card, card2: Card): boolean {
-  const [suit1, rank1] = card1.name.split('-');
-  const [suit2, rank2] = card2.name.split('-');
-
-  if (rank1 === rank2 && suit1 !== suit2) return true; // Set
-  if (suit1 === suit2 && Math.abs(card1.order - card2.order) === 1) return true; // Run
-  return false;
-}
-
-function canBeLaidOff(card: Card, meld: Card[]): boolean {
-  if (meld.length < 3) return false;
-
-  const isSet = meld.every(c => c.name.split('-')[1] === meld[0].name.split('-')[1]);
-  const isRun = meld.every((c, i, arr) => i === 0 || c.order === arr[i - 1].order + 1);
-
-  if (isSet) {
-    return meld.some(c => c.name.split('-')[1] === card.name.split('-')[1]) &&
-           !meld.some(c => c.name.split('-')[0] === card.name.split('-')[0]);
-  }
-
-  if (isRun) {
-    const suit = meld[0].name.split('-')[0];
-    const orders = meld.map(c => c.order).sort((a, b) => a - b);
-    const cardOrder = card.order;
-    return (
-      card.name.split('-')[0] === suit &&
-      (cardOrder === orders[0] - 1 || cardOrder === orders[orders.length - 1] + 1)
-    );
-  }
-
-  return false;
 }

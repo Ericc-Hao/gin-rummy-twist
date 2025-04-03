@@ -726,6 +726,10 @@ useEffect(() => {
           })
           const data = await res.json();
 
+          if (data['remaining_cards'] <2){
+            alert('no cards in stack!')
+          } else{
+
             const place = data["operation"]
             // player dropped cards
             const dropped_card_str = data['dropped_card']
@@ -771,7 +775,7 @@ useEffect(() => {
                 }
             }
 
-
+          }
         }catch (err) {
           alert(err);
         }

@@ -105,7 +105,7 @@ class Match():
 
     
 
-    def initialize_match(self, cur_round = -1):
+    def initialize_match(self, cur_round = -1, start_with = host):
         print("initialize match,", cur_round, self.current_round) if debug else None
         if cur_round <= self.current_round:
             return
@@ -117,7 +117,8 @@ class Match():
         self.guest_cards = []
         self.initial_cards = []
         self.latest_operation = None
-        self.latest_player = host
+        self.latest_player = start_with
+
         random.shuffle(self.deck)
         # Initialize drop zone with one card from deck.
         self.drop_zone.append(self.deck.pop())
@@ -136,6 +137,10 @@ class Match():
         print(len(self.guest_cards), len(self.host_cards), len(self.deck), len(self.drop_zone)) if debug else None
         print(self.guest_cards, self.host_cards) if debug else None
         self.new_card = self.host_cards[-1]
+        if start_with == guest:
+            cards = self.host_cards
+            self.host_cards = self.guest_cards
+            self.guest_cards = cards
 
 
     def get_matchid(self) -> str:

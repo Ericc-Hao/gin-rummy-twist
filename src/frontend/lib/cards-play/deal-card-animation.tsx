@@ -32,8 +32,8 @@ import { AvatarDisplay,ChatBubble  } from '@my-components/avatar'
 import GameOverOverlay from './game-end-overlay'
 
 // const backend_url = "http://127.0.0.1:8080"
-// const backend_url = "http://localhost:8080";
-const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
+const backend_url = "http://localhost:8080";
+// const backend_url = process.env.BACKEND_URL || "https://backend.ginrummys.ca";
 
 
 function getRandomCards(cards: Card[]): Card[] {
@@ -77,6 +77,8 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
   const [isKnocked, setIsKnocked] = useState<boolean>(false)
   const [showDeadwoods, setShowDeadwoods] = useState<boolean>(false)
 
+  const [restart, setRestart] = useState<boolean>(false)
+
   const shuffledCards = getRandomCards(CARDS); 
   const initialCardsNumber = 24
 
@@ -87,13 +89,22 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
   const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currentPassRef = useRef(currentPass);
 
+  // const [actualPlayer, setActualPlayer] = useState("")
+
 
   // set which player deal
   useEffect(() => {
     if (whosTurn === "1" && !hasHandledP1Play.current) {
       hasHandledP1Play.current = true;
       host === "1" ? (setP2Playing("toDeal")) : setP1Playing("toDeal");
+
+      // const thisActualPlayer = host === whosTurn ? "1" : "0"
+      // console.log(" thisActualPlayer thisActualPlayer thisActualPlayer thisActualPlayer: ", thisActualPlayer);
+      
+      // setActualPlayer(thisActualPlayer)
     }
+
+
   }, [whosTurn, host]);
   
   // click deal，host start game
@@ -132,6 +143,7 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
       },
       body: JSON.stringify({
         host: host,
+        current_host: whosTurn,
         matchid: thisGameID,
         round:currentRound
       })
@@ -308,6 +320,10 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
   // host check if non-host clicked pass (except tutorial)
   useEffect(() => {
   
+    console.log('zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz:',dealing);
+    console.log('yyyyyyyyyyyyyyyyyyyyyyyyyyy: ', host == whosTurn && dealing && currentPassRef.current === null && !hasHandledPass.current && roomId !== 'tutorial');
+    
+    
     if (host == whosTurn && dealing && currentPassRef.current === null && !hasHandledPass.current && roomId !== 'tutorial') {
 
       let count = 0;
@@ -326,6 +342,8 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
         }
 
         try {
+          console.log('@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@:', matchID,currentRound,  host );
+          
           const res = await fetch(`${backend_url}/api/is_passed`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -342,6 +360,8 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
             clearInterval(interval);
           } else if (data.result === 2) {
             hasHandledPass.current = true;
+            console.log('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+            
             handleP1Play(); 
             setP2Playing(null);
             setCurrentPass(null)
@@ -365,7 +385,9 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
         clearInterval(interval);
       };
     }
-  }, [dealing, host, matchID,whosTurn]);
+  }, [dealing]);
+
+  // }, [dealing, host, matchID,whosTurn,restart]);
 
 useEffect(() => {
   dropZoneRef.current = dropZoneCards;
@@ -385,8 +407,13 @@ useEffect(() => {
     setIsKnocked(false)
     setShowDeadwoods(false);
     setPassResult(null)
-    
 
+    const newRestart = !restart
+    setRestart(newRestart)
+
+    const thisActualPlayer = host === whosTurn ? "1" : "0"
+    console.log("77777777777777777777777777777777777777777777: ", thisActualPlayer);
+    
     const nextRound = currentRound + 1
     setCurrentRound(nextRound)
     
@@ -402,6 +429,9 @@ useEffect(() => {
 
 
   async function get_card_from_stack(is_P2: boolean){
+
+    console.log('11111111111111111111111111111111111111111111111111');
+    
     await fetch(`${backend_url}/api/match_move`, {
       method: "POST",
       headers: {
@@ -410,6 +440,8 @@ useEffect(() => {
       body: JSON.stringify({
         host: host,
         matchid: matchID,
+        current_host: whosTurn,
+        round: currentRound,
         move: 'stack'})
     })
     .then((response) => response.json())
@@ -453,6 +485,8 @@ useEffect(() => {
       
       if (roomId == 'tutorial'){
         //bug：hanldePass， robot从stack拿牌
+        console.log('bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
+        
         handleP1Play()
       } else {
         fetch(`${backend_url}/api/set_passed`, {
@@ -493,6 +527,8 @@ useEffect(() => {
                 setP2Playing(null);
                 setP1Playing("toTake");
                 setCurrentPass(1);
+                console.log('cccccccccccccccccccccccccccccc');
+                
                 handleP1Play();
                 clearInterval(interval);
               } else if (data.result === 3) {
@@ -563,6 +599,8 @@ useEffect(() => {
           setCurrentPass(null)
         }
         if (dropZoneCards && dropZoneCards.length > 0) {
+          console.log('2222222222222222222222222222222222222222');
+          
           await fetch(`${backend_url}/api/match_move`, {
             method: "POST",
             headers: {
@@ -571,6 +609,8 @@ useEffect(() => {
             body: JSON.stringify({
               host: host,
               matchid: matchID,
+              current_host: whosTurn,
+              round: currentRound,
               move: 'dropzone'})
           })
           const newDropZoneCards = [...dropZoneCards];
@@ -614,6 +654,8 @@ useEffect(() => {
           const updatedCards = [...player2Cards.cards];
           updatedCards.splice(item.index, 1);
           setPlayer2Cards(GinRummyScore(updatedCards));
+          console.log('333333333333333333333333333333333333333333333333');
+          
           await fetch(`${backend_url}/api/match_move`, {
             method: "POST",
             headers: {
@@ -621,6 +663,7 @@ useEffect(() => {
             },
             body: JSON.stringify({
               host: host,
+              current_host: whosTurn,
               matchid: matchID,
               move: 'drop',
               player: host,
@@ -630,6 +673,8 @@ useEffect(() => {
           setP1Playing("toTake")
           setP2Playing(null)
 
+          console.log('dddddddddddddddddddddddddddddddddddddddddddddddd');
+          
           handleP1Play()
       }
     };
@@ -638,6 +683,8 @@ useEffect(() => {
     async function handleP1Play() {
       let ready = false;
       while (ready == false){
+        console.log('4444444444444444444444444444444444444444444444444');
+        
         await fetch(`${backend_url}/api/match_move`, {
           method: "POST",
           headers: {
@@ -646,6 +693,8 @@ useEffect(() => {
           body: JSON.stringify({
             host: host,
             matchid: matchID,
+            current_host: whosTurn,
+            round: currentRound,
             move: 'opponent_status'})
         }).then((response) => response.json())
         .then((data) => {
@@ -661,6 +710,8 @@ useEffect(() => {
         }
         
         try {
+          console.log('55555555555555555555555555555555555555555555555555');
+          
           const res = await fetch(`${backend_url}/api/match_move`, {
             method: "POST",
             headers: {
@@ -669,9 +720,15 @@ useEffect(() => {
             body: JSON.stringify({
               host: host,
               matchid: matchID,
+              current_host: whosTurn,
+              round: currentRound,
               move: 'wait_opponent'})
           })
           const data = await res.json();
+
+          if (data['remaining_cards'] <2){
+            alert('no cards in stack!')
+          } else{
 
             const place = data["operation"]
             // player dropped cards
@@ -718,7 +775,7 @@ useEffect(() => {
                 }
             }
 
-
+          }
         }catch (err) {
           alert(err);
         }
@@ -796,6 +853,8 @@ useEffect(() => {
 
       setIsKnocked(true)
 
+      console.log('66666666666666666666666666666666666666666666666666666666666666666666');
+      
       await fetch(`${backend_url}/api/match_move`, {
         method: "POST",
         headers: {
@@ -804,6 +863,8 @@ useEffect(() => {
         body: JSON.stringify({
           host: host,
           matchid: matchID,
+          current_host: whosTurn,
+          round: currentRound,
           move: 'knock'})
       })
       
@@ -821,18 +882,14 @@ useEffect(() => {
         if (result === "Undercut") {
           if (host == '0') {
             whosNext = '1'
-            setWhosTurn('1')
           } else {
             whosNext = '0'
-            setWhosTurn('0')
           }
         } else {
           if (host == '0') {
             whosNext ='0'
-            setWhosTurn('0')
           } else {
             whosNext = '1'
-            setWhosTurn('1')
           }
         }
         setWhosTurn(whosNext)
@@ -849,31 +906,8 @@ useEffect(() => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(roundSummaryData),
         });
-
-
       }
-      
-
-
-    
     }
-
-    // function calculateLayingOffImproved(opponentCards: Card[], knockerMelds: Card[]) {
-    //   const cardsWithLayingOff = [...opponentCards, ...knockerMelds];
-    //   const recalculated = GinRummyScore(cardsWithLayingOff);
-    
-    //   const knockerMeldPoint = knockerMelds.reduce((sum, c) => sum + c.point, 0);
-    //   const effectiveLayingOff = (recalculated.MeldsPoint || 0) - knockerMeldPoint;
-    
-    //   const adjustedDeadwoodPoint = opponentCards.reduce((sum, c) => sum + c.point, 0) - effectiveLayingOff;
-    
-    //   return {
-    //     adjustedDeadwoodPoint: Math.max(adjustedDeadwoodPoint, 0),
-    //     updatedDeadwoods: recalculated.Deadwoods || [],
-    //     updatedDeadwoodsPoint: recalculated.DeadwoodsPoint || 0,
-    //     updatedDeadwoodsDozenalPoint: recalculated.DeadwoodsDozenalPoint || '0',
-    //   };
-    // }
     
     
     async function handlePlayNextRound(){
@@ -1281,8 +1315,8 @@ useEffect(() => {
                         whiteSpace: 'nowrap',
                         left: 'calc(50% + 500px)',
                         borderRadius:'50%',
-                        backgroundColor: player2Cards.DeadwoodsPoint !== undefined && player2Cards.DeadwoodsPoint <= 120 ? 'red' : 'gray',
-                        pointerEvents: player2Cards.DeadwoodsPoint !== undefined && player2Cards.DeadwoodsPoint <= 120 ? 'auto' : 'none',
+                        backgroundColor: player2Cards.DeadwoodsPoint !== undefined && player2Cards.DeadwoodsPoint <= 12 ? 'red' : 'gray',
+                        pointerEvents: player2Cards.DeadwoodsPoint !== undefined && player2Cards.DeadwoodsPoint <= 12 ? 'auto' : 'none',
                       }}
                       onClick={() => {handleKnockFromMe();}}
                     >
@@ -1389,7 +1423,13 @@ useEffect(() => {
       {scoreSummary && (scoreSummary.p1TotalScore >= 120 || scoreSummary.p2TotalScore >= 120) && (
         <GameOverOverlay
           isWin={(() => {
-            const isHost = host === whosTurn;
+            let winner
+            if (scoreSummary.p1TotalScore >= 120) {
+              winner = '1'
+            } else {
+              winner = '0'
+            }
+            const isHost = host === winner;
             return (isHost && scoreSummary.p1TotalScore >= 120) || (!isHost && scoreSummary.p2TotalScore >= 120);
           })()}
           p1TotalScore={scoreSummary.p1TotalScore}

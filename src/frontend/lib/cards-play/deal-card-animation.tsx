@@ -89,7 +89,7 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
   const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currentPassRef = useRef(currentPass);
 
-  const [actualPlayer, setActualPlayer] = useState("")
+  // const [actualPlayer, setActualPlayer] = useState("")
 
 
   // set which player deal
@@ -98,10 +98,10 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
       hasHandledP1Play.current = true;
       host === "1" ? (setP2Playing("toDeal")) : setP1Playing("toDeal");
 
-      const thisActualPlayer = host === whosTurn ? "1" : "0"
-      console.log(" thisActualPlayer thisActualPlayer thisActualPlayer thisActualPlayer: ", thisActualPlayer);
+      // const thisActualPlayer = host === whosTurn ? "1" : "0"
+      // console.log(" thisActualPlayer thisActualPlayer thisActualPlayer thisActualPlayer: ", thisActualPlayer);
       
-      setActualPlayer(thisActualPlayer)
+      // setActualPlayer(thisActualPlayer)
     }
 
 

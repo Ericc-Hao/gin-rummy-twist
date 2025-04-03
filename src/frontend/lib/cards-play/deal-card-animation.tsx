@@ -142,7 +142,8 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        host: actualPlayer,
+        host: host,
+        current_host: whosTurn,
         matchid: thisGameID,
         round:currentRound
       })
@@ -252,7 +253,7 @@ export default function DealCards({ roomId, host, userName}: { roomId: string; h
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          host: actualPlayer,
+          host: host,
           matchid: matchID,
           round: currentRound
         })
@@ -437,8 +438,9 @@ useEffect(() => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        host: actualPlayer,
+        host: host,
         matchid: matchID,
+        current_host: whosTurn,
         round: currentRound,
         move: 'stack'})
     })
@@ -605,8 +607,9 @@ useEffect(() => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              host: actualPlayer,
+              host: host,
               matchid: matchID,
+              current_host: whosTurn,
               round: currentRound,
               move: 'dropzone'})
           })
@@ -659,7 +662,8 @@ useEffect(() => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              host: actualPlayer,
+              host: host,
+              current_host: whosTurn,
               matchid: matchID,
               move: 'drop',
               player: host,
@@ -687,8 +691,9 @@ useEffect(() => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            host: actualPlayer,
+            host: host,
             matchid: matchID,
+            current_host: whosTurn,
             round: currentRound,
             move: 'opponent_status'})
         }).then((response) => response.json())
@@ -713,8 +718,9 @@ useEffect(() => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              host: actualPlayer,
+              host: host,
               matchid: matchID,
+              current_host: whosTurn,
               round: currentRound,
               move: 'wait_opponent'})
           })
@@ -851,8 +857,9 @@ useEffect(() => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          host: actualPlayer,
+          host: host,
           matchid: matchID,
+          current_host: whosTurn,
           round: currentRound,
           move: 'knock'})
       })

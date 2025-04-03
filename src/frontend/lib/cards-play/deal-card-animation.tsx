@@ -640,7 +640,7 @@ useEffect(() => {
     async function handleDrop(item: { card: Card; index: number }){
       switch (p2Playing) {
         case 'toTake':
-          alert('need to pick a card first');
+          alert('You need to pick a card first.');
           break;
         case 'toDrop':
 

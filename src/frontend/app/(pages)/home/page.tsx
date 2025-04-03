@@ -65,6 +65,10 @@ export default function homePage() {
                     </Drawer>
                 </div>
             </div>
+
+            <div className="w-full fixed bottom-0 text-center  bg-gray-100 py-2 text-sm text-gray-800 z-50">
+            K6T dozenal deck of cards by J. L. Cazaux, Pionissimo
+            </div>
         </div>    
     )
 }

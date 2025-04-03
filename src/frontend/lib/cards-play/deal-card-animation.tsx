@@ -1315,8 +1315,8 @@ useEffect(() => {
                         whiteSpace: 'nowrap',
                         left: 'calc(50% + 500px)',
                         borderRadius:'50%',
-                        backgroundColor: player2Cards.DeadwoodsPoint !== undefined && player2Cards.DeadwoodsPoint <= 120 ? 'red' : 'gray',
-                        pointerEvents: player2Cards.DeadwoodsPoint !== undefined && player2Cards.DeadwoodsPoint <= 120 ? 'auto' : 'none',
+                        backgroundColor: player2Cards.DeadwoodsPoint !== undefined && player2Cards.DeadwoodsPoint <= 12 ? 'red' : 'gray',
+                        pointerEvents: player2Cards.DeadwoodsPoint !== undefined && player2Cards.DeadwoodsPoint <= 12 ? 'auto' : 'none',
                       }}
                       onClick={() => {handleKnockFromMe();}}
                     >

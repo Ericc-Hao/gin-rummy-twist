@@ -906,31 +906,8 @@ useEffect(() => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(roundSummaryData),
         });
-
-
       }
-      
-
-
-    
     }
-
-    // function calculateLayingOffImproved(opponentCards: Card[], knockerMelds: Card[]) {
-    //   const cardsWithLayingOff = [...opponentCards, ...knockerMelds];
-    //   const recalculated = GinRummyScore(cardsWithLayingOff);
-    
-    //   const knockerMeldPoint = knockerMelds.reduce((sum, c) => sum + c.point, 0);
-    //   const effectiveLayingOff = (recalculated.MeldsPoint || 0) - knockerMeldPoint;
-    
-    //   const adjustedDeadwoodPoint = opponentCards.reduce((sum, c) => sum + c.point, 0) - effectiveLayingOff;
-    
-    //   return {
-    //     adjustedDeadwoodPoint: Math.max(adjustedDeadwoodPoint, 0),
-    //     updatedDeadwoods: recalculated.Deadwoods || [],
-    //     updatedDeadwoodsPoint: recalculated.DeadwoodsPoint || 0,
-    //     updatedDeadwoodsDozenalPoint: recalculated.DeadwoodsDozenalPoint || '0',
-    //   };
-    // }
     
     
     async function handlePlayNextRound(){
@@ -1446,7 +1423,13 @@ useEffect(() => {
       {scoreSummary && (scoreSummary.p1TotalScore >= 120 || scoreSummary.p2TotalScore >= 120) && (
         <GameOverOverlay
           isWin={(() => {
-            const isHost = host === whosTurn;
+            let winner
+            if (scoreSummary.p1TotalScore >= 120) {
+              winner = '1'
+            } else {
+              winner = '0'
+            }
+            const isHost = host === winner;
             return (isHost && scoreSummary.p1TotalScore >= 120) || (!isHost && scoreSummary.p2TotalScore >= 120);
           })()}
           p1TotalScore={scoreSummary.p1TotalScore}

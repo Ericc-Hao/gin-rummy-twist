@@ -105,7 +105,14 @@ def match_start_request():
     #if match_id not in ongoing_matches:
         #ongoing_matches[match_id] = Match(match_id)
 
-    ongoing_matches[match_id].initialize_match(int(request.json['round']), request.json['host'])
+    print("************************************************************************")
+    print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+    print("************************************************************************")
+    print(str(request.json['host']))
+    print("************************************************************************")
+    print("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n")
+    print("************************************************************************")
+    ongoing_matches[match_id].initialize_match(int(request.json['round']), str(request.json['host']))
 
     match_obj = ongoing_matches[match_id]
     init_cards = match_obj.get_initial_cards()

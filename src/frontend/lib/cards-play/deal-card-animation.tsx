@@ -1434,6 +1434,11 @@ useEffect(() => {
           })()}
           p1TotalScore={scoreSummary.p1TotalScore}
           p2TotalScore={scoreSummary.p2TotalScore}
+          scoreSummary={scoreSummary}
+          host={host}
+          whosTurn={whosTurn}
+          roomId={roomId}
+          decimalToDozenal={decimalToDozenal}
         />
       )}
     </DndProvider>
